@@ -1,0 +1,229 @@
+---
+title: "EHRunKineticsKinematics"
+author: "Dan Feeney"
+date: "4/20/2021"
+output: html_document
+---
+
+# End and Health Validation analyses
+
+## Sex: (1) Male, (2) Female
+## Shoe: (1) DD, (2) SD, (3) SL (Laces)
+
+```{r message=FALSE, warning=FALSE}
+rm(list=ls())
+library(readxl)
+library(tidyverse)
+library(emmeans)
+library(lme4)
+
+
+dat <- suppressWarnings(read_xlsx('C:/Users/Daniel.Feeney/Dropbox (Boa)/Endurance Health Validation/RunningJointMechanics.xlsx'))
+#Making variables factors or numeric
+dat$Subject <- as.factor(dat$Subject)
+dat$Sex <- as.factor(dat$Sex)
+dat$Period <- as.factor(dat$Period)
+dat$Condition <- as.factor(dat$Condition)
+dat$`Knee Max Angle X` <- as.numeric(dat$`Knee Max Angle X`)
+dat$`Knee Max Angle Y` <- as.numeric(dat$`Knee Max Angle Y`) 
+dat$`Knee Max Angle Z` <- as.numeric(dat$`Knee Max Angle Z`) 
+dat$`Knee Max Power` <- as.numeric(dat$`Knee Max Power`) / dat$Mass
+dat$`Knee Min Angle X` <- as.numeric(dat$`Knee Min Angle X`)
+dat$`Knee Min Angle Y` <- as.numeric(dat$`Knee Min Angle Y`)
+dat$`Knee Min Angle Z` <- as.numeric(dat$`Knee Min Angle Z`)
+dat$`Knee Max Moment X` <- as.numeric(dat$`Knee Max Moment X`) / dat$Mass
+dat$`Knee Max Moment Y` <- as.numeric(dat$`Knee Max Moment Y`) / dat$Mass
+dat$`Knee Max Moment Z` <- as.numeric(dat$`Knee Max Moment Z`) / dat$Mass
+dat$`Knee Min Power` <- as.numeric(dat$`Knee Min Power`) / dat$Mass
+dat$`Knee Negative Work` <- as.numeric(dat$`Knee Negative Work`) / dat$Mass
+dat$`Knee Positive Work` <- as.numeric(dat$`Knee Positive Work`) / dat$Mass
+dat$`Knee ROM X` <- as.numeric(dat$`Knee ROM X`)
+dat$`Knee ROM Y` <- as.numeric(dat$`Knee ROM Y`)
+dat$`Knee ROM Z` <- as.numeric(dat$`Knee ROM Z`)
+dat$`Knee Min Moment X` <- as.numeric(dat$`Knee Min Moment X`) / dat$Mass
+dat$`Knee Min Moment Y` <- as.numeric(dat$`Knee Min Moment Y`) / dat$Mass
+
+
+dat$`Hip Max Angle X` <- as.numeric(dat$`Hip Max Angle X`)
+dat$`Hip Max Angle Y` <- as.numeric(dat$`Hip Max Angle Y`)
+dat$`Hip Max Angle Z` <- as.numeric(dat$`Hip Max Angle Z`)
+dat$`Hip Max Moment X` <- as.numeric(dat$`Hip Max Moment X`) / dat$Mass
+dat$`Hip Max Moment Y` <- as.numeric(dat$`Hip Max Moment Y`) / dat$Mass
+dat$`Hip Max Moment Z` <- as.numeric(dat$`Hip Max Moment Z`) / dat$Mass
+dat$`Hip Max Power` <- as.numeric(dat$`Hip Max Power`) / dat$Mass
+dat$`Hip Negative Work` <- as.numeric(dat$`Hip Negative Work`) / dat$Mass
+dat$`Hip Positive Work` <- as.numeric(dat$`Hip Positive Work`) / dat$Mass
+dat$`Hip ROM X` <- as.numeric(dat$`Hip ROM X`)
+dat$`Hip ROM Y` <- as.numeric(dat$`Hip ROM Y`)
+dat$`Hip ROM Z` <- as.numeric(dat$`Hip ROM Z`)
+
+```
+
+## Use very generic outlier removal for all of the non-physiological values
+```{r}
+remove_outliers <- function(x, na.rm = TRUE, ...) {
+  mn <- median(x, na.rm = TRUE)
+  std <- IQR(x, na.rm = TRUE)
+  y <- x
+  y[x < (mn - 1.96*std)] <- NA
+  y[x > (mn + 1.96*std)] <- NA
+  y
+}
+
+cleanedDat <- dat %>%
+  group_by(Subject) %>%
+  mutate(
+    KneeAngX = remove_outliers(`Knee Max Angle X`),
+    KneeAngY = remove_outliers(`Knee Max Angle Y`),
+    KneeAngZ = remove_outliers(`Knee Max Angle Z`),
+    KneeMomX = remove_outliers(`Knee Max Moment X`),
+    KneePosMomY = remove_outliers(`Knee Max Moment Y`),
+    KneeNegMomY = remove_outliers(`Knee Min Moment Y`),
+    KneeMomZ = remove_outliers(`Knee Max Moment Z`),
+    NegFootWork = remove_outliers(`Distal Foot Negative Work`),
+    PosFootWork = remove_outliers(`Distal Foot Positive Work`),
+    NegAnkleWork = remove_outliers(`Ankle Negative Work`),
+    PosAnkleWork = remove_outliers(`Ankle Positive Work`),
+    AnkleAngX = remove_outliers(`Ankle Max Angle X`),
+    AnkleAngY = remove_outliers(`Ankle Max Angle Y`),
+    AnkleAngZ = remove_outliers(`Ankle Max Angle Z`),
+    AnkleMomX = remove_outliers(`Ankle Max Moment X`),
+    AnkleMomY = remove_outliers(`Ankle Max Moment Y`),
+    AnkleMomZ = remove_outliers(`Ankle Max Moment Z`)
+  )
+
+summary(cleanedDat$NegFootWork)
+
+```
+
+## Make function to plot data and second to run lmer. These are the helper functions used below
+```{r}
+
+plotAndStore <- function(col, dfName){
+  
+  genPlot <- ggplot(data = dfName, mapping = aes(x = .data[[col]], fill = dfName$Condition)) +
+    geom_density() +   facet_wrap(~dfName$Subject) +     
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + ggtitle(col) +
+    guides(fill=guide_legend(title="Configuration"))
+  
+  return(genPlot)
+}
+
+
+plotAndStore('NegFootWork', cleanedDat)
+
+testAnova <- function(metric, df) {
+  
+  myformula <- as.formula(paste0(metric," ~ Condition", "+ Period"," + (1|Subject)"))
+  myformula2 <- as.formula(paste0(metric, " ~ Period", " + (1|Subject)"))
+  
+  full.mod = lmer(myformula, data = df, REML = TRUE, na.action = "na.omit" )
+  red.mod = lmer(myformula2, data = df, REML = TRUE, na.action = "na.omit" )
+  
+conditions.emm <- emmeans(full.mod, "Condition", lmer.df = "satterthwaite")
+#conditions.emm
+contrast(conditions.emm, "trt.vs.ctrl", ref = "3") 
+
+
+  newList <- list("randEffectMod" = summary(full.mod), "anovaBetweenMods" = anova(full.mod, red.mod),
+                  "contrasts" = conditions.emm, "Contrasts2" = contrast(conditions.emm, "trt.vs.ctrl", ref = "3"))
+  return(newList)
+  
+}
+
+testAnova('NegFootWork',cleanedDat)
+
+
+```
+
+
+
+## Look at knee abduction, abduction moment, internal rotation
+###  Y points left on each joint from the left leg, so a positive Knee moment in Y would be flexion. X points inferior for the hip and knee but forward (sagittal)  on the foot leaving Z to point sagittal on the hip and knee but superior on the foot.
+
+## Hypotheses: a.	BOA configurations will reduce peak knee abduction b.	BOA will reduce peak knee adduction moment (internal) c.	BOA configurations will reduce peak knee internal rotation
+
+
+## Negative foot work
+```{r}
+# Subset for distal foot work that is reasonable
+# all neg foot work should be less than 50 based on literature
+plotAndStore('NegFootWork',cleanedDat)
+testAnova('NegFootWork',cleanedDat)
+
+
+```
+
+## Positive foot work
+```{r}
+# Positive foot work
+plotAndStore('PosFootWork',cleanedDat)
+
+testAnova('PosFootWork',cleanedDat)
+
+```
+
+## Ankle powers and work
+```{r}
+plotAndStore('NegAnkleWork',cleanedDat)
+
+testAnova('NegAnkleWork',cleanedDat)
+```
+
+## Ankle positive work
+```{r}
+plotAndStore('PosAnkleWork',cleanedDat)
+
+testAnova('PosAnkleWork', cleanedDat)
+```
+## Knee angles
+
+
+
+## Knee X moment. There may still be some high values but data look mostly clean
+```{r}
+plotAndStore('KneeMomX',cleanedDat)
+
+testAnova('KneeMomX', cleanedDat)
+```
+
+## Knee Y moments
+```{r}
+plotAndStore('KneePosMomY',cleanedDat)
+testAnova('KneePosMomY', cleanedDat)
+
+plotAndStore('KneeNegMomY', cleanedDat)
+testAnova('KneeNegMomY', cleanedDat)
+
+```
+
+
+## Knee Z moments
+```{r}
+plotAndStore('KneeMomZ',cleanedDat)
+testAnova('KneeMomZ', cleanedDat)
+
+
+```
+
+## Ankle angles
+```{r}
+plotAndStore('AnkleAngX', cleanedDat)
+plotAndStore('AnkleAngY', cleanedDat)
+plotAndStore('AnkleAngZ', cleanedDat)
+
+```
+
+## Ankle moments
+```{r}
+summary(cleanedDat$AnkleMomX) #ab/adduction moment?
+summary(cleanedDat$AnkleMomY) #flexion/extension moment
+summary(cleanedDat$AnkleMomZ) #internal rotation moment?
+
+
+plotAndStore('AnkleMomX', cleanedDat)
+
+
+```
+
+

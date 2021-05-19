@@ -1,0 +1,196 @@
+---
+title: "EnduranceValidationAnalysis"
+output: html_document
+---
+
+# DU Endurance and Health Validation Analysis
+```{r message=TRUE, warning=TRUE}
+#loading required packages, etc. 
+rm(list=ls())
+library(readxl)
+library(tidyverse)
+library(emmeans)
+library(lme4)
+library(brms)
+
+dat <- read_xlsx('C:/Users/Daniel.Feeney/Dropbox (Boa)/Endurance Health Validation/GRFRunning.xlsx')
+
+## cleaning
+# Remove Spaces from Column Names
+names(dat)<-str_replace_all(names(dat), c(" " = "." , "," = "" ))
+
+#sizes <- read_excel('C:/Users/Daniel.Feeney/Documents/SubjectSizes.xlsx')
+dat$TimePeriod <- as.factor(as.character(dat$Period))
+#dat <- merge(dat, sizes, "Subject")
+
+dat$Subject <- as.factor(dat$Subject)
+dat$ShoeCondition <- as.factor(dat$Condition)
+dat <- subset(dat, dat$Contact.Time < 0.35) # removing one non physiological rates
+dat <- subset(dat, dat$Subject != 22) # remove subject 22
+
+lDat <- subset(dat, dat$RightorLeft == 2)
+
+```
+
+### Remove outliers
+```{r} 
+
+remove_outliers <- function(x, na.rm = TRUE, ...) {
+  mn <- mean(x, na.rm = TRUE)
+  std <- sd(x, na.rm = TRUE)
+  y <- x
+  y[x < (mn - 1.96*std)] <- NA
+  y[x > (mn + 1.96*std)] <- NA
+  y
+}
+
+lDat <- lDat %>%
+  group_by(Subject, ShoeCondition) %>%
+  mutate(
+    VALR = remove_outliers(VALR),
+    VILR = remove_outliers(VILR),
+    pBF = remove_outliers(pBF),
+    pPF = remove_outliers(pPF),
+    pVGRF = remove_outliers(pVGRF),
+    pLF = remove_outliers(pLF),
+    pMF = remove_outliers(pMF),
+    Contact.Time = remove_outliers(Contact.Time),
+    Stride.Time = remove_outliers(Stride.Time),
+    Braking.Impulse = remove_outliers(Braking.Impulse),
+    Propelling.Impulse = remove_outliers(Propelling.Impulse),
+    Lateral.Impulse = remove_outliers(Lateral.Impulse),
+    Medial.Impulse = remove_outliers(Medial.Impulse)
+  )
+
+
+lDat <- lDat %>%
+  mutate(
+    BodyWeight = Mass*9.81,
+    VALR.BW = VALR / BodyWeight,
+    VILR.BW = VILR / BodyWeight,
+    pBF.BW = pBF / BodyWeight,
+    pPF.BW = pPF / BodyWeight,
+    pVGRF.BW = pVGRF / BodyWeight,
+    pLF.BW = pLF / BodyWeight,
+    pMF.BW = pMF / BodyWeight,
+    Braking.Impulse.BW = Braking.Impulse / BodyWeight,
+    Propelling.Impulse.BW = Propelling.Impulse / BodyWeight,
+    Lateral.Impulse.BW = Lateral.Impulse / BodyWeight,
+    Medial.Impulse.BW = Medial.Impulse / BodyWeight
+  )
+
+```
+
+## Plotting distributions of loading rates
+```{r}
+ggplot(data = lDat, mapping = aes(x = VALR.BW, fill = ShoeCondition)) + geom_density() +facet_wrap(~Subject)
+
+ggplot(data = lDat, mapping = aes(x = VILR.BW, fill = ShoeCondition)) + geom_density() +facet_wrap(~Subject)
+
+```
+
+## plots of loading rates
+```{r}
+dt2 <- na.omit(lDat)
+
+dt2 %>%
+  group_by(Subject, Period, ShoeCondition) %>%
+  summarize(
+    AvgLR = mean(VALR.BW)) %>%
+  ggplot(mapping=aes(x = Period, y = AvgLR, color = ShoeCondition, group = ShoeCondition)) +
+  geom_point() + geom_line() + ylab('VALR') + xlab('Time Period') +
+  facet_wrap(~Subject, scales = "free")
+
+
+dt2 %>%
+  group_by(Subject, Period, ShoeCondition) %>%
+  summarize(
+    AvgLR = mean(VILR.BW)) %>%
+  ggplot(mapping=aes(x = Period, y = AvgLR, color = ShoeCondition, group = ShoeCondition)) +
+  geom_point() + geom_line() + ylab('VILR') + xlab('Time Period') +
+  facet_wrap(~Subject, scales = "free")
+
+```
+
+
+## VILR model reduced loading rate in SD vs SL
+```{r}
++
+```
+
+## VALR model also see reduced loading rate in SD vs SL
+```{r}
+# Average Loading rate
+valrMod <- lmer(VALR.BW ~ ShoeCondition + TimePeriod + (1|Subject), data = dt2)
+summary(valrMod)
+
+nullMod <- lmer(VALR.BW ~ TimePeriod + (1|Subject), data = dt2) # Shoe condition has omnibus sig
+anova(valrMod, nullMod)
+
+
+conditions.emm <- emmeans(valrMod, "ShoeCondition", lmer.df = "satterthwaite")
+#conditions.emm
+contrast(conditions.emm, "trt.vs.ctrl", ref = "3") 
+
+```
+
+
+## pk Medial and pk Lateral Models
+```{r}
+# peak medial
+pkMedMod <- lmer(pMF.BW ~ ShoeCondition + TimePeriod + (1|Subject), data = dt2)
+summary(pkMedMod)
+
+nullMod <- lmer(pMF.BW ~ TimePeriod + (1|Subject), data = dt2) # Shoe condition has omnibus sig
+anova(pkMedMod, nullMod)
+
+
+conditions.emm <- emmeans(pkMedMod, "ShoeCondition", lmer.df = "satterthwaite")
+#conditions.emm
+contrast(conditions.emm, "trt.vs.ctrl", ref = "3") 
+
+
+# Ok lateral
+pkLatMod <- lmer(pLF.BW ~ ShoeCondition + TimePeriod + (1|Subject), data = dt2)
+summary(pkMedMod)
+
+nullMod <- lmer(pLF.BW ~ TimePeriod + (1|Subject), data = dt2) # Shoe condition has omnibus sig
+anova(pkLatMod, nullMod)
+
+
+conditions.emm <- emmeans(pkLatMod, "ShoeCondition", lmer.df = "satterthwaite")
+#conditions.emm
+contrast(conditions.emm, "trt.vs.ctrl", ref = "3") 
+```
+
+
+## braking impulse and force. Abs value b impulse for easy of understanding
+```{r}
+dt2$Braking.Impulse.BW <- abs(dt2$Braking.Impulse.BW)
+ggplot(data = dt2, mapping = aes(x = Braking.Impulse.BW, fill = ShoeCondition)) + geom_density() +facet_wrap(~Subject)
+
+# peak medial
+BImpMod <- lmer(Braking.Impulse.BW ~ ShoeCondition + TimePeriod + (1|Subject), data = dt2)
+summary(BImpMod)
+
+nullMod <- lmer(Braking.Impulse.BW ~ TimePeriod + (1|Subject), data = dt2) # Shoe condition has omnibus sig
+anova(BImpMod, nullMod)
+
+
+conditions.emm <- emmeans(BImpMod, "ShoeCondition", lmer.df = "satterthwaite")
+#conditions.emm
+contrast(conditions.emm, "trt.vs.ctrl", ref = "3") 
+
+
+# Ok lateral
+pkBkMod <- lmer(pBF.BW ~ ShoeCondition + TimePeriod + (1|Subject), data = dt2)
+summary(BImpMod)
+
+nullMod <- lmer(pkBkMod ~ TimePeriod + (1|Subject), data = dt2) # Shoe condition has omnibus sig
+anova(pkLatMod, nullMod)
+
+
+conditions.emm <- emmeans(pkBkMod, "ShoeCondition", lmer.df = "satterthwaite")
+#conditions.emm
+contrast(conditions.emm, "trt.vs.ctrl", ref = "3") 
+```
