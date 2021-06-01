@@ -16,17 +16,17 @@ dd%>%
   summarize(avgVALR = mean(VALR))
 
 # Agility -----------------------------------------------------------------
-library(readxl)
-agilityDat <- read_xlsx('C:/Users/Daniel.Feeney/Dropbox (Boa)/Boa Team Folder/BigData2021/BigDataAgility.xlsx')
-unique(agilityDat$Subject)
+#agilityDat <- read_xlsx('C:/Users/Daniel.Feeney/Dropbox (Boa)/Boa Team Folder/BigData2021/BigDataAgility.xlsx')
+agilityDat <- read.csv('C:/Users/Daniel.Feeney/Boa Technology Inc/PFL - General/BigData2021/BigDataAgility_newMetrics.csv')
 
-max(agilityDat$ContactTime)
-min(agilityDat$ContactTime)
-hist(agilityDat$jumpHeight)
-length( subset( agilityDat, agilityDat$jumpHeight > 1) )
-agilityDat %>%
-  group_by(Movement, Configuration) %>%
-  summarize(ContactTime = mean(ContactTime))
+unique(agilityDat$Subject)
+agilityDat <- agilityDat %>% 
+  mutate(Subject = replace(Subject, Subject == 'Ted', 'Ted Barnett'))
+
+
+max(agilityDat$CT)
+
+
 # this section can be modified to change subject names but should  --------
 
 

@@ -2,36 +2,38 @@ rm(list=ls())
 library(tidyverse)
 library(patchwork)
 
-dat <- read.csv('C:/Users/Daniel.Feeney/Dropbox (Boa)/AgilityPerformance/COPanalysis.csv')
+dat <- read.csv('C:/Users/Daniel.Feeney/Boa Technology Inc/PFL - General/BigData2021/BigDataAgility_newMetrics.csv')
+
 dat <- subset(dat, dat$CT > 20)
 dat <- subset(dat, dat$impulse > 100)
 dat$CTNorm <- ( dat$CT / dat$impulse ) * 100
 dat <- subset(dat, dat$CTNorm < 1)
+dat <- subset(dat, dat$copExc > 0.01)
 dat$RFD <- abs(dat$RFD)
+dat <- dat %>% 
+  mutate(Subject = replace(Subject, Subject == 'Ted', 'Ted Barnett'))
 
-skate <- subset(dat, dat$Movement == 'Skater')
-cmj <- subset(dat, dat$Movement == 'CMJ')
+skate <- subset(dat, dat$Movement == 'Skater' | dat$Movement == 'skater')
+cmj <- subset(dat, dat$Movement == 'CMJ' | dat$Movement == 'cmj')
 
-p1 <- ggplot(data = skate, mapping = aes(x = Config, y = copExc)) + geom_boxplot() + facet_wrap(~Sub)
+ggplot(data = skate, mapping = aes(x = Config, y = copExc)) + geom_boxplot() + facet_wrap(~Subject)
 
-p2 <- ggplot(data = skate, mapping = aes(x = Config, y = timingDiff)) + geom_boxplot() + facet_wrap(~Sub)
+ggplot(data = skate, mapping = aes(x = Config, y = timingDiff)) + geom_boxplot() + facet_wrap(~Subject)
 
-p3 <- ggplot(data = skate, mapping = aes(x = Config, y = COPtraj)) + geom_boxplot() + facet_wrap(~Sub)
+ggplot(data = skate, mapping = aes(x = Config, y = COPtraj)) + geom_boxplot() + facet_wrap(~Subject)
 
-p1 / p2 / p3
 
-r1 <- ggplot(data = skate, mapping = aes(x = copExc, y = CTNorm, color = Config)) + geom_point() + facet_wrap(~Sub) +
+ggplot(data = skate, mapping = aes(x = copExc, y = CTNorm, color = Config)) + geom_point() + facet_wrap(~Subject) +
   ggtitle('Skater Jump Contact Time vs. COP excursion') + theme_bw()
 
-r2 <- ggplot(data = cmj, mapping = aes(x = copExc, y = CTNorm, color = Config)) + geom_point() + facet_wrap(~Sub) +
+ggplot(data = cmj, mapping = aes(x = copExc, y = CTNorm, color = Config)) + geom_point() + facet_wrap(~Subject) +
   ggtitle('CMJ Contact Time vs. COP excursion') + theme_bw()
-r1/r2
 
-ggplot(data = skate, mapping = aes(x = RFD, y = CTNorm, color = Config)) + geom_point() + facet_wrap(~Sub) +
+ggplot(data = skate, mapping = aes(x = RFD, y = CTNorm, color = Config)) + geom_point() + facet_wrap(~Subject) +
   ggtitle('Skater Jump RFD concentric vs. COP excursion') + theme_bw()
 
-ggplot(data = skate, mapping = aes(x = timingDiff, y = RFD, color = Config)) + geom_point() + facet_wrap(~Sub) +
+ggplot(data = skate, mapping = aes(x = timingDiff, y = RFD, color = Config)) + geom_point() + facet_wrap(~Subject) +
   ggtitle('Skater Jump Time Diff to RFD concentric') + theme_bw()
 
-ggplot(data = skate, mapping = aes(x = COPtraj, y = CTNorm, color = Config)) + geom_point() + facet_wrap(~Sub) +
+ggplot(data = skate, mapping = aes(x = COPtraj, y = CTNorm, color = Config)) + geom_point() + facet_wrap(~Subject) +
   ggtitle('Skater Jump Time CT Norm vs. COPTraj') + theme_bw()
