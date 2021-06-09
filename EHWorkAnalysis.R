@@ -111,3 +111,83 @@ ggplot(data = WalkPressure, mapping = aes(x = Subject, y = sdRMedFF, fill = Conf
 ggplot(data = WalkPressure, mapping = aes(x = Subject, y = meanRLatFF, fill = Config)) + geom_boxplot()
 
 
+
+# qual --------------------------------------------------------------------
+
+library(readxl)
+library(tm)
+library(SnowballC)
+library(RColorBrewer)
+library(wordcloud)
+
+qualDat <- read_xlsx('C:/Users/Daniel.Feeney/Dropbox (Boa)/Hike Work Research/Work Pilot 2021/qual.xlsx')
+
+qualDat %>%
+  pivot_longer(cols = Performance:Heel,
+               names_to = "Location", values_to = "Rating") %>%
+  group_by(Location, Config) %>%
+  summarize(
+    avg = mean(Rating),
+    medAvg = median(Rating)
+  )
+  
+qualDat %>%
+  pivot_longer(cols = Performance:Heel,
+               names_to = "Location", values_to = "Rating") %>%
+  filter(Location == 'Performance') %>%
+  ggplot(mapping = aes(x = Config, y = Rating, fill = Config)) + geom_boxplot() +
+    theme_classic()
+
+
+qualDat %>%
+  pivot_longer(cols = Performance:Heel,
+               names_to = "Location", values_to = "Rating") %>%
+  filter(Location != 'Performance') %>%
+  ggplot(mapping = aes(x = Rating, fill = Config)) + geom_density() + facet_wrap(~Location) 
+
+
+# making word clouds ------------------------------------------------------
+
+tri <- subset(qualDat, qualDat$Config == 'Tri')
+LR <- subset(qualDat, qualDat$Config == 'LR')
+lace <- subset(qualDat, qualDat$Config == 'Lace')
+triNotes <- tri$Comments
+LRnotes <- LR$Comments
+laceNotes <- lace$Comments
+
+
+makeWordCloud <- function(inputText) {
+  
+  docs <- Corpus(VectorSource(inputText))
+  docs <- docs %>%
+    tm_map(removeNumbers) %>%
+    tm_map(removePunctuation)
+  
+  # Convert the text to lower case
+  docs <- tm_map(docs, content_transformer(tolower))
+  # Remove numbers
+  docs <- tm_map(docs, removeNumbers)
+  # Remove english common stopwords
+  docs <- tm_map(docs, removeWords, stopwords("english"))
+  # Remove your own stop word
+  # specify your stopwords as a character vector
+  docs <- tm_map(docs, removeWords, c("like", "feel","feels","lace","bottom","steel","replacement","toe.","toe",
+                                      "felt","tri")) 
+  
+  dtm <- TermDocumentMatrix(docs)
+  m <- as.matrix(dtm)
+  v <- sort(rowSums(m),decreasing=TRUE)
+  d <- data.frame(word = names(v),freq=v)
+  head(d, 10)
+  
+  set.seed(1234)
+  wordcloud(words = d$word, freq = d$freq, min.freq = 1,
+            max.words=25, random.order=FALSE, rot.per=0.35, 
+            colors=brewer.pal(8, "Dark2"))
+  
+}
+
+makeWordCloud(triNotes)
+makeWordCloud(LRnotes)
+makeWordCloud(laceNotes)
+
