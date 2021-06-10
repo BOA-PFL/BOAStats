@@ -6,7 +6,7 @@ library(brms)
 library(tidybayes)
 library(lme4)
 
-dat <- read.csv('C:/Users/Daniel.Feeney/Dropbox (Boa)/EndurancePerformance/SalomonQuicklace_Aug2020/RunData/CompiledRunData.csv')
+dat <- read.csv(file.choose()
 
 
 # Summary features --------------------------------------------------------
