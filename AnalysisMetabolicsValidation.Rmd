@@ -13,7 +13,9 @@ library(lme4)
 library(emmeans)
 
 dat <- read.csv(file.choose()) # With 13 time points
-weightNew <- read.csv('C:/Users/Daniel.Feeney/Dropbox (Boa)/FBS Abstract/Metabolic (31 of 31)/MetabolicTrialResults/weights2.csv') #correcting for different mass each day
+
+#weightNew <- read.csv('C:/Users/Daniel.Feeney/Dropbox (Boa)/FBS Abstract/Metabolic (31 of 31)/MetabolicTrialResults/weights2.csv') #correcting for different mass each day
+#weightNew <- read.csv(file.choose()) #correcting for different mass each day
 weightNew <- rename(weightNew, Subject = ï..Subject)
 weightNew <- rename(weightNew, Config = Condition)
 
@@ -104,7 +106,7 @@ ggplot(data = reducedDat, mapping = aes(x = as.factor(TimePoints), y = EEmFixed,
 ## few minutes and first few minutes for 4 observations per person per shoe
 
 ```{r}
-diffDat <- read.csv('C:/Users/Daniel.Feeney/Dropbox (Boa)/FBS Abstract/MetDiff.csv')
+diffDat <- read.csv(file.choose())
 diffDat$Config <- as.factor(diffDat$Config)
 diffDat$TimePoints <- as.factor(diffDat$TimePoints)
 diffDat$Subject <- as.factor(diffDat$Subject)

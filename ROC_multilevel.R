@@ -10,7 +10,7 @@ library(caret)
 library(readxl)
 rm(list=ls())
 # tidying -----------------------------------------------------------------
-testDat <- read_excel('C:/Users/Daniel.Feeney/Dropbox (Boa)/Endurance Health Validation/Proprioception_21_Subjects/18_Proprioception.xlsx', skip = 2)
+testDat <- read_excel(file.choose(), skip = 2)
 testDat <- testDat[1:50,]
 
 barefoot <- testDat[,1:2]

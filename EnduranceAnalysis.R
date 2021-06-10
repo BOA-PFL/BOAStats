@@ -8,8 +8,8 @@ library(tidybayes)
 library(lme4)
 
 
-dat <- read.csv('C:/Users/Daniel.Feeney//Dropbox (Boa)/Endurance Health Validation/TMLong0930R.csv')
-sizes <- read_excel('C:/Users/Daniel.Feeney/Documents/SubjectSizes.xlsx')
+dat <- read.csv(file.choose())
+sizes <- read_excel(file.choose())
 dat$TimePeriod <- as.factor(dat$TimePeriod)
 
 
