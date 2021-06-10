@@ -5,8 +5,8 @@ library(tidyverse)
 library(lme4)
 library(patchwork)
 
-dat <- read.csv('C:/Users/Daniel.Feeney/Dropbox (Boa)/Snow Protocol/SnowboardProtocol/Results/snowboardResults.csv')
-dat <- read.csv('C:/Users/Daniel.Feeney/Dropbox (Boa)/Snow Protocol/4onthefloor/Results.csv')
+dat <- read.csv(file.choose())
+dat <- read.csv(file.choose())
 
 
 # exploration of data -----------------------------------------------------
@@ -137,7 +137,7 @@ rm(list=ls())
 library(tidyverse)
 library(lme4)
 
-dat <- read.csv('C:/Users/Daniel.Feeney/Dropbox (Boa)/Snow Protocol/SnowboardProtocol/Results/snowboardResults.csv')
+dat <- read.csv(file.choose())
 
 
 # exploration of data -----------------------------------------------------
@@ -265,7 +265,7 @@ rm(list=ls())
 library(tidyverse)
 library(lme4)
 
-dat <- read.csv('C:/Users/Daniel.Feeney/Dropbox (Boa)/Snow Protocol/SnowboardProtocol/Results/snowboardResults.csv')
+dat <- read.csv(file.choose())
 
 
 # exploration of data -----------------------------------------------------
