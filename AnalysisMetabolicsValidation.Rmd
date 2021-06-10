@@ -12,7 +12,7 @@ library(tidyverse)
 library(lme4)
 library(emmeans)
 
-dat <- read.csv('C:/Users/Daniel.Feeney/Dropbox (Boa)/FBS Abstract/MetResults13.csv') # With 13 time points
+dat <- read.csv(file.choose()) # With 13 time points
 weightNew <- read.csv('C:/Users/Daniel.Feeney/Dropbox (Boa)/FBS Abstract/Metabolic (31 of 31)/MetabolicTrialResults/weights2.csv') #correcting for different mass each day
 weightNew <- rename(weightNew, Subject = ï..Subject)
 weightNew <- rename(weightNew, Config = Condition)
