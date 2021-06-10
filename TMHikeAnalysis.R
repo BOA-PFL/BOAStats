@@ -3,7 +3,7 @@ rm(list=ls())
 library(tidyverse)
 library(ggplot2)
 
-hikeDat <- read.csv('C:/Users/Daniel.Feeney/Dropbox (Boa)/Hike Work Research/Data/TMHike/CollatedForces.csv')
+hikeDat <- read.csv(file.choose())
 names(hikeDat)[1] <- 'Subject'
 
 sub1 <- subset(sub1, sub1$HipWork < 10000) #removing unrealistically high hip work values
@@ -20,7 +20,7 @@ ggplot(data = sub1, aes(x=as.factor(Config), y = MaxHipP)) + geom_boxplot() +
   ylab('Peak Hip Power') + labs(fill = 'Configuration')
 
 #### Force data alone ###
-fDat <- read.csv('C:/Users/Daniel.Feeney/Dropbox (Boa)/Hike Work Research/Data/TMHike/CollatedForces.csv')
+fDat <- read.csv(file.choose())
 fDat <- subset(fDat, fDat$LoadRate > 40) #removing outlier trials
 
 fDat %>%
