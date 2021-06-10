@@ -4,7 +4,7 @@ library(lme4)
 library(tidyr)
 library(dplyr)
 
-dat <- read.csv('C:/Users/Daniel.Feeney/Dropbox (Boa)/Hike Work Research/Data/NovelData/hikeLong.csv')
+dat <- read.csv(file.choose())
 bv <- subset(dat, dat$SubName == 'BV')
 ## outlier removal
 remove_outliers <- function(x, na.rm = TRUE, ...) {
