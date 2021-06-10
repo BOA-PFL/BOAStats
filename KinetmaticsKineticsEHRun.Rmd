@@ -18,7 +18,7 @@ library(emmeans)
 library(lme4)
 
 
-dat <- suppressWarnings(read_xlsx('C:/Users/Daniel.Feeney/Dropbox (Boa)/Endurance Health Validation/RunningJointMechanics.xlsx'))
+dat <- suppressWarnings(read_xlsx(file.choose()))
 #Making variables factors or numeric
 dat$Subject <- as.factor(dat$Subject)
 dat$Sex <- as.factor(dat$Sex)

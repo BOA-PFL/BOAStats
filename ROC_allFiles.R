@@ -25,7 +25,7 @@ calcAUC <- function(inputDF) {
 }
 
 
-files <- list.files(path="C:/Users/Daniel.Feeney/Dropbox (Boa)/Endurance Health Validation/Proprioception_21_Subjects", pattern="*xlsx", full.names=TRUE, recursive=FALSE)
+files <- list.files(path=file.choose(), pattern="*xlsx", full.names=TRUE, recursive=FALSE)
 
 for (file in files){
   # tidying -----------------------------------------------------------------
@@ -145,7 +145,7 @@ for (file in files){
   }
   output <- data.frame(subjectNo, condTmp, aucTmp, tmpComp)
   
-  write.table(output, file = 'C:/Users/Daniel.Feeney/Dropbox (Boa)/Endurance Health Validation/Proprioception_21_Subjects/fulldat.csv', 
+  write.table(output, file = file.choose(), 
               col.names = FALSE, sep = ",", append = TRUE)
   
   ## accuracy

@@ -30,7 +30,7 @@ testAnova <- function(metric, df) {
 # Single leg landings -----------------------------------------------------
 
 
-landingDat <- read.csv('C:/Users/Daniel.Feeney/Dropbox (Boa)/Hike Work Research/Work Pilot 2021/SLLForces.csv')
+landingDat <- read.csv(file.choose())
 landingDat$Subject <- as.factor(landingDat$Sub)
 landingDat$Config <- as.factor(landingDat$Config)
 landingDat$Movement <- as.factor(landingDat$Movement)
@@ -54,7 +54,7 @@ testAnova('pkForce', sllDrop)
 
 # Walk forces ---------------------------------------------------------
 
-WalkKinematics <- read_csv('C:/Users/Daniel.Feeney/Dropbox (Boa)/Hike Work Research/Work Pilot 2021/WalkForceComb.csv')
+WalkKinematics <- read_csv(file.choose())
 WalkKinematics$Subject <- as.factor(WalkKinematics$Subject)
 WalkKinematics$Config <- as.factor(WalkKinematics$Config)
 WalkKinematics <- subset(WalkKinematics, WalkKinematics$NL > 100)
@@ -85,7 +85,7 @@ testAnova('brakeImpulse', WalkKinematics)
 testAnova('VLR', WalkKinematics)
 
 # pressures ---------------------------------------------------------------
-WalkPressure <- read.csv('C:/Users/Daniel.Feeney/Dropbox (Boa)/Hike Work Research/Work Pilot 2021/pressuresComb.csv')
+WalkPressure <- read.csv(file.choose())
 WalkPressure$Config <- as.factor(WalkPressure$Config)
 WalkPressure$Subject <- as.factor(WalkPressure$Subject)
 WalkPressure <- subset(WalkPressure, WalkPressure$sdRHeel > 10) #removing false steps
@@ -120,7 +120,7 @@ library(SnowballC)
 library(RColorBrewer)
 library(wordcloud)
 
-qualDat <- read_xlsx('C:/Users/Daniel.Feeney/Dropbox (Boa)/Hike Work Research/Work Pilot 2021/qual.xlsx')
+qualDat <- read_xlsx(file.choose())
 
 qualDat %>%
   pivot_longer(cols = Performance:Heel,
