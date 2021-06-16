@@ -13,7 +13,7 @@ library(emmeans)
 library(lme4)
 library(brms)
 
-dat <- read_xlsx('C:/Users/Daniel.Feeney/Dropbox (Boa)/Endurance Health Validation/GRFRunning.xlsx')
+dat <- read_xlsx(file.choose())
 
 ## cleaning
 # Remove Spaces from Column Names

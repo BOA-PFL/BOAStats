@@ -7,7 +7,7 @@ library(lme4)
 # ROC data ----------------------------------------------------------------
 
 
-dat <- read.csv('C:/Users/Daniel.Feeney/Dropbox (Boa)/Endurance Health Validation/Proprioception_21_Subjects/fulldat.csv')
+dat <- read.csv(file.choose())
 
 ggplot(data = dat, mapping = aes(x = Comparison, y = ROC)) + geom_point(aes(color = Config)) + facet_wrap( ~ Subject)
 
@@ -18,7 +18,7 @@ summary(fullmod)
 # Accuracy alone ----------------------------------------------------------
 
 
-accdat <- read.csv('C:/Users/Daniel.Feeney/Dropbox (Boa)/Endurance Health Validation/Proprioception_21_Subjects/accdat.csv')
+accdat <- read.csv(file.choose())
 
 ggplot(data = accdat, mapping = aes(x = Config, y = Accuracy)) + geom_boxplot()
 

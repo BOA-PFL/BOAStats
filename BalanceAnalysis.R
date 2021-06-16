@@ -6,7 +6,7 @@
 ######
 
 rm(list=ls())
-balanceDat <- read.csv('C:/Users/Daniel.Feeney/Dropbox (Boa)/Hike Work Research/Data/Balance_ProtocolR.csv')
+balanceDat <- read.csv(file.choose())
 names(balanceDat)[1] <- 'Subject'
 
 balance <- subset(balanceDat, balanceDat$Movement == 'Balance')

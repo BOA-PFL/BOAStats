@@ -5,7 +5,7 @@ library(readxl)
 # Look at data ------------------------------------------------------------
 
 
-dd <- read.csv("C:/Users/Daniel.Feeney/Dropbox (Boa)/Boa Team Folder/BigData2021/BigDataRun2.csv")
+dd <- read.csv(file.choose())
 
 unique(dd$Subject)
 summary(dd$VALR)
@@ -17,7 +17,7 @@ dd%>%
 
 # Agility -----------------------------------------------------------------
 #agilityDat <- read_xlsx('C:/Users/Daniel.Feeney/Dropbox (Boa)/Boa Team Folder/BigData2021/BigDataAgility.xlsx')
-agilityDat <- read.csv('C:/Users/Daniel.Feeney/Boa Technology Inc/PFL - General/BigData2021/BigDataAgility_newMetrics.csv')
+agilityDat <- read.csv(file.choose())
 
 unique(agilityDat$Subject)
 agilityDat <- agilityDat %>% 
@@ -31,10 +31,10 @@ max(agilityDat$CT)
 
 
 # update each time!
-bigData <- read_xlsx('C:/Users/Daniel.Feeney/Dropbox (Boa)/Boa Team Folder/BigData2021/BigDataRun2.csv')
+bigData <- read_xlsx(file.choose())
 
 # load in new file to append
-dat_to_append <- read.csv('C:/Users/Daniel.Feeney/Dropbox (Boa)/EndurancePerformance/TNF_Scrambler_Apr_21/TM_data/CompiledRunData.csv')
+dat_to_append <- read.csv(file.choose())
 
 # Replace names to full names. Manual!
 dat_to_append <- dat_to_append %>% 

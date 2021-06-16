@@ -1,7 +1,7 @@
 rm(list=ls())
 library(tidyverse)
 
-dat <- read.csv('C:/Users/Daniel.Feeney/Dropbox (Boa)/Hike Work Research/Work Pilot 2021/pressuresComb.csv')
+dat <- read.csv(file.choose())
 dat$Config <- as.factor(dat$Config)
 dat$Subject <- as.factor(dat$Subject)
 

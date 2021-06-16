@@ -5,9 +5,9 @@ library(brms)
 library(lme4)
 library(emmeans)
 
-dat <- read.csv('C:/Users/Daniel.Feeney/Dropbox (Boa)/FBS Abstract/MetabolicTrialResults/MetResults4Points.csv')
-weightNew <- read.csv('C:/Users/Daniel.Feeney/Dropbox (Boa)/FBS Abstract/MetabolicTrialResults/weights2.csv') #correcting for different mass each day
-weightNew <- rename(weightNew, Subject = ï..Subject)
+dat <- read.csv(file.choose())
+weightNew <- read.csv(file.choose()) #correcting for different mass each day
+weightNew <- rename(weightNew, Subject = Ã¯..Subject)
 weightNew <- rename(weightNew, Config = Condition)
 
 dat <- merge(dat, weightNew)
