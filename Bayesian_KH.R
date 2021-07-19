@@ -8,7 +8,7 @@ library(lme4)
 rm(list=ls())
 
 # Change to appropriate filepath
-dat <- read.csv('C:/Users/kate.harrison/Dropbox (Boa)/AgilityPerformance/BOA_LateralSupport_Jul21/DataWithMoments/CMJ_Skater/CompiledAgilityData.csv')
+dat <- read.csv(file.choose())
 
 # Change to the movement you want to look at (we analyze CMJ and Skater separately for most agility tests)
 dat <- subset(dat, dat$Movement == 'Skater')
@@ -21,27 +21,25 @@ dat$Shoe <- factor(dat$Shoe, c('Tri', 'Asym'))
 dat <- dat %>% 
   filter(ContactTime > 10) %>% #remove values with impossible contact time
   filter(ContactTime < 100) %>%
-  filter(peakEVmoment > -40) %>%
-  
-  group_by(SubjectName) %>%
-  mutate(z_score = scale(peakEVmoment)) %>% # Change to the variable you want to test
+  group_by(Subject) %>%
+  mutate(z_score = scale(ContactTime)) %>% # Change to the variable you want to test
   group_by(Shoe)
 
 
 #removing outliers of the variable of interest. 
 
-outliers <- boxplot(dat$z_score, plot=FALSE)$out
-dat<- dat[-which(dat$z_score %in% outliers),]
+dat<- subset(dat, dat$z_score > 2)
+dat<- subset(dat, dat$z_score < -2)
 
 #Change x axis variable to your variable of interest. Check for normal-ish distribution.
-ggplot(data = dat, aes(x = peakEVmoment)) + geom_histogram() + facet_wrap(~SubjectName) 
+ggplot(data = dat, aes(x = ContactTime)) + geom_histogram() + facet_wrap(~Subject) 
 
 #Change y axis variable to your variable of interest
-ggplot(data = dat) + geom_boxplot(mapping = aes(x = SubjectName, y = peakEVmoment, fill = Shoe)) + scale_fill_manual(values=c("#003D4C", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+ggplot(data = dat) + geom_boxplot(mapping = aes(x = Subject, y = RankleNegWork, fill = Shoe)) + scale_fill_manual(values=c("#003D4C", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
 runmod <- brm(data = dat,
               family = gaussian,
-              z_score ~ Shoe + (1 + Shoe | SubjectName), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              z_score ~ Shoe + (1 + Shoe | Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
                         prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
                         prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
@@ -84,10 +82,10 @@ posteriorPeak = posteriorDens_x[posteriorDens_y == MaxPosterior_y]
 
 # Find mean change from the data
 Ref <- subset(dat, dat$Shoe == 'Tri') # Change to baseline shoe name
-RefMean <- mean(Ref$CT_VertNorm)        # Change to variable of interest
+RefMean <- mean(Ref$ContactTime)        # Change to variable of interest
 
 NewConfig <- subset(dat, dat$Shoe == 'Asym') # Change to shoe being tested against baseline
-NewConfigMean <- mean(NewConfig$CT_VertNorm)        # Change to variable of interest
+NewConfigMean <- mean(NewConfig$ContactTime)        # Change to variable of interest
 
 actualChange <- NewConfigMean - RefMean # outputs change from baseline to comparison shoe in units of measurement
 
@@ -115,6 +113,6 @@ dat<- dat[-which(dat$peakRankleINV %in% outliers),]
 outliers <- boxplot(dat$CT_HorzNorm, plot=FALSE)$out
 dat<- dat[-which(dat$CT_HorzNorm %in% outliers),]
 
-plot(dat$peakEVmoment, dat$CT_HorzNorm)
+plot(dat$FyPeak, dat$ContactTime)
 
-cor.test(dat$peakEVmoment, dat$CT_VertNorm, method = 'pearson')
+cor.test(dat$FzPeak, dat$ContactTime, method = 'pearson')
