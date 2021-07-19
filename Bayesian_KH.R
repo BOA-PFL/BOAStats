@@ -1,8 +1,10 @@
 
 library(tidyverse)
+library(rstan)
 library(brms)
 library(tidybayes)
 library(lme4)
+
 
 
 rm(list=ls())
@@ -10,11 +12,13 @@ rm(list=ls())
 # Change to appropriate filepath
 dat <- read.csv(file.choose())
 
+
 # Change to the movement you want to look at (we analyze CMJ and Skater separately for most agility tests)
 dat <- subset(dat, dat$Movement == 'Skater')
 dat <- as_tibble(dat)
 
 #Change to Config names used in your data, with the baseline model listed first.
+
 dat$Shoe <- factor(dat$Shoe, c('Tri', 'Asym'))
 
 
@@ -50,9 +54,6 @@ runmod <- brm(data = dat,
 
 print(runmod)
 
-#pp <- predict(runmod, re_formula = ~(1 | SubjectName))
-
-
 posterior <- posterior_samples(runmod) #This extracts the posterior (grabs samples in a proportion to the probability they would be observed)
 
 # Change column number to the column of the shoe you are analyzing. This outputs the probability that the variable in the comparison shoe is higher 
@@ -60,6 +61,7 @@ posterior <- posterior_samples(runmod) #This extracts the posterior (grabs sampl
 # shoe is lower than baseline). Be careful when interpreting to consider if a higher or lower value is better. 
 
 sum(posterior[,2] < 0) / length(posterior[,2]) 
+
 
 prior = as.data.frame(rnorm(1000, 0, 1))
 
@@ -87,14 +89,19 @@ RefMean <- mean(Ref$ContactTime)        # Change to variable of interest
 NewConfig <- subset(dat, dat$Shoe == 'Asym') # Change to shoe being tested against baseline
 NewConfigMean <- mean(NewConfig$ContactTime)        # Change to variable of interest
 
+estimatedChange <- mean(posterior[,2]) #The maximum a posteriori estimate 
+
+Ref <- subset(dat, dat$Shoe == 'Lace') # Change to baseline shoe name
+RefMean <- mean(Ref$EE)        # Change to variable of interest
+
+NewConfig <- subset(dat, dat$Shoe == 'TC_BOA') # Change to shoe being tested against baseline
+NewConfigMean <- mean(NewConfig$EE)        # Change to variable of interest
+
+
 actualChange <- NewConfigMean - RefMean # outputs change from baseline to comparison shoe in units of measurement
 
 pctChange <- actualChange/RefMean * 100 # outputs change from baseline to comparison shoe in percentage
 
-BOAdat <- subset(dat, dat$ShoeCondition == 'BOA')
-
-mean(BOAdat$z_score, na.rm=TRUE)
-sd(BOAdat$z_score, na.rm = TRUE)
 
 # Correlations between outcomes
 
@@ -116,3 +123,4 @@ dat<- dat[-which(dat$CT_HorzNorm %in% outliers),]
 plot(dat$FyPeak, dat$ContactTime)
 
 cor.test(dat$FzPeak, dat$ContactTime, method = 'pearson')
+
