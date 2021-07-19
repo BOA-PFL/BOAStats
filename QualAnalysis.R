@@ -4,12 +4,13 @@ library(SnowballC)
 library(RColorBrewer)
 library(wordcloud)
 library(readxl)
+library(ggplot2)
 
 rm(list=ls())
 
 qualDat <- read_xlsx(file.choose())
 
-qualDat$Shoe <- factor(dat$Shoe, c('Lace', 'BOA'))
+qualDat$Shoe <- factor(qualDat$Shoe, c('Tri', 'Asym'))
 
 qualDat %>%
   pivot_longer(cols = Overall:Heel,
@@ -24,7 +25,7 @@ qualDat %>%
   pivot_longer(cols = Overall:Heel,
                names_to = "Location", values_to = "Rating") %>%
   filter(Location == 'Overall') %>%
-  ggplot(mapping = aes(x = Shoe, y = Rating, fill = Shoe)) + geom_boxplot() + scale_fill_manual(values=c("#003D4C", "#00966C", "#ECE81A","#DC582A","#CAF0E4"))
+  ggplot(mapping = aes(x = Shoe, y = Rating, group = SubjectName)) + geom_line(aes(color = SubjectName)) + geom_point(aes(color = SubjectName)) 
   
 
 
@@ -32,7 +33,7 @@ qualDat %>%
   pivot_longer(cols = Forefoot:Heel,
                names_to = "Location", values_to = "Rating") %>%
   filter(Location != 'Performance') %>%
-  ggplot(mapping = aes(x = Rating, fill = Shoe)) + geom_density() + facet_wrap(~Location) + scale_fill_manual(values=c("#003D4C", "#00966C", "#ECE81A","#DC582A","#CAF0E4"))
+  ggplot(mapping = aes(x = Rating, fill = Shoe)) + geom_density(alpha = 0.5) + facet_wrap(~Location) + scale_fill_manual(values=c("#003D4C", "#00966C", "#ECE81A","#DC582A","#CAF0E4"))
 
 
 # making word clouds ------------------------------------------------------
