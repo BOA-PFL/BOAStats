@@ -1,34 +1,63 @@
 rm(list=ls())
 library(tidyverse)
 library(readxl)
+library(lme4)
+library(patchwork)
 
-# Look at data ------------------------------------------------------------
 
+# -------------------------------------------------------------------------
 
-dd <- read.csv(file.choose())
+subSizes <- read_xlsx('C:/Users/Daniel.Feeney/Boa Technology Inc/PFL - General/BigData2021/MasterSubjectSizes.xlsx')
+rightDat <- subset(subSizes, subSizes$Side == 'R')
+leftDat <- subset(subSizes, subSizes$Side == 'L')
 
-unique(dd$Subject)
-summary(dd$VALR)
-unique(dd$Brand)
+a <- hist(rightDat$`Length (cm)`)
+a <- ggplot(data = rightDat, mapping = aes(x = `Length (cm)`)) + geom_histogram() 
+b <- ggplot(data = rightDat, mapping = aes(x = as.numeric(`Shoe Sizes (Reported)`))) + geom_histogram() +
+  xlab('Reported Shoe Size (US)')
+c <- ggplot(data = rightDat, mapping = aes(x = `Width (cm)`)) + geom_histogram()
+d <- ggplot(data = rightDat, mapping = aes(x = `Girth(cm)`)) + geom_histogram()
+(a | b)/(c|d)
 
-dd%>%
-  group_by(Configuration) %>%
-  summarize(avgVALR = mean(VALR))
+hist(rightDat$`Width/length`)
+
 
 # Agility -----------------------------------------------------------------
-#agilityDat <- read_xlsx('C:/Users/Daniel.Feeney/Dropbox (Boa)/Boa Team Folder/BigData2021/BigDataAgility.xlsx')
-agilityDat <- read.csv(file.choose())
+agilityDat <- read_csv('C:/Users/Daniel.Feeney/Boa Technology Inc/PFL - General/BigData2021/BigDataAgility_newMetrics.csv')
+#agilityDat <- read.csv(file.choose())
 
-unique(agilityDat$Subject)
+agilityDat <- merge(subSizes, agilityDat, by = "Subject" )
+# Replace names to full names. Manual!
 agilityDat <- agilityDat %>% 
-  mutate(Subject = replace(Subject, Subject == 'Ted', 'Ted Barnett'))
+  mutate(Movement = replace(Movement, Movement == 'skater', 'Skater'))
+agilityDat <- agilityDat %>% 
+  mutate(Config = replace(Config, Config == 'Tri', 'Tri Panel'))
 
 
-max(agilityDat$CT)
+
+agilityDat['CTNorm'] <- (agilityDat$CT / agilityDat$impulse) * 100
+agilityDat <- subset(agilityDat, agilityDat$CTNorm > 0)
+agilityDat <- subset(agilityDat, agilityDat$CTNorm < 0.5)
+
+ggplot(data = agilityDat, mapping = aes(x = CTNorm, y = COPtraj, col = Config, group = Config)) + geom_point() +
+  facet_wrap(~Movement + Subject)
+
+ggplot(data = agilityDat, mapping = aes(x = CTNorm, y = copExc, col = Config, group = Config)) + geom_point() +
+  facet_wrap(~Movement + Subject)
+
+full.mod = lmer(CTNorm ~ Config + (1|Model) + (Config|Subject), data = agilityDat, REML = TRUE, na.action = "na.omit" )
+summary(full.mod)
+
+##
+ggplot(data = agilityDat, mapping = aes(x = CTNorm, fill = Config)) + geom_density(alpha=.5) +theme_classic() +
+  facet_wrap(~Movement + Subject)
+
+
+
 
 
 # this section can be modified to change subject names but should  --------
-
+hist(agilityDat$`Width/length`)
 
 # update each time!
 bigData <- read_xlsx(file.choose())

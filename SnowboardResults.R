@@ -5,10 +5,17 @@ library(tidyverse)
 library(lme4)
 library(patchwork)
 
-dat <- read.csv(file.choose())
-dat <- read.csv(file.choose())
+dat <- read.csv('C:/Users/Daniel.Feeney/Dropbox (Boa)/Snow Protocol/SnowboardProtocol/Results/snowboardResults.csv')
+#dat <- read.csv(file.choose())
 
+dat <- dat %>% 
+  mutate(Subject = replace(Subject, Subject == 'Broc', 'S01'))
 
+dat <- dat %>% 
+  mutate(Subject = replace(Subject, Subject == 'Karl', 'S02'))
+
+dat <- dat %>% 
+  mutate(Subject = replace(Subject, Subject == 'Kate', 'S03'))
 # exploration of data -----------------------------------------------------
 
 dat %>%
@@ -22,25 +29,33 @@ dat %>%
   )
 
 #dat <- subset(dat, dat$MaxRFDUp < 300) #based on initial look, removing unrealistic RFD values
-dat <- subset(dat, dat$Side == 'R')
+#dat <- subset(dat, dat$Side == 'R')
+dat <- subset(dat, dat$timeToPeak > 0)
+
+ggplot(data = dat, mapping = aes(x = Subject, y = timeToPeak, fill = Config)) + geom_boxplot() +
+  facet_wrap(~Side + TurnType) + ylab('Time to peak (ms)')
+
+ggplot(data = dat, mapping = aes(x = Subject, y =  MaxForceToes, fill = Config)) + geom_boxplot() +
+  facet_wrap(~Side + TurnType) + ylab('Peak Normal Force (N)')
+
+ggplot(data = dat, mapping = aes(x = Subject, y =  MaxRFDdn, fill = Config)) + geom_boxplot() +
+  facet_wrap(~Side + TurnType) + ylab('Max Rate of Force Development (N/s)')
 
 p1 <- ggplot(data = dat, mapping = aes(x = Subject, y = MaxForceToes, fill = Config)) + geom_boxplot() +
   facet_wrap(~Side + TurnType)
 
 
 p2 <- ggplot(data = dat, mapping = aes(x = Subject, y = MaxRFDUp, fill = Config)) + geom_boxplot() +
-  facet_wrap(~Side + TurnType)
+  facet_wrap(~Side + TurnType)+ ylab('RFD Up (N/ms)')
 
 p3 <- ggplot(data = dat, mapping = aes(x = Subject, y = abs(MaxRFDdn), fill = Config)) + geom_boxplot() +
-  facet_wrap(~Side + TurnType)
+  facet_wrap(~Side + TurnType) + ylab('RFD Down (N/ms)')
 
 (p1 | p2 ) / p3
+p2 | p3
 
-ggplot(data = dat, mapping = aes(x = Subject, y = timeToPeak, fill = Config)) + geom_boxplot() +
-  facet_wrap(~Side + TurnType)
 
-ggplot(data = dat, mapping = aes(x = Subject, y = stdPeak / MaxForceToes, fill = Config)) + geom_boxplot() +
-  facet_wrap(~Side + TurnType)
+
 
 toeDat <- subset(dat, dat$TurnType == 'Toes')
 pkForce.mod <- lmer(MaxForceToes ~ Config + (1 | Subject), data = toeDat)
@@ -59,10 +74,10 @@ library(brms)
 pkForceModel <- brm(data = toeDat,
                   family = gaussian,
                   MaxForceToes ~ Config + (1 | Subject), #fixed efect of configuration with a different intercept and slope for each subject
-                  prior = c(prior(normal(50, 15), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpceted as the average loading rate (but average is again modified by the subject-specific betas)
-                            prior(normal(0, 20), class = b), #beta for the intercept for the change in loadinr rate for each configuration
-                            prior(cauchy(0, 5), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
-                            prior(cauchy(0, 1), class = sigma)), #overall variabiltiy that is left unexplained 
+                  prior = c(prior(normal(500, 100), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpceted as the average loading rate (but average is again modified by the subject-specific betas)
+                            prior(normal(0, 40), class = b), #beta for the intercept for the change in loadinr rate for each configuration
+                            prior(cauchy(0, 50), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                            prior(cauchy(0, 10), class = sigma)), #overall variabiltiy that is left unexplained 
                   iter = 2000, warmup = 1000, chains = 4, cores = 4,
                   control = list(adapt_delta = .975, max_treedepth = 20),
                   seed = 190831)
@@ -71,8 +86,8 @@ print(pkForceModel)
 plot(pkForceModel)
 
 posterior <- posterior_samples(pkForceModel) #This extracts the posterior (grabs samples in a proportion to the probability they would be observed)
-sum(posterior$b_ConfigDD < 0) / length(posterior$b_ConfigDD) #There is a 81.4% chance lace results in a greater VLR (count the number of samples where the lace configuration intercept is greater than 0 (e.g. it is higher than DD))
-mean(posterior$b_ConfigDD) #The maximal a posteriori estimate 
+sum(posterior$b_ConfigLace < 0) / length(posterior$b_ConfigLace) #There is a 81.4% chance lace results in a greater VLR (count the number of samples where the lace configuration intercept is greater than 0 (e.g. it is higher than DD))
+mean(posterior$b_ConfigLace) #The maximal a posteriori estimate 
 
 # peak force estimate to be 6 N higher in BOA witha  confidence of 64%
 
@@ -80,8 +95,8 @@ mean(posterior$b_ConfigDD) #The maximal a posteriori estimate
 RFDdnModel <- brm(data = dat,
               family = gaussian,
               abs(MaxRFDdn) ~ Config + (1 | Subject), #fixed efect of configuration with a different intercept and slope for each subject
-              prior = c(prior(normal(50, 20), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpceted as the average loading rate (but average is again modified by the subject-specific betas)
-                        prior(normal(0, 10), class = b), #beta for the intercept for the change in loadinr rate for each configuration
+              prior = c(prior(normal(80, 30), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpceted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 20), class = b), #beta for the intercept for the change in loading rate for each configuration
                         prior(cauchy(0, 5), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
                         prior(cauchy(0, 1), class = sigma)), #overall variabiltiy that is left unexplained 
               iter = 2000, warmup = 1000, chains = 4, cores = 4,
@@ -100,7 +115,7 @@ mean(posterior$b_ConfigLace) #The maximal a posteriori estimate
 timeToPeakMod <- brm(data = dat,
                   family = gaussian,
                   timeToPeak ~ Config + (1 | Subject), #fixed efect of configuration with a different intercept and slope for each subject
-                  prior = c(prior(normal(50, 20), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpceted as the average loading rate (but average is again modified by the subject-specific betas)
+                  prior = c(prior(normal(45, 25), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpceted as the average loading rate (but average is again modified by the subject-specific betas)
                             prior(normal(0, 10), class = b), #beta for the intercept for the change in loadinr rate for each configuration
                             prior(cauchy(0, 5), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
                             prior(cauchy(0, 1), class = sigma)), #overall variabiltiy that is left unexplained 
