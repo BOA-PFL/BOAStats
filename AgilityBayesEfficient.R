@@ -11,7 +11,7 @@ dat <- read.csv(file.choose())
 #datagil <- read.csv('C:/Users/Adam.Luftglass/OneDrive - Boa Technology Inc/Documents/R/CompiledAgilityData.csv')
 
 # Change to the movement you want to look at (we analyze CMJ and Skater separately for most agility tests)
-dat <- subset(dat, dat$Movement == 'CMJ')
+dat <- subset(dat, dat$Movement == 'Skater')
 dat <- as_tibble(dat)
 
 
@@ -46,6 +46,7 @@ makePlot <- function(inputDF, colName) {
 makePlot(dat, 'RAnkPeakEV')
 makePlot(dat, 'RAnkPeakIV')
 makePlot(dat, 'CTnorm') 
+makePlot(dat, 'RAnkDorsiflexion')
 
 extractVals <- function(originalDat, posteriorName, colNo, colName, configName) {
   # This function takes the original dataframe, the name of the psoterior and the 
@@ -129,3 +130,23 @@ extractVals(dat, posteriorCT, 2,'CTnorm', 'LR')
 extractVals(dat, posteriorCT, 3, 'CTnorm','Lateralhigh')
 extractVals(dat, posteriorCT, 4, 'CTnorm','Lateralmid')
 makePlot(dat, 'CTnorm')
+
+
+## contact time normalized to impulse 
+DFmod <- brm(data = dat,
+             family = gaussian,
+             z_scoreDF ~ Config + (1 | Sub), #fixed effect of configuration with a different intercept and slope for each subject
+             prior = c(prior(normal(0, 1), class = Intercept), #Since we use z-scores, the intercept prior is set as a mean of 0 with SD of 1
+                       prior(normal(0, 1), class = b), #beta for the intercept for the change in outcome for each configuration
+                       prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                       prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+             iter = 2000, warmup = 1000, chains = 4, cores = 4,
+             control = list(adapt_delta = .975, max_treedepth = 20),
+             seed = 190831)
+plot(DFmod)
+posteriorDF <- posterior_samples(DFmod)
+# finding pct changes CT
+extractVals(dat, posteriorDF, 2,'RAnkDorsiflexion', 'LR') #for cmj dorsiflexion, higher is good since it allows ROM in that plane
+extractVals(dat, posteriorDF, 3, 'RAnkDorsiflexion','Lateralhigh')
+extractVals(dat, posteriorDF, 4, 'RAnkDorsiflexion','Lateralmid')
+makePlot(dat, 'RAnkDorsiflexion')
