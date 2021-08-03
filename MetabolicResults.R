@@ -1,106 +1,83 @@
+# EH Run Validation study analysis
 rm(list=ls())
-
 library(tidyverse)
-library(brms)
+library(readxl)
 library(lme4)
 library(emmeans)
-
-dat <- read.csv(file.choose())
-weightNew <- read.csv(file.choose()) #correcting for different mass each day
-weightNew <- rename(weightNew, Subject = ï..Subject)
-weightNew <- rename(weightNew, Config = Condition)
-
-dat <- merge(dat, weightNew)
+library(patchwork)
 
 
-ggplot(data = dat, mapping = aes(x = as.factor(Subject), y = EEm, fill = Config)) + geom_boxplot() 
+# generic function --------------------------------------------------------
 
-#dat <- subset(dat, dat$EEm >8) #removing non-physiological values for energetic expenditure
-
-### Outlier removal based on 25 quantile - 1.5* IQR or 75 + 1.5*IQR ###
-remove_outliers <- function(x, na.rm = TRUE, ...) {
-  qnt <- quantile(x, probs=c(.25, .75), na.rm = na.rm, ...)
-  H <- 1.5 * IQR(x, na.rm = na.rm)
-  y <- x
-  y[x < (qnt[1] - H)] <- NA
-  y[x > (qnt[2] + H)] <- NA
-  y
+testAnova <- function(metric, df) {
+  
+  myformula <- as.formula(paste0(metric," ~ Config", " + (1|Subject)"))
+  myformula2 <- as.formula(paste0(metric, " ~ (1|Subject)"))
+  
+  full.mod = lmer(myformula, data = df, REML = TRUE, na.action = "na.omit" )
+  red.mod = lmer(myformula2, data = df, REML = TRUE, na.action = "na.omit" )
+  
+  conditions.emm <- emmeans(full.mod, "Config", lmer.df = "satterthwaite")
+  #conditions.emm
+  contrast(conditions.emm, "trt.vs.ctrl", ref = "SL") 
+  
+  
+  newList <- list("randEffectMod" = summary(full.mod), "anovaBetweenMods" = anova(full.mod, red.mod),
+                  "contrasts" = conditions.emm, "Contrasts2" = contrast(conditions.emm, "trt.vs.ctrl", ref = "SL"))
+  return(newList)
+  
 }
 
-# Level
-dat <- dat %>%
-  group_by(Subject, Config) %>%
-  mutate(
-    EEm2 = remove_outliers(EEm)
-  )
-dat <- subset(dat, dat$EEm2 > 5) # removing one non physiological rates not detected by the outlier
-dat['EEmFixed'] <- dat$EEm2 * dat$Ratio
-
-ggplot(data = dat, mapping = aes(x = as.factor(Subject), y = EEmFixed, fill = Config)) + geom_boxplot() 
-#Subjects 28 and 30 have very odd SL values
-# 
-
-ggplot(data = dat, mapping = aes(x = as.factor(TimePoints), y = EEmFixed, fill = Config)) + geom_point(aes(color = Config)) +
-  facet_wrap( ~ Subject )
-# Simplest models ---------------------------------------------------------
-
-# Simple model collapsing across time points
-mod1 <- lmer(EEmFixed ~ Config + (1|Subject), data = dat)
-summary(mod1)
-modnull <- lmer(EEmFixed ~ (1|Subject), data = dat)
-anova(mod1,modnull) #not significant
+testRandSlopes <- function(metric, df) {
+  
+  myformula <- as.formula(paste0(metric," ~ Config", " + (1|Subject)"))
+  myformula2 <- as.formula(paste0(metric, " ~ (Config|Subject)"))
+  
+  full.mod = lmer(myformula, data = df, REML = TRUE, na.action = "na.omit" )
+  red.mod = lmer(myformula2, data = df, REML = TRUE, na.action = "na.omit" )
+  
+  conditions.emm <- emmeans(full.mod, "Config", lmer.df = "satterthwaite")
+  #conditions.emm
+  contrast(conditions.emm, "trt.vs.ctrl", ref = "SL") 
+  
+  
+  newList <- list("randEffectMod" = summary(full.mod), "anovaBetweenMods" = anova(full.mod, red.mod),
+                  "contrasts" = conditions.emm, "Contrasts2" = contrast(conditions.emm, "trt.vs.ctrl", ref = "SL"))
+  return(newList)
+  
+}
 
 
-conditions.emm <- emmeans(mod1, "Config")
-#conditions.emm
-contrast(conditions.emm, "trt.vs.ctrl", ref = "SL") #p-value of 0.22 for single dial vs lace, estimated 1.9% improvement
+plotAndStore <- function(col, dfName){
+  
+  genPlot <- ggplot(data = dfName, mapping = aes(x = Subject, y = .data[[col]], fill = Config)) +
+    geom_boxplot() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+    scale_fill_manual(values=c("#000000", "#ECE81A", "#CAF0E4"))
+  
+  return(genPlot)
+}
+
+withinSubPlot <- function(col, dfName){
+  ggplot(data = dfName, mapping = aes(x = as.factor(Config), y = .data[[col]], col = BestConfig, group = Subject)) + geom_point(size = 4) + 
+    geom_line() + xlab('Configuration') + theme(text = element_text(size = 16)) + ylab('EE') 
+}
+
+# metbaolics --------------------------------------------------------------
+
+metDat <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL - General/AgilityPerformanceData/BOA_InternalStrap_July2021/Metabolics/MetResults.csv')
+
+plotAndStore('EE',metDat)
+# met data averaging over 2 minutes instead of 1
+metDat2 <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL - General/AgilityPerformanceData/BOA_InternalStrap_July2021/Metabolics/MetResults2.csv')
+plotAndStore('EE',metDat2)
 
 
-0.3/12.1979 * 100
-
-# Adding in layer of time -------------------------------------------------
-
-timeMod1 <- lmer(EEmFixed ~ Config + as.factor(TimePoints) + (1|Subject), data = dat)
-summary(timeMod1)
-
-conditions.emm <- emmeans(timeMod1, "Config")
-#conditions.emm
-contrast(conditions.emm, "trt.vs.ctrl", ref = "SL") #p-value of 0.22 for single dial vs lace, estimated 1.9% improvement
-
-ggplot(data = dat, mapping = aes(x = as.factor(TimePoints), y = EEmFixed, fill = Config)) + geom_point(aes(color = Config)) +
-  facet_wrap( ~ Subject )
-
-nullMod <- lmer(EEm ~  as.factor(TimePoints) + (1|Subject), data = dat)
-anova(timeMod1, nullMod)
-
-timeMod2 <- lmer(EEm ~ Config * as.factor(TimePoints) + (1|Subject), data = dat)
-summary(timeMod1)
-
-#HR mod
-HRdat <- subset(dat, dat$HR != 0) #when HR monitor malfunctioned
-ggplot(data = HRdat, mapping = aes(x = as.factor(Subject), y = HR, fill = Config)) + geom_boxplot() 
-
-ggplot(data = HRdat, mapping = aes(x = as.factor(TimePoints), y = HR, fill = Config)) + geom_point(aes(color = Config)) + 
-  facet_wrap( ~ Subject) #Some arbitrarily low HR values for some subjects (e.g. 19 and 21 where HRM must have malfunctioned)
-HRdat <- subset(HRdat, HRdat$HR > 100)
-
-HRmod <- lmer(HR ~ Config + (1|Subject), data = HRdat)
-summary(HRmod)
-
-null2mod <- lmer(HR ~ (1|Subject), data = HRdat)
-anova(HRmod, null2mod) #signficaitn impact of configuration
-
-conditions.emm <- emmeans(HRmod, "Config")
-#conditions.emm
-contrast(conditions.emm, "trt.vs.ctrl", ref = "SL") #p-value of 0.22 for single dial vs lace, estimated 1.9% improvement
-
-
-# Checking temperatures
-tempMod <- lmer(Temp ~ Config + (1|Subject), data = dat)
-summary(tempMod)
-ggplot(data = dat, mapping = aes(x = as.factor(Subject), y = Temp, fill = Config)) + geom_boxplot() 
-
-ggplot(data = dat, mapping = aes(x = as.factor(TimePoints), y = Temp, fill = Config)) + geom_point(aes(color = Config)) + 
-  facet_wrap( ~ Subject)
-
+whichConfig <- metDat2 %>%
+  group_by(Subject) %>%
+  summarize(
+    mm = min(EE),
+    BestConfig = Config[which.min(EE)]
+            )
+metOut <- merge(metDat2, whichConfig)
+withinSubPlot('EE',metOut)
 

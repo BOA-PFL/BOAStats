@@ -125,7 +125,7 @@ library(SnowballC)
 library(RColorBrewer)
 library(wordcloud)
 
-qualDat <- read_xlsx(file.choose())
+qualDat <- read_xlsx('C:/Users/daniel.feeney/Dropbox (Boa)/Hike Work Research/Work Pilot 2021/Qual.xlsx')
 
 qualDat %>%
   pivot_longer(cols = Performance:Heel,

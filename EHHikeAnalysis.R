@@ -46,6 +46,14 @@ WalkKinematics <- subset(WalkKinematics, WalkKinematics$VLR < 11000)
 
 plotAndStoreFacet('VLR',WalkKinematics)
 
+WalkKinematics %>%
+  group_by(Subject, Config, Level)%>%
+  summarize(avgLR = mean(VLR)) %>%
+  ggplot(mapping = aes(x = Config, y = avgLR, col = Subject, group = Subject)) + geom_point(size = 4) + 
+  geom_line() + xlab('Configuration') + theme(text = element_text(size = 20)) + ylab('VLR') + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  facet_wrap(~as.factor(Level))
+
 d <- plotAndStoreFacet('peakBrake',WalkKinematics)
 
 f <- plotAndStoreFacet('brakeImpulse', WalkKinematics)
@@ -145,8 +153,8 @@ qualDat %>%
   pivot_longer(cols = Performance:Heel,
                names_to = "Location", values_to = "Rating") %>%
   filter(Location == 'Performance') %>%
-  ggplot(mapping = aes(x = Config, y = Rating, fill = Config)) + geom_boxplot() +
-  theme_classic() + 
+  ggplot(mapping = aes(x = factor(Config, level = c("Lace", "SD","DD")), y = Rating, fill = Config)) + geom_boxplot() +
+  theme_classic() + xlab('Configuration')+
   scale_fill_manual(values=c("#000000", "#ECE81A", "#CAF0E4"))
 
 
@@ -157,7 +165,9 @@ qualDat %>%
   ggplot(mapping = aes(x = Rating, fill = Config)) + geom_density() + 
   facet_wrap(~Location) +scale_fill_manual(values=c("#000000", "#ECE81A", "#CAF0E4"))
 
-ggplot(data = qualDat, mapping = aes(x = as.factor(Config), y = Performance, col = Subject, group = Subject)) + geom_point(size = 4) + 
+
+ggplot(data = qualDat, mapping = aes(x = factor(Config, level = c("Lace", "SD","DD")), y = Performance, col = Subject, group = Subject)) + 
+  geom_point(size = 4) + 
   geom_line() + xlab('Configuration') + theme(text = element_text(size = 20)) + ylab('Overall Rating of Shoe') +
   scale_y_continuous(limits=c(1,10))
 
