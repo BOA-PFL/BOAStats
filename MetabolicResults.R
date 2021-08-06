@@ -19,11 +19,11 @@ testAnova <- function(metric, df) {
   
   conditions.emm <- emmeans(full.mod, "Config", lmer.df = "satterthwaite")
   #conditions.emm
-  contrast(conditions.emm, "trt.vs.ctrl", ref = "SL") 
+  contrast(conditions.emm, "trt.vs.ctrl", ref = "Nothing") 
   
   
   newList <- list("randEffectMod" = summary(full.mod), "anovaBetweenMods" = anova(full.mod, red.mod),
-                  "contrasts" = conditions.emm, "Contrasts2" = contrast(conditions.emm, "trt.vs.ctrl", ref = "SL"))
+                  "contrasts" = conditions.emm, "Contrasts2" = contrast(conditions.emm, "trt.vs.ctrl", ref = "Nothing"))
   return(newList)
   
 }
@@ -38,11 +38,11 @@ testRandSlopes <- function(metric, df) {
   
   conditions.emm <- emmeans(full.mod, "Config", lmer.df = "satterthwaite")
   #conditions.emm
-  contrast(conditions.emm, "trt.vs.ctrl", ref = "SL") 
+  contrast(conditions.emm, "trt.vs.ctrl", ref = "Nothing") 
   
   
   newList <- list("randEffectMod" = summary(full.mod), "anovaBetweenMods" = anova(full.mod, red.mod),
-                  "contrasts" = conditions.emm, "Contrasts2" = contrast(conditions.emm, "trt.vs.ctrl", ref = "SL"))
+                  "contrasts" = conditions.emm, "Contrasts2" = contrast(conditions.emm, "trt.vs.ctrl", ref = "Nothing"))
   return(newList)
   
 }
@@ -64,13 +64,10 @@ withinSubPlot <- function(col, dfName){
 
 # metbaolics --------------------------------------------------------------
 
-metDat <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL - General/AgilityPerformanceData/BOA_InternalStrap_July2021/Metabolics/MetResults.csv')
-
-plotAndStore('EE',metDat)
+#metDat <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL - General/AgilityPerformanceData/BOA_InternalStrap_July2021/Metabolics/MetResults.csv')
 # met data averaging over 2 minutes instead of 1
 metDat2 <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL - General/AgilityPerformanceData/BOA_InternalStrap_July2021/Metabolics/MetResults2.csv')
-plotAndStore('EE',metDat2)
-
+metDat2 <- subset(metDat2, metDat2$Subject != 'Geoffrey')
 
 whichConfig <- metDat2 %>%
   group_by(Subject) %>%
@@ -81,3 +78,4 @@ whichConfig <- metDat2 %>%
 metOut <- merge(metDat2, whichConfig)
 withinSubPlot('EE',metOut)
 
+testAnova('EE',metDat2)
