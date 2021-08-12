@@ -7,20 +7,33 @@ library(dplyr)
 library(rlang)
 library(reshape2)
 
+rm(list=ls())
+
 ####### Functions
 
-withinSubPlot <- function(inputDF, colName) {
+withinSubPlot <- function(inputDF, colName, dir) {
   
+  # direction can be 'lower' or higher'. It is the direction of change that is better. 
+  # For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher. 
   meanDat <- inputDF %>%
     group_by(Subject, Config) %>%
     summarize(mean = mean(!! sym(colName)))
   
-  
-  whichConfig <- meanDat %>%
-    group_by(Subject) %>%
-    summarize(
-      BestConfig = Config[which.min(mean)]
-    )
+  if (dir == 'lower'){
+    whichConfig <- meanDat %>%
+      group_by(Subject) %>%
+      summarize(
+        BestConfig = Config[which.min(mean)]
+      )
+    
+  } else if (dir == 'higher') {
+    whichConfig <- meanDat %>%
+      group_by(Subject) %>%
+      summarize(
+        BestConfig = Config[which.max(mean)]
+      )
+    
+  }
   
   whichConfig <- merge(meanDat, whichConfig)
   
@@ -30,7 +43,7 @@ withinSubPlot <- function(inputDF, colName) {
 }
 
 
-extractVals <- function(dat, mod, configName, var) {
+extractVals <- function(dat, mod, configName, var, dir) {
   
   # This function takes the original dataframe (dat, same one entered into runmod), the Bayesian model from brms (runmod), 
   # the configuration Name, and the variable you are testing. It returns:
@@ -40,8 +53,14 @@ extractVals <- function(dat, mod, configName, var) {
   # [4] the upper bound of the bayesian 95% posterior interval (as percent change from baseline)
   configColName <- paste('b_Config', configName, sep = "")
   posterior <- posterior_samples(mod)
-  prob_Decrease <- sum(posterior[,configColName] < 0) / length(posterior[,configColName])
-  prob_Increase <- sum(posterior[,configColName] > 0) / length(posterior[,configColName])
+  
+  if (dir == 'lower'){
+    prob <- sum(posterior[,configColName] < 0) / length(posterior[,configColName])
+    
+  } else if (dir == 'higher') {
+  
+    prob <- sum(posterior[,configColName] > 0) / length(posterior[,configColName])
+  }
   
   ci <- posterior_interval(mod, prob = 0.95)
   ciLow <- ci[configColName,1] 
@@ -56,31 +75,32 @@ extractVals <- function(dat, mod, configName, var) {
   ci_LowPct <- meanSD*ciLow/mean*100
   ci_HighPct <- meanSD*ciHigh/mean*100
   
-  return(list(prob_Decrease, prob_Increase, ci_LowPct, ci_HighPct))
+  return(list(prob, ci_LowPct, ci_HighPct))
   
 }
 
 
 ###############################
 
-rm(list=ls())
+
 
 # Change to appropriate filepath
 dat <- read.csv(file.choose())
 
 # Change to the movement you want to look at (we analyze CMJ and Skater separately for most agility tests)
-#dat <- subset(dat, dat$Movement == 'Run')
+dat <- subset(dat, dat$Movement == 'Skater')
 dat <- as_tibble(dat)
 
+dat <- subset(dat, dat$Config != 'Barefoot')
 #Change to Config names used in your data, with the baseline model listed first.
 dat$Config <- factor(dat$Config, c('Nothing', 'Single', '4guide'))
 
 
 dat <- dat %>% 
-  #filter(ContactTime > 10) %>% #remove values with impossible contact time
-  #filter(ContactTime < 100) %>%
+  filter(ContactTime > 10) %>% #remove values with impossible contact time
+  filter(ContactTime < 100) %>%
   group_by(Subject) %>%
-  mutate(z_score = scale(pLF)) %>% # Change to the variable you want to test
+  mutate(z_score = scale(ContactTime)) %>% # Change to the variable you want to test
   group_by(Config)
 
 
@@ -91,11 +111,11 @@ dat<- subset(dat, dat$z_score > -2)
 
 #Change x axis variable to your variable of interest. Check for normal-ish distribution.
 
-ggplot(data = dat, aes(x = pLF)) + geom_histogram() + facet_wrap(~Sub) 
+ggplot(data = dat, aes(x = ContactTime)) + geom_histogram() + facet_wrap(~Subject) 
 
 #Change mean variable to your variable of interest
 
-witinSubPlot(dat, 'pBF')
+withinSubPlot(dat, 'ContactTime', 'lower')
 
 ##### Bayes model
 
@@ -115,7 +135,7 @@ runmod <- brm(data = dat,
 
 
   
-extractVals(dat, runmod, 'Single', 'VLR')
+extractVals(dat, runmod, '4guide', 'ContactTime', 'lower')
 
 
 
