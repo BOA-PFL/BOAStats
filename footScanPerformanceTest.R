@@ -16,30 +16,24 @@ testDat <- read_csv(file.choose())
 footDat <- read_excel('C:/Users/kate.harrison/Boa Technology Inc/PFL - Documents/General/BigData2021/MasterSubjectSizes.xlsx')
 
 
-# split foot size data into left and right 
-
-
-
 #testDat <- subset(dat, dat$Movement == 'CMJ')
 
 testDat <- testDat %>% 
    #filter(ContactTime > 10) %>% #remove values with impossible contact time
    #filter(ContactTime < 100) %>%
    group_by(Subject) %>%
-   mutate(z_score = scale(VLR)) # Change to the variable you want to test
+   mutate(z_score = scale(CT)) # Change to the variable you want to test
 
 testDat <- subset(testDat, testDat$z_score < 3)
 testDat <- subset(testDat, testDat$z_score > -3)
 
 
-ggplot(data = testDat, aes(x = VLR)) + geom_histogram() + facet_wrap(~Subject)
-
 RfootDat <- subset(footDat, footDat$Side == 'R')
 LfootDat <- subset(footDat, footDat$Side == 'L')
  
-baselineDat <- subset(testDat, testDat$Config == 'Lace') # Change to baseline shoe name
+baselineDat <- subset(testDat, testDat$Config == 'Single') # Change to baseline shoe name
 
-newShoeDat <- subset(testDat, testDat$Config == 'SD') # Change to shoe you want to compare to baseline
+newShoeDat <- subset(testDat, testDat$Config == 'Paired') # Change to shoe you want to compare to baseline
 
 Subject <- rep(NA, 2)
 diff <- rep(0, 2)
@@ -63,20 +57,26 @@ diffDat <- cbind(Subject, diff)
 diffDat <- as.data.frame(diffDat)
 
 
+
 # join dataframes
 
 corrDat <- inner_join (diffDat, RfootDat, by = 'Subject')
-
+corrDat$diff <- as.numeric(corrDat$diff)
  
 # Find correlations between foot characteristics and outcomes
 
-corrDat[,2] <- as.numeric(corrDat[,2])
- 
-cor.test(corrDat$`Length (cm)`, corrDat$diff, method = 'pearson')
-
 ggscatter(corrDat, x = "Length (cm)", y = "diff", 
           add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson", 
-          xlab = 'Foot Length', ylab = 'Change in performance from Lace to SD') 
+          xlab = 'Foot Length', ylab = 'Change in performance from Single to Paired') 
+
+ggscatter(corrDat, x = "Width (cm)", y = "diff", 
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = 'Foot Width', ylab = 'Change in performance from Single to Paired') 
+
+ggscatter(corrDat, x = "Instep (cm)", y = "diff", 
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson", 
+          xlab = 'Instep height', ylab = 'Change in performance from Single to Paired')
+
 
 
 
