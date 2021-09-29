@@ -38,7 +38,7 @@ withinSubPlot <- function(inputDF, colName, dir) {
   whichConfig <- merge(meanDat, whichConfig)
   
   ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = mean, col = BestConfig, group = Subject)) + geom_point(size = 4) + 
-    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#003D4C", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 16)) + ylab(paste0({{colName}})) 
+    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 16)) + ylab(paste0({{colName}})) 
   
 }
 
@@ -47,8 +47,7 @@ extractVals <- function(dat, mod, configName, var, dir) {
   
   # This function takes the original dataframe (dat, same one entered into runmod), the Bayesian model from brms (runmod), 
   # the configuration Name, and the variable you are testing. It returns:
-  # [1] the probabality the variable was lower in the teste Configuration compared to baseline
-  # [2] tje probability the variable was higher in the tested configuration
+  # [1] the probabality the variable was better in the test config vs. the baseline config
   # [3] the lower bound of the bayesian 95% posterior interval (as percent change from baseline) 
   # [4] the upper bound of the bayesian 95% posterior interval (as percent change from baseline)
   configColName <- paste('b_Config', configName, sep = "")
@@ -88,19 +87,19 @@ extractVals <- function(dat, mod, configName, var, dir) {
 dat <- read.csv(file.choose())
 
 # Change to the movement you want to look at (we analyze CMJ and Skater separately for most agility tests)
-#dat <- subset(dat, dat$Movement == 'Skater')
+#dat <- subset(dat, dat$Movement == 'CMJ')
 dat <- as_tibble(dat)
 
-#dat <- subset(dat, dat$Config != 'Barefoot')
+
 #Change to Config names used in your data, with the baseline model listed first.
-dat$Config <- factor(dat$Config, c('Lace', 'BOA'))
+dat$Config <- factor(dat$Config, c('Velcro', 'SD', 'DD'))
 
 
 dat <- dat %>% 
-  #filter(ContactTime > 10) %>% #remove values with impossible contact time
-  #filter(ContactTime < 100) %>%
+  #filter(CT > 10) %>% #remove values with impossible contact time
+  #filter(CT < 100) %>%
   group_by(Subject) %>%
-  mutate(z_score = scale(steadiness)) %>% # Change to the variable you want to test
+  mutate(z_score = scale(EE)) %>% # Change to the variable you want to test
   group_by(Config)
 
 
@@ -111,11 +110,13 @@ dat<- subset(dat, dat$z_score > -2)
 
 #Change x axis variable to your variable of interest. Check for normal-ish distribution.
 
-ggplot(data = dat, aes(x = steadiness)) + geom_histogram() + facet_wrap(~Subject) 
+ggplot(data = dat, aes(x = CT)) + geom_histogram() + facet_wrap(~Subject) 
 
-#Change mean variable to your variable of interest
-
-withinSubPlot(dat, 'steadiness', 'lower')
+#Change variable to your variable of interest
+#dir can be 'lower' or 'higher'. It is what direction an improvement in results would be. 
+#E.g. improvement in VLR is 'lower'. Improvement in jump height is 'higher'
+#colName is the variable you want to plot, written as the column title for that variable in your data frame.
+withinSubPlot(dat, colName = 'EE', dir = 'lower')
 
 ##### Bayes model
 
@@ -133,14 +134,14 @@ runmod <- brm(data = dat,
 
 
 
-
-  
-extractVals(dat, runmod, 'BOA', 'steadiness', 'lower')
-
-
+# dir can be 'lower' or 'higher'. It is what direction an improvement in results would be. 
+#E.g. improvement in VLR is 'lower'. Improvement in jump height is 'higher'. var is the variable you want to compare bewteen shoes.
+extractVals(dat, runmod, configName = 'Paired', var = 'maxToes', dir = 'lower') 
 
 
 
+
+####################################################### Extra stuff not Included in Performance Tests ###################################
 
 ### Plot prior, liklihood, posterior
 posterior <- posterior_samples(runmod)
