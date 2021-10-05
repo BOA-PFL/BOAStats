@@ -4,16 +4,40 @@ library(SnowballC)
 library(RColorBrewer)
 library(wordcloud)
 library(readxl)
-library(ggplot2)
+library(brms)
+library(tidyverse)
+
 
 rm(list=ls())
 
+###############
+
+withinSubQualPlot <- function(inputDF) {
+  
+  # direction can be 'lower' or higher'. It is the direction of change that is better. 
+  # For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher. 
+
+    whichConfig <- inputDF %>%
+      group_by(Subject) %>%
+      summarize(
+        BestConfig = Shoe[which.max(OverallFit)]
+      )
+  
+  whichConfig <- merge(inputDF, whichConfig)
+  
+  ggplot(data = whichConfig, mapping = aes(x = as.factor(Shoe), y = OverallFit, col = BestConfig, group = Subject)) + geom_point(size = 4) + 
+    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 16)) + ylab('Rating') 
+  
+}
+
+
+
 qualDat <- read_xlsx(file.choose())
 
-qualDat$Shoe <- factor(qualDat$Shoe, c('Tri', 'Asym'))
+qualDat$Shoe <- factor(qualDat$Shoe, c('SL', 'SDLR', 'SD4guide', 'SDOvguide', 'DDLR', 'DD4guide'))
 
 qualDat %>%
-  pivot_longer(cols = Overall:Heel,
+  pivot_longer(cols = OverallFit:Heel,
                names_to = "Location", values_to = "Rating") %>%
   group_by(Location, Shoe) %>%
   summarize(
@@ -21,37 +45,66 @@ qualDat %>%
     medAvg = median(Rating)
   )
 
-qualDat %>%
-  pivot_longer(cols = Overall:Heel,
-               names_to = "Location", values_to = "Rating") %>%
-  filter(Location == 'Overall') %>%
-  ggplot(mapping = aes(x = Shoe, y = Rating, group = SubjectName)) + geom_line(aes(color = SubjectName)) + geom_point(aes(color = SubjectName)) 
+
+### Probability of higher overall score (for radar plot)
+
+qualDat <- qualDat %>% 
+  
+  mutate(z_score = scale(OverallFit))# Change to the variable you want to test
   
 
+runmod <- brm(data = qualDat,
+              family = gaussian,
+              z_score ~ Shoe + (1|Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
 
-qualDat %>%
-  pivot_longer(cols = Forefoot:Heel,
-               names_to = "Location", values_to = "Rating") %>%
-  filter(Location != 'Performance') %>%
-  ggplot(mapping = aes(x = Rating, fill = Shoe)) + geom_density(alpha = 0.5) + facet_wrap(~Location) + scale_fill_manual(values=c("#003D4C", "#00966C", "#ECE81A","#DC582A","#CAF0E4"))
+posterior <- posterior_samples(runmod)
 
+sum(posterior[,3] > 0) / length(posterior[,3]) 
+
+
+####
+#qualDat <- pivot_longer(qualDat, cols = OverallFit:Heel, names_to = "Location", values_to = "Rating")
+#qualDat$Location <- factor(qualDat$Location, c("OverallFit", "Forefoot", "Midfoot", "Heel"))
+
+
+withinSubQualPlot(qualDat)
+
+
+
+
+qualDat <- pivot_longer(qualDat, cols = Forefoot:Heel, names_to = 'Location', values_to = 'Rating')
+  
+qualDat$Location <- factor(qualDat$Location, c('Forefoot', 'Midfoot', 'Heel')) 
+
+ggplot(qualDat, mapping = aes(x = Rating, fill = Shoe)) + geom_density(alpha = 0.5) + facet_wrap(~Location) + scale_fill_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4"))
+
+
+
+
+
+  
 
 # making word clouds ------------------------------------------------------
 
-#tri <- subset(qualDat, qualDat$Shoe == 'Tri')
-BOA <- subset(qualDat, qualDat$Shoe == 'BOA')
-lace <- subset(qualDat, qualDat$Shoe == 'Lace')
-#triNotes <- tri$Comments
-BOAnotes <- BOA$Comments
-laceNotes <- lace$Comments
 
+Single <- subset(qualDat, qualDat$Shoe == 'Single', GoodComments:BadComments)
+Paired <- subset(qualDat, qualDat$Shoe == 'Paired', GoodComments:BadComments)
+
+replacePunctuation <- content_transformer(function(x) {return (gsub("[[:punct:]]", " ", x))})
 
 makeWordCloud <- function(inputText) {
   
   docs <- Corpus(VectorSource(inputText))
   docs <- docs %>%
     tm_map(removeNumbers) %>%
-    tm_map(removePunctuation)
+    tm_map(replacePunctuation)
   
   # Convert the text to lower case
   docs <- tm_map(docs, content_transformer(tolower))
@@ -62,22 +115,45 @@ makeWordCloud <- function(inputText) {
   # Remove your own stop word
   # specify your stopwords as a character vector
   docs <- tm_map(docs, removeWords, c("like", "feel","feels","lace","bottom","steel","replacement","toe.","toe",
-                                      "felt","tri")) 
+                                      "felt","tri", "na")) 
   
   dtm <- TermDocumentMatrix(docs)
   m <- as.matrix(dtm)
   v <- sort(rowSums(m),decreasing=TRUE)
-  d <- data.frame(word = names(v),freq=v)
-  head(d, 10)
+  
+  vGood <- m[,1]
+  vBad <- m[,2]
+  vBad <- sort(vBad, decreasing = TRUE)
+  vGood <- sort(vGood, decreasing = TRUE)
+  vGood <- as.data.frame(vGood)
+  vBad <- as.data.frame(vBad)
+  
+  colorList <- c(rep('green', nrow(vGood)), rep('red', nrow(vBad)))
+  
+  GoodWords <- rownames(vGood)
+  GoodFrq<- vGood[,1]
+  Good <- cbind(GoodWords, GoodFrq)
+  BadWords <- rownames(vBad)
+  BadFrq <- vBad[,1]
+  Bad <- cbind(BadWords, BadFrq)
+  
+  d <- rbind(Good, Bad)
+  d <- cbind(d, colorList)
+  d <- as.data.frame(d)
+  colnames(d) <- c('Word', 'Freq', 'Color')
+  d <- d[order(d$Freq, decreasing = TRUE),]
+  d <- d[d$Freq > 0, ]
+ 
+  d$Freq <- as.numeric(d$Freq)
   
   set.seed(1234)
-  wordcloud(words = d$word, freq = d$freq, min.freq = 1,
-            max.words=25, random.order=FALSE, rot.per=0.35, 
-            colors=brewer.pal(8, "Dark2"))
+  wordcloud(d$Word, d$Freq, min.freq = 1, max.words = nrow(d),
+            random.order=FALSE, rot.per=0.35, 
+            colors=d$Color, ordered.colors = TRUE)
   
 }
 
-#makeWordCloud(triNotes)
-makeWordCloud(BOAnotes)
-makeWordCloud(laceNotes)
+
+makeWordCloud(Paired)
+
 

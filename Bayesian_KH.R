@@ -1,25 +1,99 @@
 
 library(tidyverse)
-library(rstan)
 library(brms)
 library(tidybayes)
 library(lme4)
-
-
+library(dplyr)
+library(rlang)
+library(reshape2)
 
 rm(list=ls())
 
+####### Functions
+
+withinSubPlot <- function(inputDF, colName, dir) {
+  
+  # direction can be 'lower' or higher'. It is the direction of change that is better. 
+  # For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher. 
+  meanDat <- inputDF %>%
+    group_by(Subject, Config) %>%
+    summarize(mean = mean(!! sym(colName)))
+  
+  if (dir == 'lower'){
+    whichConfig <- meanDat %>%
+      group_by(Subject) %>%
+      summarize(
+        BestConfig = Config[which.min(mean)]
+      )
+    
+  } else if (dir == 'higher') {
+    whichConfig <- meanDat %>%
+      group_by(Subject) %>%
+      summarize(
+        BestConfig = Config[which.max(mean)]
+      )
+    
+  }
+  
+  whichConfig <- merge(meanDat, whichConfig)
+  
+  ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = mean, col = BestConfig, group = Subject)) + geom_point(size = 4) + 
+    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#003D4C", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 16)) + ylab(paste0({{colName}})) 
+  
+}
+
+
+extractVals <- function(dat, mod, configName, var, dir) {
+  
+  # This function takes the original dataframe (dat, same one entered into runmod), the Bayesian model from brms (runmod), 
+  # the configuration Name, and the variable you are testing. It returns:
+  # [1] the probabality the variable was lower in the teste Configuration compared to baseline
+  # [2] tje probability the variable was higher in the tested configuration
+  # [3] the lower bound of the bayesian 95% posterior interval (as percent change from baseline) 
+  # [4] the upper bound of the bayesian 95% posterior interval (as percent change from baseline)
+  configColName <- paste('b_Config', configName, sep = "")
+  posterior <- posterior_samples(mod)
+  
+  if (dir == 'lower'){
+    prob <- sum(posterior[,configColName] < 0) / length(posterior[,configColName])
+    
+  } else if (dir == 'higher') {
+  
+    prob <- sum(posterior[,configColName] > 0) / length(posterior[,configColName])
+  }
+  
+  ci <- posterior_interval(mod, prob = 0.95)
+  ciLow <- ci[configColName,1] 
+  ciHigh <- ci[configColName,2]
+  
+  SDdat <- dat %>%
+    group_by(Subject) %>%
+    summarize(sd = sd(!! sym(var), na.rm = TRUE), mean = mean(!! sym(var), na.rm = TRUE))
+  
+  meanSD = mean(SDdat$sd)
+  mean = mean(SDdat$mean)
+  ci_LowPct <- meanSD*ciLow/mean*100
+  ci_HighPct <- meanSD*ciHigh/mean*100
+  
+  return(list(prob, ci_LowPct, ci_HighPct))
+  
+}
+
+
+###############################
+
+
+
 # Change to appropriate filepath
 dat <- read.csv(file.choose())
-
 
 # Change to the movement you want to look at (we analyze CMJ and Skater separately for most agility tests)
 dat <- subset(dat, dat$Movement == 'Skater')
 dat <- as_tibble(dat)
 
+dat <- subset(dat, dat$Config != 'Barefoot')
 #Change to Config names used in your data, with the baseline model listed first.
-
-dat$Shoe <- factor(dat$Shoe, c('Tri', 'Asym'))
+dat$Config <- factor(dat$Config, c('Nothing', 'Single', '4guide'))
 
 
 dat <- dat %>% 
@@ -27,23 +101,27 @@ dat <- dat %>%
   filter(ContactTime < 100) %>%
   group_by(Subject) %>%
   mutate(z_score = scale(ContactTime)) %>% # Change to the variable you want to test
-  group_by(Shoe)
+  group_by(Config)
 
 
 #removing outliers of the variable of interest. 
 
-dat<- subset(dat, dat$z_score > 2)
-dat<- subset(dat, dat$z_score < -2)
+dat<- subset(dat, dat$z_score < 2)
+dat<- subset(dat, dat$z_score > -2)
 
 #Change x axis variable to your variable of interest. Check for normal-ish distribution.
+
 ggplot(data = dat, aes(x = ContactTime)) + geom_histogram() + facet_wrap(~Subject) 
 
-#Change y axis variable to your variable of interest
-ggplot(data = dat) + geom_boxplot(mapping = aes(x = Subject, y = RankleNegWork, fill = Shoe)) + scale_fill_manual(values=c("#003D4C", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+#Change mean variable to your variable of interest
+
+withinSubPlot(dat, 'ContactTime', 'lower')
+
+##### Bayes model
 
 runmod <- brm(data = dat,
               family = gaussian,
-              z_score ~ Shoe + (1 + Shoe | Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
                         prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
                         prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
@@ -52,55 +130,33 @@ runmod <- brm(data = dat,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-print(runmod)
-
-posterior <- posterior_samples(runmod) #This extracts the posterior (grabs samples in a proportion to the probability they would be observed)
-
-# Change column number to the column of the shoe you are analyzing. This outputs the probability that the variable in the comparison shoe is higher 
-# or lower than the baseline shoe (i.e if probability > 0.5, value of comparison shoe is greater than baseline, if probability <0.5, value of comparison 
-# shoe is lower than baseline). Be careful when interpreting to consider if a higher or lower value is better. 
-
-sum(posterior[,2] < 0) / length(posterior[,2]) 
 
 
-prior = as.data.frame(rnorm(1000, 0, 1))
-
-bayes_plot = ggplot(data = prior) + geom_density(mapping = aes(x = prior[,1]), color = "#ECE81A", fill = "#ECE81A", alpha = 0.5 )
-
-bayes_plot
-bayes_plot = bayes_plot + geom_density(data = dat, mapping = aes( x = dat$z_score), color = "#003D4C", fill = "#003D4C", alpha = 0.5)
-bayes_plot
-
-bayes_plot + geom_density(data = posterior, mapping = aes(x = b_ShoeAsym), color = "#00966C", fill = "#00966C", alpha = 0.5) + ggtitle("Prior = yellow (0,1), data = blue, posterior = green ") + xlab('SD')
-
-#find peak of posterior
-
-posteriorDens = density(posterior[,2])
-posteriorDens_x = posteriorDens$x
-posteriorDens_y = posteriorDens$y
-MaxPosterior_y = max(posteriorDens_y)
-posteriorPeak = posteriorDens_x[posteriorDens_y == MaxPosterior_y]
 
 
-# Find mean change from the data
-Ref <- subset(dat, dat$Shoe == 'Tri') # Change to baseline shoe name
-RefMean <- mean(Ref$ContactTime)        # Change to variable of interest
-
-NewConfig <- subset(dat, dat$Shoe == 'Asym') # Change to shoe being tested against baseline
-NewConfigMean <- mean(NewConfig$ContactTime)        # Change to variable of interest
-
-estimatedChange <- mean(posterior[,2]) #The maximum a posteriori estimate 
-
-Ref <- subset(dat, dat$Shoe == 'Lace') # Change to baseline shoe name
-RefMean <- mean(Ref$EE)        # Change to variable of interest
-
-NewConfig <- subset(dat, dat$Shoe == 'TC_BOA') # Change to shoe being tested against baseline
-NewConfigMean <- mean(NewConfig$EE)        # Change to variable of interest
+  
+extractVals(dat, runmod, '4guide', 'ContactTime', 'lower')
 
 
-actualChange <- NewConfigMean - RefMean # outputs change from baseline to comparison shoe in units of measurement
 
-pctChange <- actualChange/RefMean * 100 # outputs change from baseline to comparison shoe in percentage
+
+
+
+### Plot prior, liklihood, posterior
+posterior <- posterior_samples(runmod)
+prior = as.data.frame(rnorm(4000, 0, 1))
+likelihood <- as.data.frame(sample(dat$z_score, 4000, replace = TRUE, prob = NULL))
+posterior_b <- posterior$b_ConfigSingle
+
+plotTitles <- c('Prior', 'likelihood', 'posterior')
+
+plotDat <- cbind(prior, likelihood, posterior_b)
+
+colnames(plotDat) <- plotTitles
+
+plotDatLong <- melt(plotDat)
+
+ggplot(plotDatLong, aes(x = value, fill = variable)) + geom_density(alpha = 0.5) + xlab('Change between configurations, in SD' )
 
 
 # Correlations between outcomes
@@ -123,4 +179,3 @@ dat<- dat[-which(dat$CT_HorzNorm %in% outliers),]
 plot(dat$FyPeak, dat$ContactTime)
 
 cor.test(dat$FzPeak, dat$ContactTime, method = 'pearson')
-

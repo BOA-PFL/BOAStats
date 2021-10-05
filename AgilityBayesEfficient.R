@@ -1,152 +1,182 @@
+
 library(tidyverse)
-library(rstan)
 library(brms)
 library(tidybayes)
 library(lme4)
+library(dplyr)
+library(rlang)
+library(reshape2)
 
 rm(list=ls())
 
+####### Functions
+
+withinSubPlot <- function(inputDF, colName, dir) {
+  
+  # direction can be 'lower' or higher'. It is the direction of change that is better. 
+  # For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher. 
+  meanDat <- inputDF %>%
+    group_by(Subject, Config) %>%
+    summarize(mean = mean(!! sym(colName)))
+  
+  if (dir == 'lower'){
+    whichConfig <- meanDat %>%
+      group_by(Subject) %>%
+      summarize(
+        BestConfig = Config[which.min(mean)]
+      )
+    
+  } else if (dir == 'higher') {
+    whichConfig <- meanDat %>%
+      group_by(Subject) %>%
+      summarize(
+        BestConfig = Config[which.max(mean)]
+      )
+    
+  }
+  
+  whichConfig <- merge(meanDat, whichConfig)
+  
+  ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = mean, col = BestConfig, group = Subject)) + geom_point(size = 4) + 
+    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 16)) + ylab(paste0({{colName}})) 
+  
+}
+
+
+extractVals <- function(dat, mod, configName, var, dir) {
+  
+  # This function takes the original dataframe (dat, same one entered into runmod), the Bayesian model from brms (runmod), 
+  # the configuration Name, and the variable you are testing. It returns:
+  # [1] the probabality the variable was better in the test config vs. the baseline config
+  # [3] the lower bound of the bayesian 95% posterior interval (as percent change from baseline) 
+  # [4] the upper bound of the bayesian 95% posterior interval (as percent change from baseline)
+  configColName <- paste('b_Config', configName, sep = "")
+  posterior <- posterior_samples(mod)
+  
+  if (dir == 'lower'){
+    prob <- sum(posterior[,configColName] < 0) / length(posterior[,configColName])
+    
+  } else if (dir == 'higher') {
+  
+    prob <- sum(posterior[,configColName] > 0) / length(posterior[,configColName])
+  }
+  
+  ci <- posterior_interval(mod, prob = 0.95)
+  ciLow <- ci[configColName,1] 
+  ciHigh <- ci[configColName,2]
+  
+  SDdat <- dat %>%
+    group_by(Subject) %>%
+    summarize(sd = sd(!! sym(var), na.rm = TRUE), mean = mean(!! sym(var), na.rm = TRUE))
+  
+  meanSD = mean(SDdat$sd)
+  mean = mean(SDdat$mean)
+  ci_LowPct <- meanSD*ciLow/mean*100
+  ci_HighPct <- meanSD*ciHigh/mean*100
+  
+  return(list(prob, ci_LowPct, ci_HighPct))
+  
+}
+
+
+###############################
+
+
+
 # Change to appropriate filepath
 dat <- read.csv(file.choose())
-#datagil <- read.csv('C:/Users/Adam.Luftglass/OneDrive - Boa Technology Inc/Documents/R/CompiledAgilityData.csv')
 
 # Change to the movement you want to look at (we analyze CMJ and Skater separately for most agility tests)
-dat <- subset(dat, dat$Movement == 'Skater')
+#dat <- subset(dat, dat$Movement == 'CMJ')
 dat <- as_tibble(dat)
 
 
 #Change to Config names used in your data, with the baseline model listed first.
-dat$Config <- factor(dat$Config, c('Lace', 'LR', 'Lateralhigh', 'Lateralmid'))
-dat$CTnorm <- dat$CT / dat$impulse
+dat$Config <- factor(dat$Config, c('Velcro', 'SD', 'DD'))
 
 
 dat <- dat %>% 
-  group_by(Sub) %>%
-  mutate(z_scoreIV = scale(RAnkPeakIV),
-         z_scoreEV = scale(RAnkPeakEV),
-         z_scoreCT = scale(CTnorm),
-         z_scoreDF = scale(RAnkDorsiflexion)) %>% # Change to the variable you want to test.Variable will be column name in dat
+  #filter(CT > 10) %>% #remove values with impossible contact time
+  #filter(CT < 100) %>%
+  group_by(Subject) %>%
+  mutate(z_score = scale(EE)) %>% # Change to the variable you want to test
   group_by(Config)
 
 
-dat <- subset(dat, dat$z_scoreIV < 2 & dat$z_scoreIV > -2)
-dat <- subset(dat, dat$z_scoreEV < 2 &  dat$z_scoreEV > -2)
-dat <-subset(dat, dat$z_scoreCT < 2 & dat$z_scoreCT > -2)
-dat <- subset(dat, dat$z_scoreDF < 2 & dat$z_scoreDF > -2)
+#removing outliers of the variable of interest. 
 
+dat<- subset(dat, dat$z_score < 2)
+dat<- subset(dat, dat$z_score > -2)
 
-makePlot <- function(inputDF, colName) {
-  # custom function pass it a variable name in quotes and get a plot
-  ggplot(data = inputDF) + geom_boxplot(mapping = aes(x = Sub, y = .data[[colName]], fill = Config)) + 
-    scale_fill_manual(values=c("#003D4C", "#00966C", "#ECE81A","#DC582A","#CAF0E4"))
-  
-}
+#Change x axis variable to your variable of interest. Check for normal-ish distribution.
 
+ggplot(data = dat, aes(x = CT)) + geom_histogram() + facet_wrap(~Subject) 
 
-makePlot(dat, 'RAnkPeakEV')
-makePlot(dat, 'RAnkPeakIV')
-makePlot(dat, 'CTnorm') 
-makePlot(dat, 'RAnkDorsiflexion')
+#Change variable to your variable of interest
+#dir can be 'lower' or 'higher'. It is what direction an improvement in results would be. 
+#E.g. improvement in VLR is 'lower'. Improvement in jump height is 'higher'
+#colName is the variable you want to plot, written as the column title for that variable in your data frame.
+withinSubPlot(dat, colName = 'EE', dir = 'lower')
 
-extractVals <- function(originalDat, posteriorName, colNo, colName, configName) {
-  # This function takes the original dataframe, the name of the psoterior and the 
-  # name of the configuration and outputs the pctChange in units of the original metric
-  # this defaults the baseline configuration to lace. 
-  # first output is pct posteiror below 0
-  # 2nd output is pct change
-  
-  pctPosterior <- sum(posteriorName[,colNo] < 0) / length(posteriorName[,colNo]) 
-  estimatedChange <- mean(posteriorName[,colNo]) 
-  
-  Ref <- subset(originalDat, originalDat$Config == 'Lace') # Change to baseline shoe name
-  RefMean <- mean(Ref[[colName]]) 
-  
-  NewConfig <- subset(originalDat, originalDat$Config == configName) # Change to shoe being tested against baseline
-  NewConfigMean <- mean(NewConfig[[colName]])   
-  
-  actualChange <- NewConfigMean - RefMean # outputs change from baseline to comparison shoe in units of measurement
-  
-  
-  pctChange <- actualChange/RefMean * 100 # outputs change from baseline to comparison shoe in percentage
-  
-  return(list(pctPosterior, pctChange))
-}
+##### Bayes model
 
 runmod <- brm(data = dat,
               family = gaussian,
-              z_scoreIV ~ Config + (1 | Sub), #fixed effect of configuration with a different intercept and slope for each subject
-              prior = c(prior(normal(0, 1), class = Intercept), #Since we use z-scores, the intercept prior is set as a mean of 0 with SD of 1
-                        prior(normal(0, 1), class = b), #beta for the intercept for the change in outcome for each configuration
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
                         prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
                         prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
               iter = 2000, warmup = 1000, chains = 4, cores = 4,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-posteriorIV <- posterior_samples(runmod) #This extracts the posterior (grabs samples in a proportion to the probability they would be observed)
-plot(runmod)
-
-# pct change inversion
-makePlot(dat, 'RAnkPeakIV')
-extractVals(dat, posteriorIV, 2, 'RAnkPeakIV','LR')
-extractVals(dat, posteriorIV, 3, 'RAnkPeakIV','Lateralhigh')
-extractVals(dat, posteriorIV, 4, 'RAnkPeakIV','Lateralmid')
 
 
-# eversion model
-evMod <- brm(data = dat,
-              family = gaussian,
-              z_scoreEV ~ Config + (1 | Sub), #fixed effect of configuration with a different intercept and slope for each subject
-              prior = c(prior(normal(0, 1), class = Intercept), #Since we use z-scores, the intercept prior is set as a mean of 0 with SD of 1
-                        prior(normal(0, 1), class = b), #beta for the intercept for the change in outcome for each configuration
-                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
-                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
-              iter = 2000, warmup = 1000, chains = 4, cores = 4,
-              control = list(adapt_delta = .975, max_treedepth = 20),
-              seed = 190831)
-plot(evMod)
-posteriorEV <- posterior_samples(evMod)
-# finding pct changes eversion
-extractVals(dat, posteriorEV, 2, 'RAnkPeakEV','LR')
-extractVals(dat, posteriorEV, 3, 'RAnkPeakEV','Lateralhigh')
-extractVals(dat, posteriorEV, 4, 'RAnkPeakEV','Lateralmid')
-makePlot(dat, 'RAnkPeakEV')
 
-## contact time normalized to impulse 
-ctMod <- brm(data = dat,
-             family = gaussian,
-             z_scoreCT ~ Config + (1 | Sub), #fixed effect of configuration with a different intercept and slope for each subject
-             prior = c(prior(normal(0, 1), class = Intercept), #Since we use z-scores, the intercept prior is set as a mean of 0 with SD of 1
-                       prior(normal(0, 1), class = b), #beta for the intercept for the change in outcome for each configuration
-                       prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
-                       prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
-             iter = 2000, warmup = 1000, chains = 4, cores = 4,
-             control = list(adapt_delta = .975, max_treedepth = 20),
-             seed = 190831)
-plot(ctMod)
-posteriorCT <- posterior_samples(ctMod)
-# finding pct changes CT
-extractVals(dat, posteriorCT, 2,'CTnorm', 'LR')
-extractVals(dat, posteriorCT, 3, 'CTnorm','Lateralhigh')
-extractVals(dat, posteriorCT, 4, 'CTnorm','Lateralmid')
-makePlot(dat, 'CTnorm')
+# dir can be 'lower' or 'higher'. It is what direction an improvement in results would be. 
+#E.g. improvement in VLR is 'lower'. Improvement in jump height is 'higher'. var is the variable you want to compare bewteen shoes.
+extractVals(dat, runmod, configName = 'Paired', var = 'maxToes', dir = 'lower') 
 
 
-## contact time normalized to impulse 
-DFmod <- brm(data = dat,
-             family = gaussian,
-             z_scoreDF ~ Config + (1 | Sub), #fixed effect of configuration with a different intercept and slope for each subject
-             prior = c(prior(normal(0, 1), class = Intercept), #Since we use z-scores, the intercept prior is set as a mean of 0 with SD of 1
-                       prior(normal(0, 1), class = b), #beta for the intercept for the change in outcome for each configuration
-                       prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
-                       prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
-             iter = 2000, warmup = 1000, chains = 4, cores = 4,
-             control = list(adapt_delta = .975, max_treedepth = 20),
-             seed = 190831)
-plot(DFmod)
-posteriorDF <- posterior_samples(DFmod)
-# finding pct changes CT
-extractVals(dat, posteriorDF, 2,'RAnkDorsiflexion', 'LR') #for cmj dorsiflexion, higher is good since it allows ROM in that plane
-extractVals(dat, posteriorDF, 3, 'RAnkDorsiflexion','Lateralhigh')
-extractVals(dat, posteriorDF, 4, 'RAnkDorsiflexion','Lateralmid')
-makePlot(dat, 'RAnkDorsiflexion')
+
+
+####################################################### Extra stuff not Included in Performance Tests ###################################
+
+### Plot prior, liklihood, posterior
+posterior <- posterior_samples(runmod)
+prior = as.data.frame(rnorm(4000, 0, 1))
+likelihood <- as.data.frame(sample(dat$z_score, 4000, replace = TRUE, prob = NULL))
+posterior_b <- posterior$b_ConfigSingle
+
+plotTitles <- c('Prior', 'likelihood', 'posterior')
+
+plotDat <- cbind(prior, likelihood, posterior_b)
+
+colnames(plotDat) <- plotTitles
+
+plotDatLong <- melt(plotDat)
+
+ggplot(plotDatLong, aes(x = value, fill = variable)) + geom_density(alpha = 0.5) + xlab('Change between configurations, in SD' )
+
+
+# Correlations between outcomes
+
+dat <- dat %>% 
+  filter(ContactTime > 10) %>% #remove values with impossible contact time
+  filter(ContactTime < 100) %>%
+  filter(pRanklePower <1500) %>% 
+  
+  group_by(SubjectName) %>%
+  mutate(z_score = scale(pRanklePower)) %>% # Change to the variable you want to test
+  group_by(Shoe)
+
+outliers <- boxplot(dat$peakRankleINV, plot=FALSE)$out
+dat<- dat[-which(dat$peakRankleINV %in% outliers),]
+
+outliers <- boxplot(dat$CT_HorzNorm, plot=FALSE)$out
+dat<- dat[-which(dat$CT_HorzNorm %in% outliers),]
+
+plot(dat$FyPeak, dat$ContactTime)
+
+cor.test(dat$FzPeak, dat$ContactTime, method = 'pearson')
