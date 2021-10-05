@@ -4,7 +4,36 @@ library(readxl)
 library(lme4)
 library(patchwork)
 
+replaceName <- function(DF, toReplace, newName){
+  
+  # replace incorrect subject names with newname
+  DF <- DF %>% 
+    mutate(Subject = replace(Subject, Subject == toReplace, newName))
+  return(DF)
+}
+replaceMove <- function(DF, toReplace, newName){
+  
+ #replace the movement with newName above
+    DF <- DF %>% 
+    mutate(Movement = replace(Movement, Movement == toReplace, newName))
+  return(DF)
+}
 
+replaceConfig <- function(DF, toReplace, newName){
+  
+  #replace the config with newName above
+  DF <- DF %>% 
+    mutate(Config = replace(Config, Config == toReplace, newName))
+  return(DF)
+}
+
+replaceConfiguration <- function(DF, toReplace, newName){
+  
+  #replace the config with newName above. Use if configuration is col name
+  DF <- DF %>% 
+    mutate(Configuration = replace(Configuration, Configuration == toReplace, newName))
+  return(DF)
+}
 # -------------------------------------------------------------------------
 
 subSizes <- read_xlsx('C:/Users/Daniel.Feeney/Boa Technology Inc/PFL - General/BigData2021/MasterSubjectSizes.xlsx')
@@ -23,16 +52,15 @@ hist(rightDat$`Width/length`)
 
 
 # Agility -----------------------------------------------------------------
-agilityDat <- read_csv('C:/Users/Daniel.Feeney/Boa Technology Inc/PFL - General/BigData2021/BigDataAgility_newMetrics.csv')
+agilityDat <- read_csv('C:/Users/Daniel.Feeney/Boa Technology Inc/PFL - General/BigData2021/BigDataAgilityNew.csv')
 #agilityDat <- read.csv(file.choose())
 
 agilityDat <- merge(subSizes, agilityDat, by = "Subject" )
 # Replace names to full names. Manual!
-agilityDat <- agilityDat %>% 
-  mutate(Movement = replace(Movement, Movement == 'skater', 'Skater'))
-agilityDat <- agilityDat %>% 
-  mutate(Config = replace(Config, Config == 'Tri', 'Tri Panel'))
 
+
+agilityDat <- replaceConfig(agilityDat, 'BOA', 'Tri Panel')
+agilityDat <- replaceMove(agilityDat, 'skater', 'Skater')
 
 
 agilityDat['CTNorm'] <- (agilityDat$CT / agilityDat$impulse) * 100
@@ -56,33 +84,24 @@ ggplot(data = agilityDat, mapping = aes(x = CTNorm, fill = Config)) + geom_densi
 
 
 
-# this section can be modified to change subject names but should  --------
+# this section can be modified to change subject names but should 
+### only use this for scratch work --------
 hist(agilityDat$`Width/length`)
 
 # update each time!
-bigData <- read_xlsx(file.choose())
+bigData <- read.csv('C:/Users/Daniel.Feeney/Boa Technology Inc/PFL - General/BigData2021/BigDataAgility_newMetrics.csv')
 
 # load in new file to append
 dat_to_append <- read.csv(file.choose())
 
-# Replace names to full names. Manual!
-dat_to_append <- dat_to_append %>% 
-  mutate(Subject = replace(Subject, Subject == 'Ando', 'Matt Anderson'))
+# Replace names to full names. using functio nabove
+
+dat_to_append <- replaceName(dat_to_append, 'Adam', 'Adam Luftglass')
 
 dat_to_append <- dat_to_append %>% 
-  mutate(Subject = replace(Subject, Subject == 'Braden', 'Braden Forsyth'))
-
+  mutate(Movement = replace(Movement, Movement == 'skater', 'Skater'))
 dat_to_append <- dat_to_append %>% 
-  mutate(Subject = replace(Subject, Subject == 'Ian', 'Ian Anderson'))
-
-dat_to_append <- dat_to_append %>% 
-  mutate(Subject = replace(Subject, Subject == 'Matt', 'Matt Dietrich'))
-
-dat_to_append <- dat_to_append %>% 
-  mutate(Subject = replace(Subject, Subject == 'Sidney', 'Sidney Foster'))
-
-dat_to_append <- dat_to_append %>% 
-  mutate(Subject = replace(Subject, Subject == 'Greg', 'Greg Orticelle'))
+  mutate(Config = replace(Config, Config == 'Tri', 'Tri Panel'))
 
 # Add brand, year, month, shoe name
 shoeName <- rep('Scrambler', dim(dat_to_append)[1])
@@ -103,6 +122,44 @@ dat_to_append$Year <- yr
 
 newDat <- rbind(bigData, dat_to_append)
 # write output
-write.table(newDat, "C:/Users/Daniel.Feeney/Dropbox (Boa)/Boa Team Folder/BigData2021/BigDataRun2.csv", sep=',')
+write.table(dat_to_append, "C:/Users/Daniel.Feeney/Boa Technology Inc/PFL - General/BigData2021/BigDataAgilityNew.csv", sep=',')
+
+
+
+# Run data ----------------------------------------------------------------
+
+runData <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL - General/BigData2021/BigDataRun.csv')
+
+runData <- replaceName(runData, 'Dan', 'Dan Feeney')
+runData <- replaceName(runData, 'Sean', 'Sean Hopkins')
+runData <- replaceName(runData, 'Ryan', 'Ryan Krol')
+runData <- replaceName(runData, 'AmandaB', 'Amanda Basham')
+runData <- replaceName(runData, 'Jennifer', 'Jennifer Dormann')
+runData <- replaceName(runData, 'Katie', 'Katie Carbiener')
+runData <- replaceName(runData, 'Jeff', 'Jeff Gay')
+runData <- replaceName(runData, 'Tucker', 'Tucker Grouse')
+runData <- replaceName(runData, 'AmandaK', 'Amanda Kirkby')
+unique(runData$Subject)
+
+runData <- replaceConfiguration(runData, 'BOA', 'Dual Dial Panel')
+runData$VALR <- as.numeric(runData$VALR)
+
+sumDat <- runData %>%
+  group_by(Subject, ShoeCondition, Shoe) %>%
+  summarize(
+    avg = mean(VALR, na.rm = TRUE),
+    median = median(VALR, na.rm = TRUE)
+  )
+
+runData <- merge(subSizes, runData, by = "Subject" )
+runData <- subset(runData, (runData$VALR < 200) & (runData$VALR > 0) )
+
+ggplot(runData, aes(x = VALR, color = Configuration)) + geom_density() + facet_wrap(~Subject)
+
+### metabolic running data ###
+metData <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL - General/BigData2021/MetabolicBigData.csv')
+
+
+ggplot(metData, aes(x = as.factor(Configuration), y = EE, color = Configuration, fill = Configuration)) + geom_boxplot() + facet_wrap(~Subject + Shoe)
 
 
