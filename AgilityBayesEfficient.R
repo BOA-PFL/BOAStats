@@ -81,46 +81,37 @@ extractVals <- function(dat, mod, configName, var, dir) {
 
 ###############################
 
-
-
-# Change to appropriate filepath
 dat <- read.csv(file.choose())
 
-# Change to the movement you want to look at (we analyze CMJ and Skater separately for most agility tests)
-#dat <- subset(dat, dat$Movement == 'CMJ')
 dat <- as_tibble(dat)
 
 
 #Change to Config names used in your data, with the baseline model listed first.
-dat$Config <- factor(dat$Config, c('Velcro', 'SD', 'DD'))
+dat$Config <- factor(dat$Config, c('TriPanel', 'DualPanel'))
+
+########################################## CMJ ###############################################
+
+cmjDat <- subset(dat, dat$Movement == 'CMJ')
 
 
-dat <- dat %>% 
-  #filter(CT > 10) %>% #remove values with impossible contact time
-  #filter(CT < 100) %>%
+###### CMJ Contact Time
+
+cmjDat <- cmjDat %>% 
+  filter(CT > 10) %>% #remove values with impossible contact time
+  filter(CT < 100) %>%
   group_by(Subject) %>%
-  mutate(z_score = scale(EE)) %>% # Change to the variable you want to test
+  mutate(z_score = scale(CT)) %>% 
   group_by(Config)
 
+cmjDat<- subset(cmjDat, dat$z_score < 2) #removing outliers  
+cmjDat<- subset(cmjDat, dat$z_score > -2)
 
-#removing outliers of the variable of interest. 
+ggplot(data = cmjDat, aes(x = CT)) + geom_histogram() + facet_wrap(~Subject) 
 
-dat<- subset(dat, dat$z_score < 2)
-dat<- subset(dat, dat$z_score > -2)
+withinSubPlot(cmjDat, colName = 'CT', dir = 'lower')
 
-#Change x axis variable to your variable of interest. Check for normal-ish distribution.
 
-ggplot(data = dat, aes(x = CT)) + geom_histogram() + facet_wrap(~Subject) 
-
-#Change variable to your variable of interest
-#dir can be 'lower' or 'higher'. It is what direction an improvement in results would be. 
-#E.g. improvement in VLR is 'lower'. Improvement in jump height is 'higher'
-#colName is the variable you want to plot, written as the column title for that variable in your data frame.
-withinSubPlot(dat, colName = 'EE', dir = 'lower')
-
-##### Bayes model
-
-runmod <- brm(data = dat,
+runmod <- brm(data = cmjDat, # Bayes model
               family = gaussian,
               z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
@@ -131,13 +122,111 @@ runmod <- brm(data = dat,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
+# Change configName to the config you want to compare to baseline (must match config name in data sheet)
+
+extractVals(cmjDat, runmod, configName = 'DualPanel', 'CT', 'lower') 
+
+##### CMJ jump height/impulse 
+
+cmjDat <- cmjDat %>% 
+  filter(CT > 10) %>% #remove values with impossible contact time
+  filter(CT < 100) %>%
+  group_by(Subject) %>%
+  mutate(z_score = scale(impulse)) %>% 
+  group_by(Config)
+
+cmjDat<- subset(cmjDat, dat$z_score < 2) #removing outliers  
+cmjDat<- subset(cmjDat, dat$z_score > -2)
+
+ggplot(data = cmjDat, aes(x = impulse)) + geom_histogram() + facet_wrap(~Subject) 
+
+withinSubPlot(cmjDat, colName = 'impulse', dir = 'higher')
 
 
+runmod <- brm(data = cmjDat, # Bayes model
+              family = gaussian,
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
 
-# dir can be 'lower' or 'higher'. It is what direction an improvement in results would be. 
-#E.g. improvement in VLR is 'lower'. Improvement in jump height is 'higher'. var is the variable you want to compare bewteen shoes.
-extractVals(dat, runmod, configName = 'Paired', var = 'maxToes', dir = 'lower') 
+# Change configName to the config you want to compare to baseline (must match config name in data sheet)
 
+extractVals(cmjDat, runmod, configName = 'DualPanel', 'impulse', 'higher') 
+
+
+########################################## Skater ###############################################
+
+skaterDat <- subset(dat, dat$Movement == 'Skater')
+
+
+###### Skater Contact Time
+
+skaterDat <- skaterDat %>% 
+  filter(CT > 10) %>% #remove values with impossible contact time
+  filter(CT < 100) %>%
+  group_by(Subject) %>%
+  mutate(z_score = scale(CT)) %>% 
+  group_by(Config)
+
+skaterDat<- subset(skaterDat, skaterDat$z_score < 2) #removing outliers  
+skaterDat<- subset(skaterDat, skaterDat$z_score > -2)
+
+ggplot(data = skaterDat, aes(x = CT)) + geom_histogram() + facet_wrap(~Subject) ## Check for normalish distribution/outliers
+
+withinSubPlot(skaterDat, colName = 'CT', dir = 'lower')
+
+
+runmod <- brm(data = skaterDat, # Bayes model
+              family = gaussian,
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+# Change configName to the config you want to compare to baseline (must match config name in data sheet)
+
+extractVals(skaterDat, runmod, configName = 'DualPanel', 'CT', 'lower') 
+
+##### Skater jump height/impulse 
+
+skaterDat <- skaterDat %>% 
+  filter(CT > 10) %>% #remove values with impossible contact time
+  filter(CT < 100) %>%
+  group_by(Subject) %>%
+  mutate(z_score = scale(impulse)) %>% 
+  group_by(Config)
+
+skaterDat<- subset(skaterDat, dat$z_score < 2) #removing outliers  
+skaterDat<- subset(skaterDat, dat$z_score > -2)
+
+ggplot(data = skaterDat, aes(x = impulse)) + geom_histogram() + facet_wrap(~Subject) 
+
+withinSubPlot(skaterDat, colName = 'impulse', dir = 'higher')
+
+
+runmod <- brm(data = skaterDat, # Bayes model
+              family = gaussian,
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+# Change configName to the config you want to compare to baseline (must match config name in data sheet)
+
+extractVals(skaterDat, runmod, configName = 'DualPanel', 'impulse', 'higher') 
 
 
 
