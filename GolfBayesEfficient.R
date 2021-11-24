@@ -44,38 +44,41 @@ withinSubPlot <- function(inputDF, colName, dir) {
 }
 
 
-extractVals <- function(dat, mod, configName, var, dir) {
+extractVals <- function(dat, mod, configNames, var, dir) {
   
+  for (configName in configNames) {
   # This function takes the original dataframe (dat, same one entered into runmod), the Bayesian model from brms (runmod), 
   # the configuration Name, and the variable you are testing. It returns:
   # [1] the probabality the variable was better in the test config vs. the baseline config
   # [3] the lower bound of the bayesian 95% posterior interval (as percent change from baseline) 
   # [4] the upper bound of the bayesian 95% posterior interval (as percent change from baseline)
-  configColName <- paste('b_Config', configName, sep = "")
-  posterior <- posterior_samples(mod)
+    configColName <- paste('b_Config', configName, sep = "")
+    posterior <- posterior_samples(mod)
   
-  if (dir == 'lower'){
-    prob <- sum(posterior[,configColName] < 0) / length(posterior[,configColName])
+    if (dir == 'lower'){
+      prob <- sum(posterior[,configColName] < 0) / length(posterior[,configColName])
     
-  } else if (dir == 'higher') {
+    } else if (dir == 'higher') {
   
-    prob <- sum(posterior[,configColName] > 0) / length(posterior[,configColName])
+      prob <- sum(posterior[,configColName] > 0) / length(posterior[,configColName])
+    }
+  
+    ci <- posterior_interval(mod, prob = 0.95)
+    ciLow <- ci[configColName,1] 
+    ciHigh <- ci[configColName,2]
+  
+    SDdat <- dat %>%
+      group_by(Subject) %>%
+      summarize(sd = sd(!! sym(var), na.rm = TRUE), mean = mean(!! sym(var), na.rm = TRUE))
+  
+    meanSD = mean(SDdat$sd)
+    mean = mean(SDdat$mean)
+    ci_LowPct <- meanSD*ciLow/mean*100
+    ci_HighPct <- meanSD*ciHigh/mean*100
+  
+    return(list('Config:', configName, 'Probability of Improvement:', prob, 'Worse end of CI:', ci_LowPct, 'Best end of CI:', ci_HighPct))
+    
   }
-  
-  ci <- posterior_interval(mod, prob = 0.95)
-  ciLow <- ci[configColName,1] 
-  ciHigh <- ci[configColName,2]
-  
-  SDdat <- dat %>%
-    group_by(Subject) %>%
-    summarize(sd = sd(!! sym(var), na.rm = TRUE), mean = mean(!! sym(var), na.rm = TRUE))
-  
-  meanSD = mean(SDdat$sd)
-  mean = mean(SDdat$mean)
-  ci_LowPct <- meanSD*ciLow/mean*100
-  ci_HighPct <- meanSD*ciHigh/mean*100
-  
-  return(list(prob, ci_LowPct, ci_HighPct))
   
 }
 
@@ -86,14 +89,20 @@ dat <- read_xlsx(file.choose()) # Select file with compiled TrackMan data
 
 dat <- as_tibble(dat)
 
-dat$Config <- factor(dat$Config, c('Lace', 'BOA')) #Change to Config names used in your data, with the baseline model listed first.
+baseline <- 'Monopanel'
+  
+otherConfigs <- c('OP')
+
+allConfigs <- c(baseline, otherConfigs)
+
+dat$Config <- factor(dat$Config, allConfigs) 
 
 
 ################### Drive Distance
 
 dat <- dat %>% 
   group_by(Subject) %>%
-  mutate(z_score = scale(CarryFlatLength)) %>% # Change to the variable you want to test
+  mutate(z_score = scale(CarryFlatLength)) %>% 
   group_by(Config)
 
 ggplot(data = dat, aes(x = CarryFlatLength)) + geom_histogram() + facet_wrap(~Subject) #Change x axis variable to your variable of interest. Check for normal-ish distribution.
@@ -114,7 +123,7 @@ runmod <- brm(data = dat,
               seed = 190831)
 
 
-extractVals(dat, runmod, configName = 'BOA', 'CarryFlatLength', 'higher') #Change ConfigName to the shoe you want to cmpare to baseline
+extractVals(dat, runmod, otherConfigs, 'CarryFlatLength', 'higher') 
 
 
 #################### Drive accuracy
@@ -137,7 +146,7 @@ runmod <- brm(data = dat,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-extractVals(dat, runmod, configName = 'BOA', 'AbsAccuracy', 'lower') #Change ConfigName to the shoe you want to cmpare to baseline
+extractVals(dat, runmod, otherConfigs, 'AbsAccuracy', 'lower') 
 
 
 ######################## Dirve Distance Consistency
@@ -167,7 +176,7 @@ SDdat <- cbind(Sub, Config, sdDistance)
 colnames(SDdat) <- c('Subject', 'Config', 'SD_Distance')
 SDdat <- SDdat[complete.cases(SDdat),]
 SDdat <- as_tibble(SDdat)
-SDdat$Config <- factor(SDdat$Config, c('Lace', 'BOA')) # Change to config names for the test. List baseline config first.
+SDdat$Config <- factor(SDdat$Config, allConfigs) 
 
 SDdat <- SDdat %>%
   mutate_at(vars(matches('SD_Distance')), list(as.numeric)) %>%
@@ -188,7 +197,7 @@ runmod <- brm(data = SDdat,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-extractVals(SDdat, runmod, configName = 'BOA', 'SD_Distance', 'lower') #Change configName to the shoe you want to cmpare to baseline
+extractVals(SDdat, runmod, configNames = , 'SD_Distance', 'lower') 
 
 
 ################################# Peak Force Magnitude (target foot)
@@ -197,8 +206,7 @@ forceDat <- read.csv(file.choose())
 
 forceDat <- as_tibble(forceDat)
 
-#Change to Config names used in your data, with the baseline model listed first.
-forceDat$Config <- factor(forceDat$Config, c('Lace', 'BOA'))
+forceDat$Config <- factor(forceDat$Config, allConfigs)
 
 forceDat <- forceDat %>% 
   group_by(Subject) %>%
@@ -217,7 +225,7 @@ runmod <- brm(data = forceDat,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-extractVals(forceDat, runmod, configName = 'BOA', 'targetPeakFz', 'higher') #Change ConfigName to the shoe you want to cmpare to baseline
+extractVals(forceDat, runmod, otherConfigs, 'targetPeakFz', 'higher') 
 
 
 ################################## Peak force consistency (target foot)
@@ -247,7 +255,7 @@ SDforceDat <- cbind(Sub, Config, sdForce)
 colnames(SDforceDat) <- c('Subject', 'Config', 'SD_Force')
 SDforceDat <- SDforceDat[complete.cases(SDforceDat),]
 SDforceDat <- as_tibble(SDforceDat)
-SDforceDat$Config <- factor(SDforceDat$Config, c('Lace', 'BOA')) # Change to config names for the test. List baseline config first.
+SDforceDat$Config <- factor(SDforceDat$Config, allConfigs) 
 
 SDforceDat <- SDforceDat %>%
   mutate_at(vars(matches('SD_Force')), list(as.numeric)) %>%
@@ -268,7 +276,7 @@ runmod <- brm(data = SDforceDat,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-extractVals(SDforceDat, runmod, configName = 'BOA', 'SD_Force', 'lower') #Change ConfigName to the shoe you want to cmpare to baseline
+extractVals(SDforceDat, runmod, otherConfigs, 'SD_Force', 'lower') 
 
 ################################################  EXTRA STUFF NOT IN PFL DATA REPORTS ###########################################################################
 ###############################################################################################################################
