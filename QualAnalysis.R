@@ -12,16 +12,17 @@ rm(list=ls())
 
 ###############
 
+
 withinSubQualPlot <- function(inputDF) {
   
   # direction can be 'lower' or higher'. It is the direction of change that is better. 
   # For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher. 
-
-    whichConfig <- inputDF %>%
-      group_by(Subject) %>%
-      summarize(
-        BestConfig = Config[which.max(OverallFit)]
-      )
+  
+  whichConfig <- inputDF %>%
+    group_by(Subject) %>%
+    summarize(
+      BestConfig = Config[which.max(OverallFit)]
+    )
   
   whichConfig <- merge(inputDF, whichConfig)
   
@@ -32,9 +33,25 @@ withinSubQualPlot <- function(inputDF) {
 
 
 
+
+
+qualDat$Config <- factor(qualDat$Config, c('SL','LRSD','4guide'))
+
+qualDat %>%
+  pivot_longer(cols = OverallFit:Heel,
+               names_to = "Location", values_to = "Rating") %>%
+  group_by(Location, Config) %>%
+  summarize(
+    avg = mean(Rating),
+    medAvg = median(Rating)
+  )
+
+
+
+
 qualDat <- read_xlsx(file.choose())
 
-qualDat$Config <- factor(qualDat$Config, c('SL', 'SDLR', 'SD4guide', 'SDOvguide', 'DDLR', 'DD4guide')) #List baseline first
+qualDat$Config <- factor(qualDat$Config, c('SL', 'LRSD','4guide')) #List baseline first
 
 qualDat %>%
   pivot_longer(cols = OverallFit:Heel,
@@ -94,8 +111,8 @@ ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) + geom_density(alpha =
 # making word clouds ------------------------------------------------------
 
 
-Single <- subset(qualDat, qualDat$Config == 'Single', GoodComments:BadComments)
-Paired <- subset(qualDat, qualDat$Config == 'Paired', GoodComments:BadComments)
+SL <- subset(qualDat, qualDat$Config == 'SL', GoodComments:BadComments)
+guide <- subset(qualDat, qualDat$Config == '4guide', GoodComments:BadComments)
 
 replacePunctuation <- content_transformer(function(x) {return (gsub("[[:punct:]]", " ", x))})
 
@@ -154,6 +171,6 @@ makeWordCloud <- function(inputText) {
 }
 
 
-makeWordCloud(Paired)
+makeWordCloud(SL)
 
 
