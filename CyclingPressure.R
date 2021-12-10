@@ -137,3 +137,31 @@ plot(testRes2$contrasts)
 
 testRes3 <- testRandSlopesDH('endPct', dhDat)
 plot(testRes3$contrasts)
+
+# power data --------------------------------------------------------------
+
+pwrDat <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL - General/Cycling2021/EH_CyclingPilot_2021/Watt Bike Data/CompiledPowerData.csv')
+
+ggplot(data = pwrDat, mapping = aes(x = Subject, y = sprintPower, fill = Config)) + geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+testRandSlopesPwr <- function(metric, df) {
+  
+  myformula <- as.formula(paste0(metric," ~ Config", " + (1|Subject)"))
+  myformula2 <- as.formula(paste0(metric, " ~ (Config|Subject)"))
+  
+  full.mod = lmer(myformula, data = df, REML = TRUE, na.action = "na.omit" )
+  red.mod = lmer(myformula2, data = df, REML = TRUE, na.action = "na.omit" )
+  
+  conditions.emm <- emmeans(full.mod, "Config", lmer.df = "satterthwaite")
+  #conditions.emm
+  contrast(conditions.emm, "trt.vs.ctrl", ref = "Velcro") 
+  
+  
+  newList <- list("randEffectMod" = summary(full.mod), "anovaBetweenMods" = anova(full.mod, red.mod),
+                  "contrasts" = conditions.emm, "Contrasts2" = contrast(conditions.emm, "trt.vs.ctrl", ref = "Velcro"))
+  return(newList)
+  
+}
+testRandSlopesPwr('sprintPower',pwrDat)
+testRandSlopesPwr('steadyPower',pwrDat)

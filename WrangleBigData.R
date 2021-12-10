@@ -57,8 +57,6 @@ agilityDat <- read_csv('C:/Users/Daniel.Feeney/Boa Technology Inc/PFL - General/
 
 agilityDat <- merge(subSizes, agilityDat, by = "Subject" )
 # Replace names to full names. Manual!
-
-
 agilityDat <- replaceConfig(agilityDat, 'BOA', 'Tri Panel')
 agilityDat <- replaceMove(agilityDat, 'skater', 'Skater')
 
@@ -68,20 +66,28 @@ agilityDat <- subset(agilityDat, agilityDat$CTNorm > 0)
 agilityDat <- subset(agilityDat, agilityDat$CTNorm < 0.5)
 
 ggplot(data = agilityDat, mapping = aes(x = CTNorm, y = COPtraj, col = Config, group = Config)) + geom_point() +
-  facet_wrap(~Movement + Subject)
+  facet_wrap(~Movement + Subject) #this metric seems tobe more reliable
 
 ggplot(data = agilityDat, mapping = aes(x = CTNorm, y = copExc, col = Config, group = Config)) + geom_point() +
   facet_wrap(~Movement + Subject)
 
-full.mod = lmer(CTNorm ~ Config + (1|Model) + (Config|Subject), data = agilityDat, REML = TRUE, na.action = "na.omit" )
-summary(full.mod)
+skate <- subset(agilityDat, agilityDat$Movement == 'Skater')
+skate.mod = lmer(CTNorm ~ Config + (1|Model) + (Config|Subject), data = skate, REML = TRUE, na.action = "na.omit" )
+summary(skate.mod)
+
+cmj <- subset(agilityDat, agilityDat$Movement == 'CMJ')
+cmj.mod = lmer(CTNorm ~ Config + (1|Model) + (Config|Subject), data = cmj, REML = TRUE, na.action = "na.omit" )
+summary(cmj.mod)
 
 ##
 ggplot(data = agilityDat, mapping = aes(x = CTNorm, fill = Config)) + geom_density(alpha=.5) +theme_classic() +
   facet_wrap(~Movement + Subject)
 
 
+# add in shoe data --------------------------------------------------------
 
+shoes <- read_xlsx('C:/Users/daniel.feeney/Boa Technology Inc/PFL - General/BigData2021/ShoeTested.xlsx')
+agilityShoes <- merge(agilityDat, shoes)
 
 
 # this section can be modified to change subject names but should 
