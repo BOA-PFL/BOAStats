@@ -147,7 +147,7 @@ ggplot(data = pwrDat, mapping = aes(x = Subject, y = sprintPower, fill = Config)
 
 testRandSlopesPwr <- function(metric, df) {
   
-  myformula <- as.formula(paste0(metric," ~ Config", " + (1|Subject)"))
+  myformula <- as.formula(paste0(metric," ~ Config", " + (Config|Subject)"))
   myformula2 <- as.formula(paste0(metric, " ~ (Config|Subject)"))
   
   full.mod = lmer(myformula, data = df, REML = TRUE, na.action = "na.omit" )
