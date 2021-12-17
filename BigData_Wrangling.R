@@ -164,8 +164,13 @@ endDat <- subset(endDat, endDat$VALR > 10)
 ggplot(data = endDat, aes(x = VALR, y = VILR, color = Configuration)) + geom_point() +
   facet_wrap(~Subject)
 
-ggplot(data = endDat, aes(x = abs(pBF), y = VILR, color = Configuration)) + geom_point() +
+ggplot(data = endDat, aes(x = abs(pBF), y = VILR, color = Shoe)) + geom_point() +
   facet_wrap(~Subject)
+
+endShoes <- merge(endDat, shoes)
+
+### TODO: Add qualitative and speeds for subjects
+
 
 
 # Power & Precisoin -------------------------------------------------------
