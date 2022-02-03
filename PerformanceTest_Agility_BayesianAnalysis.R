@@ -43,39 +43,64 @@ withinSubPlot <- function(inputDF, colName, dir) {
 }
 
 
-extractVals <- function(dat, mod, configName, var, dir) {
+extractVals <- function(dat, mod, configNames, var, dir) {
   
-  # This function takes the original dataframe (dat, same one entered into runmod), the Bayesian model from brms (runmod), 
-  # the configuration Name, and the variable you are testing. It returns:
-  # [1] the probabality the variable was better in the test config vs. the baseline config
-  # [3] the lower bound of the bayesian 95% posterior interval (as percent change from baseline) 
-  # [4] the upper bound of the bayesian 95% posterior interval (as percent change from baseline)
-  configColName <- paste('b_Config', configName, sep = "")
-  posterior <- posterior_samples(mod)
+  #configNames = otherConfigs
+  #mod = runmod
+  #dir = 'higher'
+  #var = 'CarryFlatLength'
   
-  if (dir == 'lower'){
-    prob <- sum(posterior[,configColName] < 0) / length(posterior[,configColName])
+  Config = rep(NA, length(configNames))
+  ProbImp = matrix(0, length(configNames))
+  lowCI = matrix(0, length(configNames))
+  highCI = matrix(0, length(configNames))
+  
+  for (i in 1:length(configNames)) {
+    # This function takes the original dataframe (dat, same one entered into runmod), the Bayesian model from brms (runmod), 
+    # the configuration Name, and the variable you are testing. It returns:
+    # [1] the probabality the variable was better in the test config vs. the baseline config
+    # [3] the lower bound of the bayesian 95% posterior interval (as percent change from baseline) 
+    # [4] the upper bound of the bayesian 95% posterior interval (as percent change from baseline)
+    #i = 1
     
-  } else if (dir == 'higher') {
-  
-    prob <- sum(posterior[,configColName] > 0) / length(posterior[,configColName])
+    configName = configNames[i]
+    configColName <- paste('b_Config', configName, sep = "")
+    posterior <- posterior_samples(mod)
+    
+    if (dir == 'lower'){
+      prob <- sum(posterior[,configColName] < 0) / length(posterior[,configColName])
+      
+    } else if (dir == 'higher') {
+      
+      prob <- sum(posterior[,configColName] > 0) / length(posterior[,configColName])
+    }
+    
+    ci <- posterior_interval(mod, prob = 0.95)
+    ciLow <- ci[configColName,1] 
+    ciHigh <- ci[configColName,2]
+    
+    SDdat <- dat %>%
+      group_by(Subject) %>%
+      summarize(sd = sd(!! sym(var), na.rm = TRUE), mean = mean(!! sym(var), na.rm = TRUE))
+    
+    meanSD = mean(SDdat$sd)
+    mean = mean(SDdat$mean)
+    ci_LowPct <- meanSD*ciLow/mean*100
+    ci_HighPct <- meanSD*ciHigh/mean*100
+    
+    output = list('Config:', configName, 'Probability of Improvement:', prob, 'Worse end of CI:', ci_LowPct, 'Best end of CI:', ci_HighPct)
+    Config[i] = configName
+    ProbImp[i] = prob
+    lowCI[i] = ci_LowPct
+    highCI[i] = ci_HighPct
   }
-  
-  ci <- posterior_interval(mod, prob = 0.95)
-  ciLow <- ci[configColName,1] 
-  ciHigh <- ci[configColName,2]
-  
-  SDdat <- dat %>%
-    group_by(Subject) %>%
-    summarize(sd = sd(!! sym(var), na.rm = TRUE), mean = mean(!! sym(var), na.rm = TRUE))
-  
-  meanSD = mean(SDdat$sd)
-  mean = mean(SDdat$mean)
-  ci_LowPct <- meanSD*ciLow/mean*100
-  ci_HighPct <- meanSD*ciHigh/mean*100
-  
-  return(list(prob, ci_LowPct, ci_HighPct))
-  
+  ProbImp = round(ProbImp, 2)
+  lowCI = round(lowCI, 1)
+  highCI = round(highCI,1)
+  output = cbind(Config, ProbImp, lowCI, highCI)
+  output = round(output[,2:4], 1)
+  colnames(output) = c('Config', 'Probability of Improvement', 'Low end of CI', 'High end of CI')
+  return(output)
 }
 
 
