@@ -31,37 +31,31 @@ withinSubQualPlot <- function(inputDF) {
   
 }
 
-
-
-
-
-qualDat$Config <- factor(qualDat$Config, c('SL','LRSD','4guide'))
-
-qualDat %>%
-  pivot_longer(cols = OverallFit:Heel,
-               names_to = "Location", values_to = "Rating") %>%
-  group_by(Location, Config) %>%
-  summarize(
-    avg = mean(Rating),
-    medAvg = median(Rating)
-  )
-
-
-
+################
 
 qualDat <- read_xlsx(file.choose())
 
-qualDat$Config <- factor(qualDat$Config, c('SL', 'LRSD','4guide')) #List baseline first
+qualDat$Config <- factor(qualDat$Config, c('SD', '3OTT')) #List baseline first
 
 qualDat %>%
   pivot_longer(cols = OverallFit:Heel,
                names_to = "Location", values_to = "Rating") %>%
   group_by(Location, Config) %>%
   summarize(
-    avg = mean(Rating),
-    medAvg = median(Rating)
+    avg = mean(Rating, na.rm = TRUE),
+    medAvg = median(Rating, na.rm = TRUE)
   )
 
+### For High Cut
+
+qualDat %>%
+  pivot_longer(cols = OverallFit:Cuff,
+               names_to = "Location", values_to = "Rating") %>%
+  group_by(Location, Config) %>%
+  summarize(
+    avg = mean(Rating, na.rm=TRUE),
+    medAvg = median(Rating, na.rm=TRUE)
+  )
 
 ### Probability of higher overall score (for radar plot)
 
@@ -104,7 +98,12 @@ ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) + geom_density(alpha =
 
 
 
+### For high cut 
+qualDat <- pivot_longer(qualDat, cols = Forefoot:Cuff, names_to = 'Location', values_to = 'Rating')
 
+qualDat$Location <- factor(qualDat$Location, c('Forefoot', 'Midfoot', 'Heel', 'Cuff')) 
+
+ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) + geom_density(alpha = 0.5) + facet_wrap(~Location) + scale_fill_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4"))
 
   
 
