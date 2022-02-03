@@ -46,12 +46,25 @@ withinSubPlot <- function(inputDF, colName, dir) {
 
 extractVals <- function(dat, mod, configNames, var, dir) {
   
-  for (configName in configNames) {
+  #configNames = otherConfigs
+  #mod = runmod
+  #dir = 'higher'
+  #var = 'CarryFlatLength'
+  
+  Config = rep(NA, length(configNames))
+  ProbImp = matrix(0, length(configNames))
+  lowCI = matrix(0, length(configNames))
+  highCI = matrix(0, length(configNames))
+  
+  for (i in 1:length(configNames)) {
   # This function takes the original dataframe (dat, same one entered into runmod), the Bayesian model from brms (runmod), 
   # the configuration Name, and the variable you are testing. It returns:
   # [1] the probabality the variable was better in the test config vs. the baseline config
   # [3] the lower bound of the bayesian 95% posterior interval (as percent change from baseline) 
   # [4] the upper bound of the bayesian 95% posterior interval (as percent change from baseline)
+    #i = 1
+    
+    configName = configNames[i]
     configColName <- paste('b_Config', configName, sep = "")
     posterior <- posterior_samples(mod)
   
@@ -76,10 +89,17 @@ extractVals <- function(dat, mod, configNames, var, dir) {
     ci_LowPct <- meanSD*ciLow/mean*100
     ci_HighPct <- meanSD*ciHigh/mean*100
   
-    return(list('Config:', configName, 'Probability of Improvement:', prob, 'Worse end of CI:', ci_LowPct, 'Best end of CI:', ci_HighPct))
-    
+    output = list('Config:', configName, 'Probability of Improvement:', prob, 'Worse end of CI:', ci_LowPct, 'Best end of CI:', ci_HighPct)
+    Config[i] = configName
+    ProbImp[i] = prob
+    lowCI[i] = ci_LowPct
+    highCI[i] = ci_HighPct
   }
   
+  output = cbind(Config, ProbImp, lowCI, highCI)
+  output = round(output[,2:4], 1)
+  colnames(output) = c('Config', 'Probability of Improvement', 'Low end of CI', 'High end of CI')
+  return(output)
 }
 
 
@@ -91,7 +111,7 @@ dat <- as_tibble(dat)
 
 baseline <- 'Monopanel'
   
-otherConfigs <- c('OP')
+otherConfigs <- c('OP', 'OPLoose')
 
 allConfigs <- c(baseline, otherConfigs)
 
