@@ -99,7 +99,7 @@ extractVals <- function(dat, mod, configNames, var, dir) {
   lowCI = round(lowCI, 1)
   highCI = round(highCI,1)
   output = cbind(Config, ProbImp, lowCI, highCI)
-  output = round(output[,2:4], 1)
+  
   colnames(output) = c('Config', 'Probability of Improvement', 'Low end of CI', 'High end of CI')
   return(output)
 }
