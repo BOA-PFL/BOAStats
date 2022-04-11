@@ -111,9 +111,9 @@ dat <- read_xlsx(file.choose()) # Select file with compiled TrackMan data
 
 dat <- as_tibble(dat)
 
-baseline <- 'Monopanel'
+baseline <- 'LR'
   
-otherConfigs <- c('OP', 'OPLoose')
+otherConfigs <- c('PFW')
 
 allConfigs <- c(baseline, otherConfigs)
 
