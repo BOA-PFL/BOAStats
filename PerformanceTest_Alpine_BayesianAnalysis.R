@@ -1,4 +1,3 @@
-
 library(tidyverse)
 library(brms)
 library(tidybayes)
@@ -6,7 +5,6 @@ library(lme4)
 library(dplyr)
 library(rlang)
 library(reshape2)
-library(readxl)
 
 rm(list=ls())
 
@@ -46,10 +44,7 @@ withinSubPlot <- function(inputDF, colName, dir) {
 
 extractVals <- function(dat, mod, configNames, var, dir) {
   
-  #configNames = otherConfigs
-  #mod = runmod
-  #dir = 'higher'
-  #var = 'CarryFlatLength'
+  
   
   Config = rep(NA, length(configNames))
   ProbImp = matrix(0, length(configNames))
@@ -57,38 +52,38 @@ extractVals <- function(dat, mod, configNames, var, dir) {
   highCI = matrix(0, length(configNames))
   
   for (i in 1:length(configNames)) {
-  # This function takes the original dataframe (dat, same one entered into runmod), the Bayesian model from brms (runmod), 
-  # the configuration Name, and the variable you are testing. It returns:
-  # [1] the probabality the variable was better in the test config vs. the baseline config
-  # [3] the lower bound of the bayesian 95% posterior interval (as percent change from baseline) 
-  # [4] the upper bound of the bayesian 95% posterior interval (as percent change from baseline)
+    # This function takes the original dataframe (dat, same one entered into runmod), the Bayesian model from brms (runmod), 
+    # the configuration Name, and the variable you are testing. It returns:
+    # [1] the probabality the variable was better in the test config vs. the baseline config
+    # [3] the lower bound of the bayesian 95% posterior interval (as percent change from baseline) 
+    # [4] the upper bound of the bayesian 95% posterior interval (as percent change from baseline)
     #i = 1
     
     configName = configNames[i]
     configColName <- paste('b_Config', configName, sep = "")
     posterior <- posterior_samples(mod)
-  
+    
     if (dir == 'lower'){
       prob <- sum(posterior[,configColName] < 0) / length(posterior[,configColName])
-    
+      
     } else if (dir == 'higher') {
-  
+      
       prob <- sum(posterior[,configColName] > 0) / length(posterior[,configColName])
     }
-  
-    ci <- posterior_interval(mod, prob = 0.95)
+    
+    ci <- posterior_interval(mod, prob = 0.80)
     ciLow <- ci[configColName,1] 
     ciHigh <- ci[configColName,2]
-  
+    
     SDdat <- dat %>%
       group_by(Subject) %>%
       summarize(sd = sd(!! sym(var), na.rm = TRUE), mean = mean(!! sym(var), na.rm = TRUE))
-  
+    
     meanSD = mean(SDdat$sd)
     mean = mean(SDdat$mean)
     ci_LowPct <- meanSD*ciLow/mean*100
     ci_HighPct <- meanSD*ciHigh/mean*100
-  
+    
     output = list('Config:', configName, 'Probability of Improvement:', prob, 'Worse end of CI:', ci_LowPct, 'Best end of CI:', ci_HighPct)
     Config[i] = configName
     ProbImp[i] = prob
@@ -104,36 +99,40 @@ extractVals <- function(dat, mod, configNames, var, dir) {
   return(output)
 }
 
+###############################
 
-#################### Set up data
-
-dat <- read_xlsx(file.choose()) # Select file with compiled TrackMan data
+dat <- read.csv(file.choose())
 
 dat <- as_tibble(dat)
 
-baseline <- 'LR'
-  
-otherConfigs <- c('PFW')
+
+baseline <- 'V1'
+
+otherConfigs <- c('V2')
 
 allConfigs <- c(baseline, otherConfigs)
 
 dat$Config <- factor(dat$Config, allConfigs) 
 
 
-################### Drive Distance
+###### Weight transfer to outside foot
 
 dat <- dat %>% 
   group_by(Subject) %>%
-  mutate(z_score = scale(CarryFlatLength)) %>% 
+  mutate(z_score = scale(OutsideFootForce)) %>% 
   group_by(Config)
 
-ggplot(data = dat, aes(x = CarryFlatLength)) + geom_histogram() + facet_wrap(~Subject) #Change x axis variable to your variable of interest. Check for normal-ish distribution.
 
+dat<- subset(dat, dat$z_score < 2) #removing outliers  
+dat<- subset(dat, dat$z_score > -2)
 
-withinSubPlot(dat, colName = 'CarryFlatLength', dir = 'higher') 
+ggplot(data = dat, aes(x = OutsideFootForce)) + geom_histogram() + facet_wrap(~Subject) 
 
+p <- withinSubPlot(dat, colName = 'OutsideFootForce', dir = 'higher')
+yTitle <- expression(Better~weight~transfer%->%"")
+p + ylab(yTitle)
 
-runmod <- brm(data = dat, 
+runmod <- brm(data = dat, # Bayes model
               family = gaussian,
               z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
@@ -144,20 +143,27 @@ runmod <- brm(data = dat,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
+extractVals(dat, runmod, otherConfigs, 'OutsideFootForce', 'higher') 
 
-extractVals(dat, runmod, otherConfigs, 'CarryFlatLength', 'higher') 
 
-
-#################### Drive accuracy
+###### Foot roll (Pressure targeted on medial ball of foot)
 
 dat <- dat %>% 
-  mutate(AbsAccuracy = abs(LaunchDirection)) %>%
   group_by(Subject) %>%
-  mutate(z_score = scale(AbsAccuracy))
+  mutate(z_score = scale(OutsideFootMedialForce)) %>% 
+  group_by(Config)
 
-withinSubPlot(dat, colName = 'AbsAccuracy', 'lower')
 
-runmod <- brm(data = dat,
+dat<- subset(dat, dat$z_score < 2) #removing outliers  
+dat<- subset(dat, dat$z_score > -2)
+
+ggplot(data = dat, aes(x = OutsideFootMedialForce)) + geom_histogram() + facet_wrap(~Subject) 
+
+p <- withinSubPlot(dat, colName = 'OutsideFootMedialForce', dir = 'higher')
+yTitle <- expression(Better~foot~roll%->%"")
+p + ylab(yTitle)
+
+runmod <- brm(data = dat, # Bayes model
               family = gaussian,
               z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
@@ -168,75 +174,27 @@ runmod <- brm(data = dat,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-extractVals(dat, runmod, otherConfigs, 'AbsAccuracy', 'lower') 
+extractVals(dat, runmod, otherConfigs, 'OutsideFootMedialForce', 'higher') 
 
 
-######################## Dirve Distance Consistency
+###### Forward stance (Pressure on toes during early stance)
 
-subjects <- unique(dat$Subject)
-shoes <- unique(dat$Config)
-sdDistance <- matrix(0, length(subjects)*length(shoes))
-Sub <- rep(NA, length(subjects)*length(shoes))
-Config <- rep(NA, length(subjects)*length(shoes))
-r = 1
-
-for (sub in subjects) {
-  
-  tmp_sub <- subset(dat, dat$Subject == sub)
-  
-  for (s in shoes) {
-    tmp_shoe <- subset(tmp_sub, tmp_sub$Config == s)
-    Sub[r] <- sub
-    Config[r] <- s
-    sdDistance[r] <- sd(tmp_shoe$CarryFlatLength) 
-    r = r+1
-    
-  }
-}
-
-SDdat <- cbind(Sub, Config, sdDistance)
-colnames(SDdat) <- c('Subject', 'Config', 'SD_Distance')
-SDdat <- SDdat[complete.cases(SDdat),]
-SDdat <- as_tibble(SDdat)
-SDdat$Config <- factor(SDdat$Config, allConfigs) 
-
-SDdat <- SDdat %>%
-  mutate_at(vars(matches('SD_Distance')), list(as.numeric)) %>%
-  mutate(z_score = scale(SD_Distance)) %>%
+dat <- dat %>% 
+  group_by(Subject) %>%
+  mutate(z_score = scale(avgOutsideHeelStart)) %>% 
   group_by(Config)
 
 
-withinSubPlot(SDdat, 'SD_Distance', 'lower')
+dat<- subset(dat, dat$z_score < 2) #removing outliers  
+dat<- subset(dat, dat$z_score > -2)
 
-runmod <- brm(data = SDdat,
-              family = gaussian,
-              z_score ~ Config, #fixed effect of configuration and time period with a different intercept and slope for each subject
-              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
-                        prior(normal(0, 0.5), class = b), #beta for the intercept for the change in loading rate for each configuration
-                        #prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
-                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
-              iter = 2000, warmup = 1000, chains = 4, cores = 4,
-              control = list(adapt_delta = .975, max_treedepth = 20),
-              seed = 190831)
+ggplot(data = dat, aes(x = avgOutsideHeelStart)) + geom_histogram() + facet_wrap(~Subject) 
 
-extractVals(SDdat, runmod, configNames = , 'SD_Distance', 'lower') 
+p<-withinSubPlot(dat, colName = 'avgOutsideHeelStart', dir = 'lower')
+yTitle <- expression(""%<-%Better~forward~stance)
+p + ylab(yTitle)
 
-
-################################# Peak Force Magnitude (target foot)
-
-forceDat <- read.csv(file.choose())
-
-forceDat <- as_tibble(forceDat)
-
-forceDat$Config <- factor(forceDat$Config, allConfigs)
-
-forceDat <- forceDat %>% 
-  group_by(Subject) %>%
-  mutate(z_score = scale(targetPeakFz))
-
-withinSubPlot(forceDat, colName = 'targetPeakFz', 'higher')
-
-runmod <- brm(data = forceDat,
+runmod <- brm(data = dat, # Bayes model
               family = gaussian,
               z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
@@ -247,96 +205,66 @@ runmod <- brm(data = forceDat,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-extractVals(forceDat, runmod, otherConfigs, 'targetPeakFz', 'higher') 
+extractVals(dat, runmod, otherConfigs, 'avgOutsideHeelStart', 'lower') 
 
 
-################################## Peak force consistency (target foot)
+###### Balance (Even heel/toe pressure late in turn)
 
-subjects <- unique(forceDat$Subject)
-shoes <- unique(forceDat$Config)
-sdForce <- matrix(0, length(subjects)*length(shoes))
-Sub <- rep(NA, length(subjects)*length(shoes))
-Config <- rep(NA, length(subjects)*length(shoes))
-r = 1
-
-for (sub in subjects) {
-  
-  tmp_sub <- subset(forceDat, forceDat$Subject == sub)
-  
-  for (s in shoes) {
-    tmp_shoe <- subset(tmp_sub, tmp_sub$Config == s)
-    Sub[r] <- sub
-    Config[r] <- s
-    sdForce[r] <- sd(tmp_shoe$targetPeakFz) 
-    r = r+1
-    
-  }
-}
-
-SDforceDat <- cbind(Sub, Config, sdForce)
-colnames(SDforceDat) <- c('Subject', 'Config', 'SD_Force')
-SDforceDat <- SDforceDat[complete.cases(SDforceDat),]
-SDforceDat <- as_tibble(SDforceDat)
-SDforceDat$Config <- factor(SDforceDat$Config, allConfigs) 
-
-SDforceDat <- SDforceDat %>%
-  mutate_at(vars(matches('SD_Force')), list(as.numeric)) %>%
-  mutate(z_score = scale(SD_Force)) %>%
+dat <- dat %>% 
+  group_by(Subject) %>%
+  mutate(z_score = scale(pkOutsideHeelLate)) %>% 
   group_by(Config)
 
 
-withinSubPlot(SDforceDat, 'SD_Force', 'lower')
+dat<- subset(dat, dat$z_score < 2) #removing outliers  
+dat<- subset(dat, dat$z_score > -2)
 
-runmod <- brm(data = SDforceDat,
+ggplot(data = dat, aes(x = pkOutsideHeelLate)) + geom_histogram() + facet_wrap(~Subject) 
+
+p<-withinSubPlot(dat, colName = 'pkOutsideHeelLate', dir = 'higher')
+yTitle <- expression(Better~balance%->%"")
+p + ylab(yTitle)
+
+runmod <- brm(data = dat, # Bayes model
               family = gaussian,
-              z_score ~ Config, #fixed effect of configuration and time period with a different intercept and slope for each subject
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
-                        prior(normal(0, 0.5), class = b), #beta for the intercept for the change in loading rate for each configuration
-                        #prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
                         prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
               iter = 2000, warmup = 1000, chains = 4, cores = 4,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-extractVals(SDforceDat, runmod, otherConfigs, 'SD_Force', 'lower') 
-
-################################################  EXTRA STUFF NOT IN PFL DATA REPORTS ###########################################################################
-###############################################################################################################################
-############################################################################################################################
-### Plot prior, liklihood, posterior
-posterior <- posterior_samples(runmod)
-prior = as.data.frame(rnorm(4000, 0, 1))
-likelihood <- as.data.frame(sample(dat$z_score, 4000, replace = TRUE, prob = NULL))
-posterior_b <- posterior$b_ConfigSingle
-
-plotTitles <- c('Prior', 'likelihood', 'posterior')
-
-plotDat <- cbind(prior, likelihood, posterior_b)
-
-colnames(plotDat) <- plotTitles
-
-plotDatLong <- melt(plotDat)
-
-ggplot(plotDatLong, aes(x = value, fill = variable)) + geom_density(alpha = 0.5) + xlab('Change between configurations, in SD' )
+extractVals(dat, runmod, otherConfigs, 'pkOutsideHeelLate', 'higher') 
 
 
-# Correlations between outcomes
+###### cv Forc
 
 dat <- dat %>% 
-  filter(ContactTime > 10) %>% #remove values with impossible contact time
-  filter(ContactTime < 100) %>%
-  filter(pRanklePower <1500) %>% 
-  
-  group_by(SubjectName) %>%
-  mutate(z_score = scale(pRanklePower)) %>% # Change to the variable you want to test
-  group_by(Shoe)
+  group_by(Subject) %>%
+  mutate(z_score = scale(CVForce)) %>% 
+  group_by(Config)
 
-outliers <- boxplot(dat$peakRankleINV, plot=FALSE)$out
-dat<- dat[-which(dat$peakRankleINV %in% outliers),]
 
-outliers <- boxplot(dat$CT_HorzNorm, plot=FALSE)$out
-dat<- dat[-which(dat$CT_HorzNorm %in% outliers),]
+dat<- subset(dat, dat$z_score < 2) #removing outliers  
+dat<- subset(dat, dat$z_score > -2)
 
-plot(dat$FyPeak, dat$ContactTime)
+ggplot(data = dat, aes(x = CVForce)) + geom_histogram() + facet_wrap(~Subject) 
 
-cor.test(dat$FzPeak, dat$ContactTime, method = 'pearson')
+withinSubPlot(dat, colName = 'CVForce', dir = 'lower')
+
+
+runmod <- brm(data = dat, # Bayes model
+              family = gaussian,
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+extractVals(dat, runmod, otherConfigs, 'CVForce', 'lower') 
+
