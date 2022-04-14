@@ -128,10 +128,10 @@ cmjDat <- cmjDat %>%
   mutate(z_score = scale(CT)) %>% 
   group_by(Config)
 
-cmjDat<- subset(cmjDat, dat$z_score < 2) #removing outliers  
-cmjDat<- subset(cmjDat, dat$z_score > -2)
+cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
+cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
 
-ggplot(data = cmjDat, aes(x = CT)) + geom_histogram() + facet_wrap(~Subject) 
+ggplot(data = cmjDat, aes(x = CT, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
 
 withinSubPlot(cmjDat, colName = 'CT', dir = 'lower')
 
@@ -149,7 +149,7 @@ runmod <- brm(data = cmjDat, # Bayes model
 
 # Change configName to the config you want to compare to baseline (must match config name in data sheet)
 
-extractVals(cmjDat, runmod, configName = 'DualPanel', 'CT', 'lower') 
+extractVals(cmjDat, runmod, configName = 'Lace', 'CT', 'lower') 
 
 ##### CMJ jump height/impulse 
 
