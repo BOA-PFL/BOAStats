@@ -7,11 +7,11 @@ library(dplyr)
 library(rlang)
 library(reshape2)
 
-rm(list=ls())
+rm(list=ls()) # Clears the environment
 
 ####### Functions
 
-withinSubPlot <- function(inputDF, colName, dir) {
+withinSubPlot <- function(inputDF, colName, dir) { # Making the "Best of" line plots and defining direction
   
   # direction can be 'lower' or higher'. It is the direction of change that is better. 
   # For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher. 
@@ -34,16 +34,16 @@ withinSubPlot <- function(inputDF, colName, dir) {
       )
     
   }
-  
+  # "Best of" line plot code
   whichConfig <- merge(meanDat, whichConfig)
   
-  ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = mean, col = BestConfig, group = Subject)) + geom_point(size = 4) + 
-    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 16)) + ylab(paste0({{colName}})) 
+  ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = mean, col = BestConfig, group = Subject)) + geom_point(size = 4) +
+    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 26)) + ylab(ylabel)
   
 }
 
 
-extractVals <- function(dat, mod, configNames, var, dir) {
+extractVals <- function(dat, mod, configNames, var, dir) { # This sets us up for extracting our values in relation to the posterior
   
   #configNames = otherConfigs
   #mod = runmod
@@ -106,9 +106,9 @@ extractVals <- function(dat, mod, configNames, var, dir) {
 
 ###############################
 
-dat <- read.csv(file.choose())
+dat <- read.csv(file.choose())# Reading in the CSV
 
-dat <- as_tibble(dat)
+dat <- as_tibble(dat) # creating the data frame
 
 
 #Change to Config names used in your data, with the baseline model listed first.
@@ -116,7 +116,7 @@ dat$Config <- factor(dat$Config, c('TriPanel', 'DualPanel'))
 
 ########################################## CMJ ###############################################
 
-cmjDat <- subset(dat, dat$Movement == 'CMJ')
+cmjDat <- subset(dat, dat$Movement == 'CMJ') # Defining CMJ
 
 
 ###### CMJ Contact Time
@@ -131,9 +131,9 @@ cmjDat <- cmjDat %>%
 cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
 cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
 
-ggplot(data = cmjDat, aes(x = CT, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
+ggplot(data = cmjDat, aes(x = CT, fill = Config)) + geom_histogram() + facet_wrap(~Subject) #Normalization histograms, Check for normalish distribution/outliers
 
-withinSubPlot(cmjDat, colName = 'CT', dir = 'lower')
+withinSubPlot(cmjDat, colName = 'CT', dir = 'lower') # "Best of" Graph
 
 
 runmod <- brm(data = cmjDat, # Bayes model
@@ -148,7 +148,6 @@ runmod <- brm(data = cmjDat, # Bayes model
               seed = 190831)
 
 # Change configName to the config you want to compare to baseline (must match config name in data sheet)
-
 extractVals(cmjDat, runmod, configName = 'Lace', 'CT', 'lower') 
 
 ##### CMJ jump height/impulse 
@@ -163,9 +162,9 @@ cmjDat <- cmjDat %>%
 cmjDat<- subset(cmjDat, dat$z_score < 2) #removing outliers  
 cmjDat<- subset(cmjDat, dat$z_score > -2)
 
-ggplot(data = cmjDat, aes(x = impulse)) + geom_histogram() + facet_wrap(~Subject) 
+ggplot(data = cmjDat, aes(x = impulse)) + geom_histogram() + facet_wrap(~Subject) # Normalization histograms, Check for normalish distribution/outliers
 
-withinSubPlot(cmjDat, colName = 'impulse', dir = 'higher')
+withinSubPlot(cmjDat, colName = 'impulse', dir = 'higher') # "Best of" Graph
 
 
 runmod <- brm(data = cmjDat, # Bayes model
@@ -180,7 +179,6 @@ runmod <- brm(data = cmjDat, # Bayes model
               seed = 190831)
 
 # Change configName to the config you want to compare to baseline (must match config name in data sheet)
-
 extractVals(cmjDat, runmod, configName = 'DualPanel', 'impulse', 'higher') 
 
 
@@ -201,7 +199,7 @@ skaterDat <- skaterDat %>%
 skaterDat<- subset(skaterDat, skaterDat$z_score < 2) #removing outliers  
 skaterDat<- subset(skaterDat, skaterDat$z_score > -2)
 
-ggplot(data = skaterDat, aes(x = CT)) + geom_histogram() + facet_wrap(~Subject) ## Check for normalish distribution/outliers
+ggplot(data = skaterDat, aes(x = CT)) + geom_histogram() + facet_wrap(~Subject) ## Normalization histograms, Check for normalish distribution/outliers
 
 withinSubPlot(skaterDat, colName = 'CT', dir = 'lower')
 
