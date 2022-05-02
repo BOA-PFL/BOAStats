@@ -9,8 +9,14 @@ library(reshape2)
 
 rm(list=ls()) # Clears the environment
 
-####### Functions
+# This code uses Bayesian analysis specifically for variables we look for in agility movements
 
+
+
+####### Functions 
+
+
+# Creating plots
 withinSubPlot <- function(inputDF, colName, dir) { # Making the "Best of" line plots and defining direction
   
   # direction can be 'lower' or higher'. It is the direction of change that is better. 
@@ -119,24 +125,32 @@ dat$Config <- factor(dat$Config, c('TriPanel', 'DualPanel'))
 cmjDat <- subset(dat, dat$Movement == 'CMJ') # Defining CMJ
 
 
-###### CMJ Contact Time
+##CMJ Contact Time
 
+#Filtering out values 
 cmjDat <- cmjDat %>% 
-  filter(CT > 10) %>% #remove values with impossible contact time
+  filter(CT > 10) %>% #removes values with impossible contact time
   filter(CT < 100) %>%
   group_by(Subject) %>%
   mutate(z_score = scale(CT)) %>% 
   group_by(Config)
 
-cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
-cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
+# Removing outliers by filtering any scores that are 2sds above or below the mean
+cmjDat<- subset(cmjDat, cmjDat$z_score < 2)   
+cmjDat<- subset(cmjDat, cmjDat$z_score > -2) 
 
-ggplot(data = cmjDat, aes(x = CT, fill = Config)) + geom_histogram() + facet_wrap(~Subject) #Normalization histograms, Check for normalish distribution/outliers
+#Normalization histograms, Check for normalish distribution/outliers
+ggplot(data = cmjDat, aes(x = CT, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
 
-withinSubPlot(cmjDat, colName = 'CT', dir = 'lower') # "Best of" Graph
 
+# "best of" Line graph 
+# This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally 
+withinSubPlot(cmjDat, colName = 'CT', dir = 'lower') 
 
-runmod <- brm(data = cmjDat, # Bayes model
+## Bayes model 
+# This model takes a while to run and may  crash your session 
+#Wait until you receive a warning about rtools to run anything else
+runmod <- brm(data = cmjDat, 
               family = gaussian,
               z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
@@ -147,11 +161,12 @@ runmod <- brm(data = cmjDat, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
+
 # Change configName to the config you want to compare to baseline (must match config name in data sheet)
 extractVals(cmjDat, runmod, configName = 'Lace', 'CT', 'lower') 
 
 ##### CMJ jump height/impulse 
-
+#Filtering out values
 cmjDat <- cmjDat %>% 
   filter(CT > 10) %>% #remove values with impossible contact time
   filter(CT < 100) %>%
@@ -159,15 +174,24 @@ cmjDat <- cmjDat %>%
   mutate(z_score = scale(impulse)) %>% 
   group_by(Config)
 
-cmjDat<- subset(cmjDat, dat$z_score < 2) #removing outliers  
+
+# Removing outliers by filtering any scores that are 2sds above or below the mean
+cmjDat<- subset(cmjDat, dat$z_score < 2)  
 cmjDat<- subset(cmjDat, dat$z_score > -2)
 
-ggplot(data = cmjDat, aes(x = impulse)) + geom_histogram() + facet_wrap(~Subject) # Normalization histograms, Check for normalish distribution/outliers
 
+#Normalization histograms, Check for normalish distribution/outliers
+ggplot(data = cmjDat, aes(x = impulse)) + geom_histogram() + facet_wrap(~Subject) 
+
+
+# "best of" Line graph 
+# This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally
 withinSubPlot(cmjDat, colName = 'impulse', dir = 'higher') # "Best of" Graph
 
-
-runmod <- brm(data = cmjDat, # Bayes model
+## Bayes model 
+# This model takes a while to run and may  crash your session 
+#Wait until you receive a warning about rtools to run anything else
+runmod <- brm(data = cmjDat, 
               family = gaussian,
               z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
@@ -184,27 +208,35 @@ extractVals(cmjDat, runmod, configName = 'DualPanel', 'impulse', 'higher')
 
 ########################################## Skater ###############################################
 
-skaterDat <- subset(dat, dat$Movement == 'Skater')
+skaterDat <- subset(dat, dat$Movement == 'Skater') #Defining skater jump
 
 
 ###### Skater Contact Time
-
+# Filtering out values with impossible contact time
 skaterDat <- skaterDat %>% 
-  filter(CT > 10) %>% #remove values with impossible contact time
+  filter(CT > 10) %>% 
   filter(CT < 100) %>%
   group_by(Subject) %>%
   mutate(z_score = scale(CT)) %>% 
   group_by(Config)
 
+# Removing outliers by filtering any scores that are 2sds above or below the mean
 skaterDat<- subset(skaterDat, skaterDat$z_score < 2) #removing outliers  
-skaterDat<- subset(skaterDat, skaterDat$z_score > -2)
+skaterDat<- subset(skaterDat, skaterDat$z_score > -2) 
 
-ggplot(data = skaterDat, aes(x = CT)) + geom_histogram() + facet_wrap(~Subject) ## Normalization histograms, Check for normalish distribution/outliers
 
+#Normalization histograms, Check for normalish distribution/outliers
+ggplot(data = skaterDat, aes(x = CT)) + geom_histogram() + facet_wrap(~Subject) 
+
+
+# "best of" Line graph 
+# This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally
 withinSubPlot(skaterDat, colName = 'CT', dir = 'lower')
 
-
-runmod <- brm(data = skaterDat, # Bayes model
+## Bayes model 
+# This model takes a while to run and may  crash your session 
+#Wait until you receive a warning about rtools to run anything else
+runmod <- brm(data = skaterDat, 
               family = gaussian,
               z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
@@ -220,23 +252,31 @@ runmod <- brm(data = skaterDat, # Bayes model
 extractVals(skaterDat, runmod, configName = 'DualPanel', 'CT', 'lower') 
 
 ##### Skater jump height/impulse 
-
+# Filtering out values with impossible contact time
 skaterDat <- skaterDat %>% 
-  filter(CT > 10) %>% #remove values with impossible contact time
+  filter(CT > 10) %>% 
   filter(CT < 100) %>%
   group_by(Subject) %>%
   mutate(z_score = scale(impulse)) %>% 
-  group_by(Config)
+  group_by(Config) 
 
+# Removing outliers by filtering any scores that are 2sds above or below the mean
 skaterDat<- subset(skaterDat, dat$z_score < 2) #removing outliers  
 skaterDat<- subset(skaterDat, dat$z_score > -2)
 
+#Normalization histograms, Check for normalish distribution/outliers
 ggplot(data = skaterDat, aes(x = impulse)) + geom_histogram() + facet_wrap(~Subject) 
 
+
+# "best of" Line graph 
+# This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally
 withinSubPlot(skaterDat, colName = 'impulse', dir = 'higher')
 
 
-runmod <- brm(data = skaterDat, # Bayes model
+## Bayes model 
+# This model takes a while to run and may  crash your session 
+#Wait until you receive a warning about rtools to run anything else
+runmod <- brm(data = skaterDat, 
               family = gaussian,
               z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
@@ -248,7 +288,6 @@ runmod <- brm(data = skaterDat, # Bayes model
               seed = 190831)
 
 # Change configName to the config you want to compare to baseline (must match config name in data sheet)
-
 extractVals(skaterDat, runmod, configName = 'DualPanel', 'impulse', 'higher') 
 
 
