@@ -5,9 +5,26 @@ library(lme4)
 library(patchwork)
 library(effsize)
 
-replaceName <- function(DF, toReplace, newName){
+
+rm(list=ls()) # Clearing the environment
+
+
+## This code is meant to organize multiple CSVs into their respective BigData segment sections 
+## Things to keep in mind for all segments: 
+##    - Make sure all of the column names match correctly  
+##    - Make sure all of the subject names are correct
+##
+## 
+
+
+
+
+
+# This section is replacing incorrect or inconsistent names, to keep things consistent in the respective data sets
+
+replaceName <- function(DF, toReplace, newName){ 
   
-  # replace incorrect subject names with newname
+  # replace incorrect subject names with new name
   DF <- DF %>% 
     mutate(Subject = replace(Subject, Subject == toReplace, newName))
   return(DF)
@@ -38,12 +55,13 @@ replaceConfiguration <- function(DF, toReplace, newName){
 # -------------------------------------------------------------------------
 # Subject foot sizes & shapes
 
+# Loading in the data frame and organizing left and right sides into date frames
 subSizes <- read_xlsx('C:/Users/Daniel.Feeney/Boa Technology Inc/PFL - General/BigData2021/MasterSubjectSizes.xlsx')
 subSizes$Sex <- as.factor(subSizes$Sex)
 rightDat <- subset(subSizes, subSizes$Side == 'R')
 leftDat <- subset(subSizes, subSizes$Side == 'L')
 
-# Sizes
+# Density Plotting metrics: Length, Instep, Width, Girth by Sex 
 a <- ggplot(data = rightDat, mapping = aes(x = `Length (cm)`, fill = as.factor(Sex), color = as.factor(Sex) )) + 
   geom_histogram(alpha=0.5, position="identity") + scale_fill_manual(values=c("#DC582A", "#00966C")) + 
   theme(legend.position = "none")+ scale_color_manual(values=c("#DC582A", "#00966C"))
@@ -60,8 +78,9 @@ d <- ggplot(data = rightDat, mapping = aes(x = `Girth(cm)`, color = Sex, fill = 
   geom_histogram(alpha=0.5, position="identity")  + scale_color_manual(values=c("#DC582A", "#00966C")) +
   theme(legend.position = "none")+ scale_fill_manual(values=c("#DC582A", "#00966C"))
 (a | b)/(c|d)
+ 
 
-
+# Summarizing R side data averages by sex within the data frame
 rightDat %>%
   group_by(Sex)%>%
   summarize(
@@ -75,12 +94,13 @@ rightDat %>%
     sdGirth = sd(`Girth(cm)`)
   )
 
+# Calculating standardized mean difference - measuring effect size 
 cohen.d(`Length (cm)` ~ Sex, data = rightDat, paired = FALSE)
 cohen.d(`Instep (cm)` ~ Sex, data = rightDat, paired = FALSE)
 cohen.d(`Width (cm)` ~ Sex, data = rightDat, paired = FALSE)
 cohen.d(`Girth(cm)` ~ Sex, data = rightDat, paired = FALSE)
 
-# pressures
+#  Plotting pressures and calculating the effect size 
 
 f <- ggplot(data = rightDat, mapping = aes(x = `TotalArea (cm^2)`, fill = as.factor(Sex), color = as.factor(Sex) )) + 
   geom_histogram(alpha=0.5, position="identity") + scale_fill_manual(values=c("#DC582A", "#00966C")) + 
@@ -90,19 +110,24 @@ cohen.d(`TotalArea (cm^2)` ~ Sex, data = rightDat, paired = FALSE)
 
 
 # Agility -----------------------------------------------------------------
-agilityDat <- read_csv('C:/Users/Daniel.Feeney/Boa Technology Inc/PFL - General/BigData2021/BigDataAgilityNew.csv')
-#agilityDat <- read.csv(file.choose())
+#agilityDat <- read_csv('C:/Users/Daniel.Feeney/Boa Technology Inc/PFL - General/BigData2021/BigDataAgilityNew.csv')
+
+agilityDat <- read.csv(file.choose())
+
+
 #need to make sure brand, month, year, config in agility dat matches master shoes tested!!
 
 agilityDat <- merge(subSizes, agilityDat, by = "Subject" )
 
 
+#Update the config names that were tested
 # Replace names to full names. Manual!
 agilityDat <- replaceConfig(agilityDat, 'BOA', 'Tri Panel')
 agilityDat <- replaceMove(agilityDat, 'skater', 'Skater')
 agilityDat <- replaceConfig(agilityDat, 'OPtri', 'OPTri')
 
 
+# Normalizing contact time
 agilityDat['CTNorm'] <- (agilityDat$CT / agilityDat$impulse) * 100
 agilityDat <- subset(agilityDat, agilityDat$CTNorm > 0)
 agilityDat <- subset(agilityDat, agilityDat$CTNorm < 0.5)
@@ -110,7 +135,7 @@ agilityDat <- subset(agilityDat, agilityDat$COPtraj > 0.05)
 agilityDat <- subset(agilityDat, (agilityDat$Movement == 'CMJ' | agilityDat$Movement == 'Skater') )
 
 
-# cop excursion and CTNorm
+# cop excursion and CTNorm plotting
 ggplot(data = agilityDat, mapping = aes(x = COPtraj, y = CTNorm, col = Subject, fill = Subject)) + geom_point(size = 2) +
   facet_wrap(~Movement) + geom_smooth(method=lm, aes(color = Subject))
 ggplot(data = agilityDat, mapping = aes(x = COPtraj, y = CT, col = Subject, fill = Subject)) + geom_point(size = 2) +
@@ -118,6 +143,7 @@ ggplot(data = agilityDat, mapping = aes(x = COPtraj, y = CT, col = Subject, fill
 
 ggplot(data = agilityDat, mapping = aes(x = CT, y = copExc, col = Config, group = Config)) + geom_point() +
   facet_wrap(~Movement + Subject)
+
 
 skate <- subset(agilityDat, agilityDat$Movement == 'Skater')
 skate.mod = lmer(CTNorm ~ Config + (1|Model) + (Config|Subject), data = skate, REML = TRUE, na.action = "na.omit" )
