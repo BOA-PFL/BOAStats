@@ -144,19 +144,25 @@ ggplot(data = agilityDat, mapping = aes(x = COPtraj, y = CT, col = Subject, fill
 ggplot(data = agilityDat, mapping = aes(x = CT, y = copExc, col = Config, group = Config)) + geom_point() +
   facet_wrap(~Movement + Subject)
 
-
+#Subsetting Skater jump data
+#Contact time during skater jump 
+#Omitting NANs 
+#Correlation between CT and COP Trajectory
 skate <- subset(agilityDat, agilityDat$Movement == 'Skater')
 skate.mod = lmer(CTNorm ~ Config + (1|Model) + (Config|Subject), data = skate, REML = TRUE, na.action = "na.omit" )
 summary(skate.mod)
 cor.test(skate$CT, skate$COPtraj)
 
-
+#Subsetting CMJ data
+#Contact time during CMJ 
+#Omitting NANs 
+#Correlation between CT and COP Trajectory
 cmj <- subset(agilityDat, agilityDat$Movement == 'CMJ')
 cmj.mod = lmer(CTNorm ~ Config + (1|Model) + (Config|Subject), data = cmj, REML = TRUE, na.action = "na.omit" )
 summary(cmj.mod)
 cor.test(cmj$CT, cmj$COPtraj)
 
-##
+## Plotting CT during the movements
 ggplot(data = agilityDat, mapping = aes(x = CTNorm, fill = Config)) + geom_density(alpha=.5) +theme_classic() +
   facet_wrap(~Movement + Subject)
 

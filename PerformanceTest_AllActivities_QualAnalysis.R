@@ -7,12 +7,12 @@ library(readxl)
 library(brms)
 library(tidyverse)
 
-
+#Clearing the environment
 rm(list=ls())
 
 ###############
 
-
+# Setting up  "Best Of" line plots 
 withinSubQualPlot <- function(inputDF) {
   
   # direction can be 'lower' or higher'. It is the direction of change that is better. 
@@ -27,16 +27,20 @@ withinSubQualPlot <- function(inputDF) {
   whichConfig <- merge(inputDF, whichConfig)
   
   ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = OverallFit, col = BestConfig, group = Subject)) + geom_point(size = 4) + 
-    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 16)) + ylab('Rating') 
+    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 26)) + ylab('Rating') 
   
 }
 
 ################
 
+#Load in Compiled Qualitative Sheet
 qualDat <- read_xlsx(file.choose())
 
-qualDat$Config <- factor(qualDat$Config, c('SD', '3OTT')) #List baseline first
 
+#Defining our baseline and shoes being tested agaisnt the baseline
+qualDat$Config <- factor(qualDat$Config, c('Lace', 'PFS')) #List baseline first then shoes you want to test against
+
+# Making a summary table of the average, and median ratings of fit for the different shoe sections
 qualDat %>%
   pivot_longer(cols = OverallFit:Heel,
                names_to = "Location", values_to = "Rating") %>%
@@ -47,7 +51,7 @@ qualDat %>%
   )
 
 ### For High Cut
-
+# Making a summary table of the average, and median ratings of fit for the different shoe sections
 qualDat %>%
   pivot_longer(cols = OverallFit:Cuff,
                names_to = "Location", values_to = "Rating") %>%
@@ -58,7 +62,6 @@ qualDat %>%
   )
 
 ### Probability of higher overall score (for radar plot)
-
 qualDat <- qualDat %>% 
   
   mutate(z_score = scale(OverallFit))# Change to the variable you want to test
@@ -80,16 +83,13 @@ posterior <- posterior_samples(runmod)
 sum(posterior[,3] > 0) / length(posterior[,3]) 
 
 
-####
-#qualDat <- pivot_longer(qualDat, cols = OverallFit:Heel, names_to = "Location", values_to = "Rating")
-#qualDat$Location <- factor(qualDat$Location, c("OverallFit", "Forefoot", "Midfoot", "Heel"))
+#### Plots------------------------------------------------------------
 
-
+# Best of Line plot for overall ratings of the shoe
 withinSubQualPlot(qualDat)
 
-
-
-
+#Defining the rating for the location 
+#Density plots for fit ratings of shoe locations
 qualDat <- pivot_longer(qualDat, cols = Forefoot:Heel, names_to = 'Location', values_to = 'Rating')
   
 qualDat$Location <- factor(qualDat$Location, c('Forefoot', 'Midfoot', 'Heel')) 
@@ -98,7 +98,9 @@ ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) + geom_density(alpha =
 
 
 
-### For high cut 
+### For high cut  
+#Defining the rating for the location
+#Density plots for fit ratings of shoe locations
 qualDat <- pivot_longer(qualDat, cols = Forefoot:Cuff, names_to = 'Location', values_to = 'Rating')
 
 qualDat$Location <- factor(qualDat$Location, c('Forefoot', 'Midfoot', 'Heel', 'Cuff')) 
@@ -109,10 +111,15 @@ ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) + geom_density(alpha =
 
 # making word clouds ------------------------------------------------------
 
+#Defining the configs for their respective word couds 
+#Define the config for the cloud  - In the quotes , use the origional name if the config from the csv
 
-SL <- subset(qualDat, qualDat$Config == 'SL', GoodComments:BadComments)
-guide <- subset(qualDat, qualDat$Config == '4guide', GoodComments:BadComments)
+Lace <- subset(qualDat, qualDat$Config == 'Lace', GoodComments:BadComments)
+PFS <- subset(qualDat, qualDat$Config == 'PFS', GoodComments:BadComments) 
 
+
+#Defining the word clouds 
+# Leaving out numbers, and extra unneeded words
 replacePunctuation <- content_transformer(function(x) {return (gsub("[[:punct:]]", " ", x))})
 
 makeWordCloud <- function(inputText) {
@@ -133,10 +140,12 @@ makeWordCloud <- function(inputText) {
   docs <- tm_map(docs, removeWords, c("like", "feel","feels","lace","bottom","steel","replacement","toe.","toe",
                                       "felt","tri", "na")) 
   
+  
   dtm <- TermDocumentMatrix(docs)
   m <- as.matrix(dtm)
   v <- sort(rowSums(m),decreasing=TRUE)
   
+  # Defining "good" comments from "bad" in the csv
   vGood <- m[,1]
   vBad <- m[,2]
   vBad <- sort(vBad, decreasing = TRUE)
@@ -144,8 +153,11 @@ makeWordCloud <- function(inputText) {
   vGood <- as.data.frame(vGood)
   vBad <- as.data.frame(vBad)
   
+  # Positive words = green, negative words = grey
   colorList <- c(rep('dark green', nrow(vGood)), rep('grey', nrow(vBad)))
   
+  # Word frequency
+  #Making popular words large and less used words smaller
   GoodWords <- rownames(vGood)
   GoodFrq<- vGood[,1]
   Good <- cbind(GoodWords, GoodFrq)
@@ -153,6 +165,7 @@ makeWordCloud <- function(inputText) {
   BadFrq <- vBad[,1]
   Bad <- cbind(BadWords, BadFrq)
   
+  #Combining the positive words with the negative words in a single word cloud
   d <- rbind(Good, Bad)
   d <- cbind(d, colorList)
   d <- as.data.frame(d)
@@ -162,6 +175,7 @@ makeWordCloud <- function(inputText) {
  
   d$Freq <- as.numeric(d$Freq)
   
+  #Combining the word frequency, connotation and order into the word cloud
   set.seed(1234)
   wordcloud(d$Word, d$Freq, min.freq = 1, max.words = nrow(d),
             random.order=FALSE, rot.per=0.35, 
@@ -169,7 +183,9 @@ makeWordCloud <- function(inputText) {
   
 }
 
+# Output of the word cloud 
 
-makeWordCloud(SL)
 
+makeWordCloud(Lace)
+makeWordCloud(PFS)
 
