@@ -8,14 +8,15 @@ library(rlang)
 library(reshape2)
 library(readxl)
 
-rm(list=ls())
+rm(list=ls()) # Clears the environment
 
 ####### Functions
+# Making the "Best of" line plots and defining direction
+# direction can be 'lower' or higher'. It is the direction of change that is better. 
+# For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher. 
 
 withinSubPlot <- function(inputDF, colName, dir) {
   
-  # direction can be 'lower' or higher'. It is the direction of change that is better. 
-  # For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher. 
   meanDat <- inputDF %>%
     group_by(Subject, Config) %>%
     summarize(mean = mean(!! sym(colName)))
@@ -107,10 +108,12 @@ extractVals <- function(dat, mod, configNames, var, dir) {
 
 #################### Set up data
 
-dat <- read_xlsx(file.choose()) # Select file with compiled TrackMan data
+dat <- read_xlsx(file.choose()) # Select csv with compiled TrackMan data
 
-dat <- as_tibble(dat)
+dat <- as_tibble(dat) # creating the data frame
 
+
+# Defining the baseline and other configs
 baseline <- 'LR'
   
 otherConfigs <- c('PFW')
@@ -122,17 +125,23 @@ dat$Config <- factor(dat$Config, allConfigs)
 
 ################### Drive Distance
 
+#grouping by subject and config by the variable being observed
 dat <- dat %>% 
   group_by(Subject) %>%
   mutate(z_score = scale(CarryFlatLength)) %>% 
   group_by(Config)
 
+
+#Normalization histograms, Check for normalish distribution/outliers
 ggplot(data = dat, aes(x = CarryFlatLength)) + geom_histogram() + facet_wrap(~Subject) #Change x axis variable to your variable of interest. Check for normal-ish distribution.
 
-
+# "best of" Line graph 
+# This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally 
 withinSubPlot(dat, colName = 'CarryFlatLength', dir = 'higher') 
 
-
+## Bayes model 
+# This model takes a while to run and may  crash your session 
+#Wait until you receive a warning about rtools to run anything else
 runmod <- brm(data = dat, 
               family = gaussian,
               z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
@@ -144,19 +153,24 @@ runmod <- brm(data = dat,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-
+# # Output of the Confidence Interval
 extractVals(dat, runmod, otherConfigs, 'CarryFlatLength', 'higher') 
 
 
 #################### Drive accuracy
-
+#grouping by subject and config by the variable being observed
 dat <- dat %>% 
   mutate(AbsAccuracy = abs(LaunchDirection)) %>%
   group_by(Subject) %>%
   mutate(z_score = scale(AbsAccuracy))
 
+# "best of" Line graph 
 withinSubPlot(dat, colName = 'AbsAccuracy', 'lower')
 
+
+## Bayes model 
+# This model takes a while to run and may  crash your session 
+#Wait until you receive a warning about rtools to run anything else
 runmod <- brm(data = dat,
               family = gaussian,
               z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
@@ -166,19 +180,25 @@ runmod <- brm(data = dat,
                         prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
               iter = 2000, warmup = 1000, chains = 4, cores = 4,
               control = list(adapt_delta = .975, max_treedepth = 20),
-              seed = 190831)
+              seed = 190831) 
 
+
+# # Output of the Confidence Interval
 extractVals(dat, runmod, otherConfigs, 'AbsAccuracy', 'lower') 
 
 
 ######################## Dirve Distance Consistency
 
+
+#This section of code is setting up variables to be going through a For Loop to be looking at the variation of drive distances per person, per shoe
 subjects <- unique(dat$Subject)
 shoes <- unique(dat$Config)
 sdDistance <- matrix(0, length(subjects)*length(shoes))
 Sub <- rep(NA, length(subjects)*length(shoes))
 Config <- rep(NA, length(subjects)*length(shoes))
 r = 1
+
+
 
 for (sub in subjects) {
   
@@ -193,7 +213,7 @@ for (sub in subjects) {
     
   }
 }
-
+# Looking into the variation of drive distances via standard diviations
 SDdat <- cbind(Sub, Config, sdDistance)
 colnames(SDdat) <- c('Subject', 'Config', 'SD_Distance')
 SDdat <- SDdat[complete.cases(SDdat),]
@@ -206,8 +226,13 @@ SDdat <- SDdat %>%
   group_by(Config)
 
 
+# "best of" Line graph 
 withinSubPlot(SDdat, 'SD_Distance', 'lower')
 
+
+## Bayes model 
+# This model takes a while to run and may  crash your session 
+#Wait until you receive a warning about rtools to run anything else
 runmod <- brm(data = SDdat,
               family = gaussian,
               z_score ~ Config, #fixed effect of configuration and time period with a different intercept and slope for each subject
@@ -219,23 +244,34 @@ runmod <- brm(data = SDdat,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
+# # Output of the Confidence Interval
 extractVals(SDdat, runmod, configNames = , 'SD_Distance', 'lower') 
 
 
 ################################# Peak Force Magnitude (target foot)
+ 
 
-forceDat <- read.csv(file.choose())
 
-forceDat <- as_tibble(forceDat)
+forceDat <- read.csv(file.choose()) # Upload Overground force data csv
 
-forceDat$Config <- factor(forceDat$Config, allConfigs)
+forceDat <- as_tibble(forceDat) # creating the data frame
 
+forceDat$Config <- factor(forceDat$Config, allConfigs) 
+
+
+# Looking at peak force data over time of the drives
 forceDat <- forceDat %>% 
   group_by(Subject) %>%
   mutate(z_score = scale(targetPeakFz))
 
+
+# "best of" Line graph 
 withinSubPlot(forceDat, colName = 'targetPeakFz', 'higher')
 
+
+## Bayes model 
+# This model takes a while to run and may  crash your session 
+#Wait until you receive a warning about rtools to run anything else
 runmod <- brm(data = forceDat,
               family = gaussian,
               z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
@@ -247,11 +283,14 @@ runmod <- brm(data = forceDat,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
+# # Output of the Confidence Interval
 extractVals(forceDat, runmod, otherConfigs, 'targetPeakFz', 'higher') 
 
 
 ################################## Peak force consistency (target foot)
 
+
+#This section of code is setting up variables to be going through a For Loop to be looking at the variation of peak force consistency per person, per shoe
 subjects <- unique(forceDat$Subject)
 shoes <- unique(forceDat$Config)
 sdForce <- matrix(0, length(subjects)*length(shoes))
@@ -272,7 +311,7 @@ for (sub in subjects) {
     
   }
 }
-
+# Looking into the variation of peak force consistency via standard deviations
 SDforceDat <- cbind(Sub, Config, sdForce)
 colnames(SDforceDat) <- c('Subject', 'Config', 'SD_Force')
 SDforceDat <- SDforceDat[complete.cases(SDforceDat),]
@@ -284,9 +323,12 @@ SDforceDat <- SDforceDat %>%
   mutate(z_score = scale(SD_Force)) %>%
   group_by(Config)
 
-
+# "best of" Line graph 
 withinSubPlot(SDforceDat, 'SD_Force', 'lower')
 
+## Bayes model 
+# This model takes a while to run and may  crash your session 
+#Wait until you receive a warning about rtools to run anything else
 runmod <- brm(data = SDforceDat,
               family = gaussian,
               z_score ~ Config, #fixed effect of configuration and time period with a different intercept and slope for each subject
@@ -298,6 +340,7 @@ runmod <- brm(data = SDforceDat,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
+# # Output of the Confidence Interval
 extractVals(SDforceDat, runmod, otherConfigs, 'SD_Force', 'lower') 
 
 ################################################  EXTRA STUFF NOT IN PFL DATA REPORTS ###########################################################################
