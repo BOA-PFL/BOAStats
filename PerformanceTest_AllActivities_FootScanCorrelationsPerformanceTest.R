@@ -38,25 +38,30 @@ baselineDat <- subset(testDat, testDat$Config == 'Single') # Change to baseline 
 
 newShoeDat <- subset(testDat, testDat$Config == 'Paired') # Change to shoe you want to compare to baseline
 
+
+#  This purpose of this For Loop is finding difference for each subject between configs, and finding the relationship between performance and foot size
+# Defining the subject and difference as indices
 Subject <- rep(NA, 2)
 diff <- rep(0, 2)
 
-r = 1
+r = 1 # representing the subject
 
-for (sub in unique(testDat$Subject)) {
+for (sub in unique(testDat$Subject)) { # Finding the uniqe names of the subjects
    
-   Subject[r] <- sub
-   tempbaseDat <- subset(baselineDat, baselineDat$Subject == sub)
+   Subject[r] <- sub #temp subject name 
+   
+   #Subsetting that data into baeline and new congigs
+   tempbaseDat <- subset(baselineDat, baselineDat$Subject == sub) 
    tempnewDat <- subset(newShoeDat, newShoeDat$Subject == sub)
    
-   diff[r] <- mean(tempnewDat$z_score) - mean(tempbaseDat$z_score)
+   diff[r] <- mean(tempnewDat$z_score) - mean(tempbaseDat$z_score) # finding the differences in variation between the two configs
    
-   r = r+1
+   r = r+1 # Moving onto the next subject
    
 }
-
-diff <- as.numeric(diff)
-diffDat <- cbind(Subject, diff)
+# This section is binding the code into a single data frame comparing performance differences between the configs
+diff <- as.numeric(diff) 
+diffDat <- cbind(Subject, diff) 
 diffDat <- as.data.frame(diffDat)
 
 
@@ -66,7 +71,7 @@ diffDat <- as.data.frame(diffDat)
 corrDat <- inner_join (diffDat, RfootDat, by = 'Subject')
 corrDat$diff <- as.numeric(corrDat$diff)
  
-# Find correlations between foot characteristics and outcomes
+# Plots - Looking for correlations between foot characteristics and outcomes
 
 ggscatter(corrDat, x = "Length (cm)", y = "diff", 
           add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson", 
@@ -106,6 +111,8 @@ baselineDat <- subset(testDat, testDat$Shoe == 'Lace') # Change to baseline shoe
 
 newShoeDat <- subset(testDat, testDat$Shoe == 'A') # Change to shoe you want to compare to baseline
 
+
+# finding difference for each sub between configs, finding relationship between performance and foot size
 Subject <- rep(NA, 2)
 diff <- rep(0, 2)
 
