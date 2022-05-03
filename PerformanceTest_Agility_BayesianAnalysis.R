@@ -162,6 +162,7 @@ runmod <- brm(data = cmjDat,
               seed = 190831)
 
 
+# Output of the Confidence Interval
 # Change configName to the config you want to compare to baseline (must match config name in data sheet)
 extractVals(cmjDat, runmod, configName = 'Lace', 'CT', 'lower') 
 
