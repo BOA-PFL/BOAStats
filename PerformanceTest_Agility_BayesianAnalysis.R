@@ -17,10 +17,14 @@ rm(list=ls()) # Clears the environment
 
 
 # Creating plots
-withinSubPlot <- function(inputDF, colName, dir) { # Making the "Best of" line plots and defining direction
+withinSubPlot <- function(inputDF, colName, dir,ylabel) {
+  # Specify ylabel in function or default to the original name
+  if(missing(ylabel)){
+    ylabel = paste0({{colName}})
+  }
   
-  # direction can be 'lower' or higher'. It is the direction of change that is better. 
-  # For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher. 
+  # direction can be 'lower' or higher'. It is the direction of change that is better.
+  # For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher.
   meanDat <- inputDF %>%
     group_by(Subject, Config) %>%
     summarize(mean = mean(!! sym(colName)))
@@ -40,6 +44,7 @@ withinSubPlot <- function(inputDF, colName, dir) { # Making the "Best of" line p
       )
     
   }
+  
   # "Best of" line plot code
   whichConfig <- merge(meanDat, whichConfig)
   
@@ -112,13 +117,13 @@ extractVals <- function(dat, mod, configNames, var, dir) { # This sets us up for
 
 ###############################
 
-dat <- read.csv(file.choose())# Reading in the CSV
+dat <- read.csv(file.choose())# Reading in the CompiledAgilityData.csv
 
 dat <- as_tibble(dat) # creating the data frame
 
 
 #Change to Config names used in your data, with the baseline model listed first.
-dat$Config <- factor(dat$Config, c('TriPanel', 'DualPanel'))
+dat$Config <- factor(dat$Config, c('ED','HED','PD'))
 
 ########################################## CMJ ###############################################
 
@@ -140,7 +145,7 @@ cmjDat<- subset(cmjDat, cmjDat$z_score < 2)
 cmjDat<- subset(cmjDat, cmjDat$z_score > -2) 
 
 #Normalization histograms, Check for normalish distribution/outliers
-ggplot(data = cmjDat, aes(x = CT, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
+ggplot(data = cmjDat, aes(x = CT)) + geom_histogram() + facet_wrap(~Subject) 
 
 
 # "best of" Line graph 
