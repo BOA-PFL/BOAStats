@@ -38,7 +38,7 @@ qualDat <- read_xlsx(file.choose())
 
 
 #Defining our baseline and shoes being tested agaisnt the baseline
-qualDat$Config <- factor(qualDat$Config, c('Lace', 'PFS')) #List baseline first then shoes you want to test against
+qualDat$Config <- factor(qualDat$Config, c('ED','HED','PD')) #List baseline first then shoes you want to test against
 
 # Making a summary table of the average, and median ratings of fit for the different shoe sections
 qualDat %>%
@@ -114,8 +114,8 @@ ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) + geom_density(alpha =
 #Defining the configs for their respective word couds 
 #Define the config for the cloud  - In the quotes , use the origional name if the config from the csv
 
-Lace <- subset(qualDat, qualDat$Config == 'Lace', GoodComments:BadComments)
-PFS <- subset(qualDat, qualDat$Config == 'PFS', GoodComments:BadComments) 
+ED <- subset(qualDat, qualDat$Config == 'ED', GoodComments:BadComments)
+PD <- subset(qualDat, qualDat$Config == 'PD', GoodComments:BadComments) 
 
 
 #Defining the word clouds 
@@ -138,7 +138,7 @@ makeWordCloud <- function(inputText) {
   # Remove your own stop word
   # specify your stopwords as a character vector
   docs <- tm_map(docs, removeWords, c("like", "feel","feels","lace","bottom","steel","replacement","toe.","toe",
-                                      "felt","tri", "na")) 
+                                      "felt","tri", "na","shoe","can","everything","noticable", "else","kind")) 
   
   
   dtm <- TermDocumentMatrix(docs)
@@ -186,6 +186,6 @@ makeWordCloud <- function(inputText) {
 # Output of the word cloud 
 
 
-makeWordCloud(Lace)
-makeWordCloud(PFS)
+makeWordCloud(HED)
+makeWordCloud(PD)
 

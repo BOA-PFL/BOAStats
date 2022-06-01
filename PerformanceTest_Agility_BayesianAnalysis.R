@@ -137,7 +137,7 @@ cmjDat <- cmjDat %>%
   filter(CT > 10) %>% #removes values with impossible contact time
   filter(CT < 100) %>%
   group_by(Subject) %>%
-  mutate(z_score = scale(CT)) %>% 
+  mutate(z_score = scale(jumpTime)) %>% 
   group_by(Config)
 
 # Removing outliers by filtering any scores that are 2sds above or below the mean
@@ -145,16 +145,19 @@ cmjDat<- subset(cmjDat, cmjDat$z_score < 2)
 cmjDat<- subset(cmjDat, cmjDat$z_score > -2) 
 
 #Normalization histograms, Check for normalish distribution/outliers
-ggplot(data = cmjDat, aes(x = CT)) + geom_histogram() + facet_wrap(~Subject) 
+ggplot(data = cmjDat, aes(x = sdHeel, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
 
 
 # "best of" Line graph 
 # This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally 
-withinSubPlot(cmjDat, colName = 'CT', dir = 'lower') 
+withinSubPlot(cmjDat, colName = 'CT', dir = 'lower', 'Contact Time (s) ') 
 
 ## Bayes model 
 # This model takes a while to run and may  crash your session 
-#Wait until you receive a warning about rtools to run anything else
+###---Wait until you receive a warning Warning message to run "extractVals": 
+###--- "In system(paste(CXX, ARGS), ignore.stdout = TRUE, ignore.stderr = TRUE) :
+##---  'C:/rtools40/usr/mingw_/bin/g++' not found"  
+
 runmod <- brm(data = cmjDat, 
               family = gaussian,
               z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
@@ -163,27 +166,27 @@ runmod <- brm(data = cmjDat,
                         prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
                         prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
               iter = 2000, warmup = 1000, chains = 4, cores = 4,
-              control = list(adapt_delta = .975, max_treedepth = 20),
+              control = list(adapt_delta = .99, max_treedepth = 20),
               seed = 190831)
 
 
 # Output of the Confidence Interval
 # Change configName to the config you want to compare to baseline (must match config name in data sheet)
-extractVals(cmjDat, runmod, configName = 'Lace', 'CT', 'lower') 
+extractVals(cmjDat, runmod, configName = 'HED',  'jumpTime', 'lower') 
 
 ##### CMJ jump height/impulse 
 #Filtering out values
 cmjDat <- cmjDat %>% 
   filter(CT > 10) %>% #remove values with impossible contact time
-  filter(CT < 100) %>%
+  filter(CT < 150) %>%
   group_by(Subject) %>%
   mutate(z_score = scale(impulse)) %>% 
   group_by(Config)
 
 
 # Removing outliers by filtering any scores that are 2sds above or below the mean
-cmjDat<- subset(cmjDat, dat$z_score < 2)  
-cmjDat<- subset(cmjDat, dat$z_score > -2)
+cmjDat<- subset(cmjDat, cmjDat$z_score < 2)   
+cmjDat<- subset(cmjDat, cmjDat$z_score > -2) 
 
 
 #Normalization histograms, Check for normalish distribution/outliers
@@ -192,7 +195,7 @@ ggplot(data = cmjDat, aes(x = impulse)) + geom_histogram() + facet_wrap(~Subject
 
 # "best of" Line graph 
 # This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally
-withinSubPlot(cmjDat, colName = 'impulse', dir = 'higher') # "Best of" Graph
+withinSubPlot(cmjDat, colName = 'impulse', dir = 'higher', 'Implulse (Ns)') # "Best of" Graph
 
 ## Bayes model 
 # This model takes a while to run and may  crash your session 
@@ -209,7 +212,7 @@ runmod <- brm(data = cmjDat,
               seed = 190831)
 
 # Change configName to the config you want to compare to baseline (must match config name in data sheet)
-extractVals(cmjDat, runmod, configName = 'DualPanel', 'impulse', 'higher') 
+extractVals(cmjDat, runmod, configName = 'HED', 'impulse', 'higher') 
 
 
 ########################################## Skater ###############################################
@@ -220,10 +223,10 @@ skaterDat <- subset(dat, dat$Movement == 'Skater') #Defining skater jump
 ###### Skater Contact Time
 # Filtering out values with impossible contact time
 skaterDat <- skaterDat %>% 
-  filter(CT > 10) %>% 
-  filter(CT < 100) %>%
+  # filter(CT > 10) %>% 
+  # filter(CT < 150) %>%
   group_by(Subject) %>%
-  mutate(z_score = scale(CT)) %>% 
+  mutate(z_score = scale(jumpTime)) %>% 
   group_by(Config)
 
 # Removing outliers by filtering any scores that are 2sds above or below the mean
@@ -237,7 +240,7 @@ ggplot(data = skaterDat, aes(x = CT)) + geom_histogram() + facet_wrap(~Subject)
 
 # "best of" Line graph 
 # This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally
-withinSubPlot(skaterDat, colName = 'CT', dir = 'lower')
+withinSubPlot(skaterDat, colName = 'jumpTime', dir = 'lower', 'JumpTime (s)')
 
 ## Bayes model 
 # This model takes a while to run and may  crash your session 
@@ -255,20 +258,20 @@ runmod <- brm(data = skaterDat,
 
 # Change configName to the config you want to compare to baseline (must match config name in data sheet)
 
-extractVals(skaterDat, runmod, configName = 'DualPanel', 'CT', 'lower') 
+extractVals(skaterDat, runmod, configName = 'HED', 'jumpTime', 'lower') 
 
 ##### Skater jump height/impulse 
 # Filtering out values with impossible contact time
 skaterDat <- skaterDat %>% 
   filter(CT > 10) %>% 
-  filter(CT < 100) %>%
+  filter(CT < 150) %>%
   group_by(Subject) %>%
   mutate(z_score = scale(impulse)) %>% 
   group_by(Config) 
 
 # Removing outliers by filtering any scores that are 2sds above or below the mean
-skaterDat<- subset(skaterDat, dat$z_score < 2) #removing outliers  
-skaterDat<- subset(skaterDat, dat$z_score > -2)
+skaterDat<- subset(skaterDat, skaterDat$z_score < 2) #removing outliers  
+skaterDat<- subset(skaterDat, skaterDat$z_score > -2) 
 
 #Normalization histograms, Check for normalish distribution/outliers
 ggplot(data = skaterDat, aes(x = impulse)) + geom_histogram() + facet_wrap(~Subject) 
@@ -276,7 +279,7 @@ ggplot(data = skaterDat, aes(x = impulse)) + geom_histogram() + facet_wrap(~Subj
 
 # "best of" Line graph 
 # This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally
-withinSubPlot(skaterDat, colName = 'impulse', dir = 'higher')
+withinSubPlot(skaterDat, colName = 'impulse', dir = 'higher','Impulse (Ns)')
 
 
 ## Bayes model 
@@ -294,7 +297,7 @@ runmod <- brm(data = skaterDat,
               seed = 190831)
 
 # Change configName to the config you want to compare to baseline (must match config name in data sheet)
-extractVals(skaterDat, runmod, configName = 'DualPanel', 'impulse', 'higher') 
+extractVals(skaterDat, runmod, configName = 'HED', 'impulse', 'higher') 
 
 
 
