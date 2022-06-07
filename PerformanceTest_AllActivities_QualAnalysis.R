@@ -27,7 +27,7 @@ withinSubQualPlot <- function(inputDF) {
   whichConfig <- merge(inputDF, whichConfig)
   
   ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = OverallFit, col = BestConfig, group = Subject)) + geom_point(size = 4) + 
-    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 16)) + ylab('Rating') 
+    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 20)) + ylab('Rating') 
   
 }
 
@@ -35,7 +35,7 @@ withinSubQualPlot <- function(inputDF) {
 
 qualDat <- read_xlsx(file.choose())
 
-qualDat$Config <- factor(qualDat$Config, c('SD', '3OTT')) #List baseline first
+qualDat$Config <- factor(qualDat$Config, c('LD', 'ED', 'PD')) #List baseline first
 
 qualDat %>%
   pivot_longer(cols = OverallFit:Heel,
@@ -94,8 +94,8 @@ qualDat <- pivot_longer(qualDat, cols = Forefoot:Heel, names_to = 'Location', va
   
 qualDat$Location <- factor(qualDat$Location, c('Forefoot', 'Midfoot', 'Heel')) 
 
-ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) + geom_density(alpha = 0.5) + facet_wrap(~Location) + scale_fill_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4"))
-
+ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) + geom_density(aes(y = ..density..*(nrow(qualDat)/3)*0.1), alpha = 0.5) + facet_wrap(~Location) + scale_fill_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) +
+ylab('Responses') + theme(text=element_text(size=20)) + geom_vline(xintercept = 5, size = 1)
 
 
 ### For high cut 
@@ -104,14 +104,14 @@ qualDat <- pivot_longer(qualDat, cols = Forefoot:Cuff, names_to = 'Location', va
 qualDat$Location <- factor(qualDat$Location, c('Forefoot', 'Midfoot', 'Heel', 'Cuff')) 
 
 ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) + geom_density(alpha = 0.5) + facet_wrap(~Location) + scale_fill_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4"))
++ theme(text=element_text(size=20)) + geom_vline(xintercept = 5, size = 1)
 
-  
 
 # making word clouds ------------------------------------------------------
 
 
-SL <- subset(qualDat, qualDat$Config == 'SL', GoodComments:BadComments)
-guide <- subset(qualDat, qualDat$Config == '4guide', GoodComments:BadComments)
+Config1 <- subset(qualDat, qualDat$Config == 'V1', GoodComments:BadComments)
+Config2 <- subset(qualDat, qualDat$Config == 'V2', GoodComments:BadComments)
 
 replacePunctuation <- content_transformer(function(x) {return (gsub("[[:punct:]]", " ", x))})
 
@@ -169,7 +169,6 @@ makeWordCloud <- function(inputText) {
   
 }
 
-
-makeWordCloud(SL)
+makeWordCloud(Config2)
 
 
