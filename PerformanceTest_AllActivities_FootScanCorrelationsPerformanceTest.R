@@ -8,52 +8,60 @@ library(ggpubr)
 
 rm(list=ls())
 
-#load compiled outcomes
-
+#loading in test data
 testDat <- read_csv(file.choose())
 
-
+#Loading in the BigData Footvolume data set
 footDat <- read_excel('C:/Users/kate.harrison/Boa Technology Inc/PFL - Documents/General/BigData2021/MasterSubjectSizes.xlsx')
 
+# Defining the movement we're looking at
+testDat <- subset(dat, dat$Movement == 'CMJ')
 
-#testDat <- subset(dat, dat$Movement == 'CMJ')
-
-testDat <- testDat %>% 
-   #filter(ContactTime > 10) %>% #remove values with impossible contact time
-   #filter(ContactTime < 100) %>%
+#Filtering impossible contact times
+testDat <- testDat %>%
+   filter(ContactTime > 10) %>% 
+   filter(ContactTime < 100) %>%
    group_by(Subject) %>%
    mutate(z_score = scale(CT)) # Change to the variable you want to test
 
-testDat <- subset(testDat, testDat$z_score < 3)
-testDat <- subset(testDat, testDat$z_score > -3)
+# Filtering any scores that are 2sds above or below the mean
+testDat <- subset(testDat, testDat$z_score < 2)
+testDat <- subset(testDat, testDat$z_score > -2)
 
-
+#Defining which sides we are looking at
 RfootDat <- subset(footDat, footDat$Side == 'R')
-LfootDat <- subset(footDat, footDat$Side == 'L')
- 
+LfootDat <- subset(footDat, footDat$Side == 'L') 
+
+
+#Defining the shoes we tested  
 baselineDat <- subset(testDat, testDat$Config == 'Single') # Change to baseline shoe name
 
 newShoeDat <- subset(testDat, testDat$Config == 'Paired') # Change to shoe you want to compare to baseline
 
+
+#  This purpose of this For Loop is finding difference for each subject between configs, and finding the relationship between performance and foot size
+# Defining the subject and difference as indices
 Subject <- rep(NA, 2)
 diff <- rep(0, 2)
 
-r = 1
+r = 1 # representing the subject
 
-for (sub in unique(testDat$Subject)) {
+for (sub in unique(testDat$Subject)) { # Finding the uniqe names of the subjects
    
-   Subject[r] <- sub
-   tempbaseDat <- subset(baselineDat, baselineDat$Subject == sub)
+   Subject[r] <- sub #temp subject name 
+   
+   #Subsetting that data into baeline and new congigs
+   tempbaseDat <- subset(baselineDat, baselineDat$Subject == sub) 
    tempnewDat <- subset(newShoeDat, newShoeDat$Subject == sub)
    
-   diff[r] <- mean(tempnewDat$z_score) - mean(tempbaseDat$z_score)
+   diff[r] <- mean(tempnewDat$z_score) - mean(tempbaseDat$z_score) # finding the differences in variation between the two configs
    
-   r = r+1
+   r = r+1 # Moving onto the next subject
    
 }
-
-diff <- as.numeric(diff)
-diffDat <- cbind(Subject, diff)
+# This section is binding the code into a single data frame comparing performance differences between the configs
+diff <- as.numeric(diff) 
+diffDat <- cbind(Subject, diff) 
 diffDat <- as.data.frame(diffDat)
 
 
@@ -63,7 +71,7 @@ diffDat <- as.data.frame(diffDat)
 corrDat <- inner_join (diffDat, RfootDat, by = 'Subject')
 corrDat$diff <- as.numeric(corrDat$diff)
  
-# Find correlations between foot characteristics and outcomes
+# Plots - Looking for correlations between foot characteristics and outcomes
 
 ggscatter(corrDat, x = "Length (cm)", y = "diff", 
           add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson", 
@@ -82,25 +90,29 @@ ggscatter(corrDat, x = "Instep (cm)", y = "diff",
 
 ######### For golf ####################################
 
+#Clearing the environment
 rm(list=ls())
 
-#load compiled outcomes
-
+#loading in CompiledTrackMan Data
 testDat <- read_excel(file.choose())
 
-
+#Loading in foot volume BigData sheet
 footDat <- read_excel('C:/Users/kate.harrison/Boa Technology Inc/PFL - Documents/General/BigData2021/MasterSubjectSizes.xlsx')
 
 
 
-
+#Defining which sides we are looking at
 RfootDat <- subset(footDat, footDat$Side == 'R')
-LfootDat <- subset(footDat, footDat$Side == 'L')
+LfootDat <- subset(footDat, footDat$Side == 'L') 
 
+
+#Defining the shoes we tested
 baselineDat <- subset(testDat, testDat$Shoe == 'Lace') # Change to baseline shoe name
 
 newShoeDat <- subset(testDat, testDat$Shoe == 'A') # Change to shoe you want to compare to baseline
 
+
+# finding difference for each sub between configs, finding relationship between performance and foot size
 Subject <- rep(NA, 2)
 diff <- rep(0, 2)
 
@@ -123,13 +135,11 @@ diffDat <- cbind(Subject, diff)
 diffDat <- as.data.frame(diffDat)
 
 
-# join dataframes
-
+# join foot volume and trackman dataframes
 corrDat <- inner_join (diffDat, RfootDat, by = 'Subject')
 
 
 # Find correlations between foot characteristics and outcomes
-
 corrDat[,2] <- as.numeric(corrDat[,2])
 
 ggscatter(corrDat, x = "Length (cm)", y = "diff", 
