@@ -31,11 +31,78 @@ withinSubQualPlot <- function(inputDF) {
   
 }
 
+
+extractVals <- function(dat, mod, configNames, var, dir) {
+  
+  #configNames = otherConfigs
+  #mod = runmod
+  #dir = 'higher'
+  #var = 'CarryFlatLength'
+  
+  Config = rep(NA, length(configNames))
+  ProbImp = matrix(0, length(configNames))
+  lowCI = matrix(0, length(configNames))
+  highCI = matrix(0, length(configNames))
+  
+  for (i in 1:length(configNames)) {
+    # This function takes the original dataframe (dat, same one entered into runmod), the Bayesian model from brms (runmod), 
+    # the configuration Name, and the variable you are testing. It returns:
+    # [1] the probabality the variable was better in the test config vs. the baseline config
+    # [3] the lower bound of the bayesian 95% posterior interval (as percent change from baseline) 
+    # [4] the upper bound of the bayesian 95% posterior interval (as percent change from baseline)
+    #i = 1
+    
+    configName = configNames[i]
+    configColName <- paste('b_Config', configName, sep = "")
+    posterior <- posterior_samples(mod)
+    
+    if (dir == 'lower'){
+      prob <- sum(posterior[,configColName] < 0) / length(posterior[,configColName])
+      
+    } else if (dir == 'higher') {
+      
+      prob <- sum(posterior[,configColName] > 0) / length(posterior[,configColName])
+    }
+    
+    ci <- posterior_interval(mod, prob = 0.95)
+    ciLow <- ci[configColName,1] 
+    ciHigh <- ci[configColName,2]
+    
+    SDdat <- dat %>%
+      group_by(Subject) %>%
+      summarize(sd = sd(!! sym(var), na.rm = TRUE), mean = mean(!! sym(var), na.rm = TRUE))
+    
+    meanSD = mean(SDdat$sd)
+    mean = mean(SDdat$mean)
+    ci_LowPct <- meanSD*ciLow/mean*100
+    ci_HighPct <- meanSD*ciHigh/mean*100
+    
+    output = list('Config:', configName, 'Probability of Improvement:', prob, 'Worse end of CI:', ci_LowPct, 'Best end of CI:', ci_HighPct)
+    Config[i] = configName
+    ProbImp[i] = prob
+    lowCI[i] = ci_LowPct
+    highCI[i] = ci_HighPct
+  }
+  ProbImp = round(ProbImp, 2)
+  lowCI = round(lowCI, 1)
+  highCI = round(highCI,1)
+  output = cbind(Config, ProbImp, lowCI, highCI)
+  
+  colnames(output) = c('Config', 'Probability of Improvement', 'Low end of CI', 'High end of CI')
+  return(output)
+}
+
 ################
 
 qualDat <- read_xlsx(file.choose())
 
-qualDat$Config <- factor(qualDat$Config, c('LD', 'ED', 'PD')) #List baseline first
+base <- 'LR' # baseline configuration
+
+otherConfigs <- c('MP', 'SP') # other configurations tesed against base
+
+allConfigs <- c(base, otherConfigs)
+
+qualDat$Config <- factor(qualDat$Config, allConfigs)
 
 qualDat %>%
   pivot_longer(cols = OverallFit:Heel,
@@ -61,23 +128,85 @@ qualDat %>%
 
 qualDat <- qualDat %>% 
   
-  mutate(z_score = scale(OverallFit))# Change to the variable you want to test
+  mutate(z_score = scale(OverallFit))
   
 
 runmod <- brm(data = qualDat,
               family = gaussian,
-              z_score ~ Config + (1|Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              z_score ~ Config, #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
                         prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
-                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                      
                         prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
               iter = 2000, warmup = 1000, chains = 4, cores = 4,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-posterior <- posterior_samples(runmod)
+extractVals(qualDat, runmod, otherConfigs, 'OverallFit', 'higher') 
 
-sum(posterior[,3] > 0) / length(posterior[,3]) 
+## Score for forefoot fit
+
+qualDat <- qualDat %>% 
+  mutate(ffCent = Forefoot - 5) %>%
+  mutate(ffCentAbs = abs(ffCent)) %>%
+  mutate(z_score = scale(ffCentAbs))# Change to the variable you want to test
+
+
+runmod <- brm(data = qualDat,
+              family = gaussian,
+              z_score ~ Config, #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+extractVals(qualDat, runmod, otherConfigs, 'Forefoot', 'lower') 
+
+
+## Score for midfoot fit
+
+qualDat <- qualDat %>% 
+  mutate(mfCent = Midfoot - 5) %>%
+  mutate(mfCentAbs = abs(mfCent)) %>%
+  mutate(z_score = scale(mfCentAbs))# Change to the variable you want to test
+
+
+runmod <- brm(data = qualDat,
+              family = gaussian,
+              z_score ~ Config, #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+extractVals(qualDat, runmod, otherConfigs, 'Midfoot', 'lower')
+
+## Score for heel fit
+
+qualDat <- qualDat %>% 
+  mutate(heelCent = Heel - 5) %>%
+  mutate(heelCentAbs = abs(heelCent)) %>%
+  mutate(z_score = scale(heelCentAbs))# Change to the variable you want to test
+
+
+runmod <- brm(data = qualDat,
+              family = gaussian,
+              z_score ~ Config, #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+extractVals(qualDat, runmod, otherConfigs, 'Heel', 'lower') 
 
 
 ####

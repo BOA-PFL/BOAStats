@@ -1,3 +1,4 @@
+
 library(tidyverse)
 library(brms)
 library(tidybayes)
@@ -41,10 +42,13 @@ withinSubPlot <- function(inputDF, colName, dir) {
   
 }
 
-
+#
 extractVals <- function(dat, mod, configNames, var, dir) {
   
-  
+  #configNames = otherConfigs
+  #mod = runmod
+  #dir = 'higher'
+  #var = 'CarryFlatLength'
   
   Config = rep(NA, length(configNames))
   ProbImp = matrix(0, length(configNames))
@@ -71,7 +75,7 @@ extractVals <- function(dat, mod, configNames, var, dir) {
       prob <- sum(posterior[,configColName] > 0) / length(posterior[,configColName])
     }
     
-    ci <- posterior_interval(mod, prob = 0.80)
+    ci <- posterior_interval(mod, prob = 0.95)
     ciLow <- ci[configColName,1] 
     ciHigh <- ci[configColName,2]
     
@@ -99,73 +103,39 @@ extractVals <- function(dat, mod, configNames, var, dir) {
   return(output)
 }
 
+
 ###############################
 
 dat <- read.csv(file.choose())
 
 dat <- as_tibble(dat)
 
+baseConfig <- 'LR' # baseline config
 
-baseline <- 'V1'
+otherConfigs <- c('MP', 'SP') # list configs being tested against baseline
 
-otherConfigs <- c('V2')
+allConfigs <- c(baseConfig, otherConfigs)
 
-allConfigs <- c(baseline, otherConfigs)
-
-dat$Config <- factor(dat$Config, allConfigs) 
+dat$Config <- factor(dat$Config, allConfigs)
 
 
-###### Weight transfer to outside foot
+###### Heel Pressure Variability
 
 dat <- dat %>% 
+  filter(cvHeel > 0.1) %>%
   group_by(Subject) %>%
-  mutate(z_score = scale(OutsideFootForce)) %>% 
+  mutate(z_score = scale(cvHeel)) %>% 
   group_by(Config)
-
 
 dat<- subset(dat, dat$z_score < 2) #removing outliers  
 dat<- subset(dat, dat$z_score > -2)
 
-ggplot(data = dat, aes(x = OutsideFootForce)) + geom_histogram() + facet_wrap(~Subject) 
-
-
-p <- withinSubPlot(dat, colName = 'OutsideFootForce', dir = 'higher')
-yTitle <- expression(Better~weight~transfer%->%"")
-p + ylab(yTitle)
-
-
-runmod <- brm(data = dat, # Bayes model
-              family = gaussian,
-              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
-              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
-                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
-                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
-                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
-              iter = 2000, warmup = 1000, chains = 4, cores = 4,
-              control = list(adapt_delta = .975, max_treedepth = 20), sample_prior = TRUE,
-              seed = 190831)
+ggplot(data = dat, aes(x = cvHeel)) + geom_histogram() + facet_wrap(~Subject) 
 
 
 
-extractVals(dat, runmod, otherConfigs, 'OutsideFootForce', 'higher') 
-
-
-###### Foot roll (Pressure targeted on medial ball of foot)
-
-dat <- dat %>% 
-  group_by(Subject) %>%
-  mutate(z_score = scale(OutsideFootMedialForce)) %>% 
-  group_by(Config)
-
-
-dat<- subset(dat, dat$z_score < 2) #removing outliers  
-dat<- subset(dat, dat$z_score > -2)
-
-ggplot(data = dat, aes(x = OutsideFootMedialForce)) + geom_histogram() + facet_wrap(~Subject) 
-
-p <- withinSubPlot(dat, colName = 'OutsideFootMedialForce', dir = 'higher')
-yTitle <- expression(Better~foot~roll%->%"")
-p + ylab(yTitle)
+p <- withinSubPlot(dat, colName = 'cvHeel', dir = 'lower')
+p+ ylab('Variation in Heel pressure')
 
 runmod <- brm(data = dat, # Bayes model
               family = gaussian,
@@ -178,25 +148,29 @@ runmod <- brm(data = dat, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-extractVals(dat, runmod, otherConfigs, 'OutsideFootMedialForce', 'higher') 
+# Change configName to the config you want to compare to baseline (must match config name in data sheet)
+
+extractVals(dat, runmod, otherConfigs, 'cvHeel', 'lower') 
 
 
-###### Forward stance (Pressure on toes during early stance)
+
+###### Heel Pressure Variability
 
 dat <- dat %>% 
+  filter(cvHeel > 0.1) %>%
   group_by(Subject) %>%
-  mutate(z_score = scale(avgOutsideHeelStart)) %>% 
+  mutate(z_score = scale(cvHeel)) %>% 
   group_by(Config)
-
 
 dat<- subset(dat, dat$z_score < 2) #removing outliers  
 dat<- subset(dat, dat$z_score > -2)
 
-ggplot(data = dat, aes(x = avgOutsideHeelStart)) + geom_histogram() + facet_wrap(~Subject) 
+ggplot(data = dat, aes(x = cvHeel)) + geom_histogram() + facet_wrap(~Subject) 
 
-p<-withinSubPlot(dat, colName = 'avgOutsideHeelStart', dir = 'lower')
-yTitle <- expression(""%<-%Better~forward~stance)
-p + ylab(yTitle)
+
+
+p <- withinSubPlot(dat, colName = 'cvHeel', dir = 'lower')
+p+ ylab('Variation in Heel pressure')
 
 runmod <- brm(data = dat, # Bayes model
               family = gaussian,
@@ -209,25 +183,30 @@ runmod <- brm(data = dat, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-extractVals(dat, runmod, otherConfigs, 'avgOutsideHeelStart', 'lower') 
+# Change configName to the config you want to compare to baseline (must match config name in data sheet)
+
+extractVals(dat, runmod, otherConfigs, 'cvHeel', 'lower') 
 
 
-###### Balance (Even heel/toe pressure late in turn)
+
+
+###### Heel Pressure Variability
 
 dat <- dat %>% 
+  filter(cvHeel > 0.1) %>%
   group_by(Subject) %>%
-  mutate(z_score = scale(pkOutsideHeelLate)) %>% 
+  mutate(z_score = scale(cvHeel)) %>% 
   group_by(Config)
-
 
 dat<- subset(dat, dat$z_score < 2) #removing outliers  
 dat<- subset(dat, dat$z_score > -2)
 
-ggplot(data = dat, aes(x = pkOutsideHeelLate)) + geom_histogram() + facet_wrap(~Subject) 
+ggplot(data = dat, aes(x = cvHeel)) + geom_histogram() + facet_wrap(~Subject) 
 
-p<-withinSubPlot(dat, colName = 'pkOutsideHeelLate', dir = 'higher')
-yTitle <- expression(Better~balance%->%"")
-p + ylab(yTitle)
+
+
+p <- withinSubPlot(dat, colName = 'cvHeel', dir = 'lower')
+p+ ylab('Variation in Heel pressure')
 
 runmod <- brm(data = dat, # Bayes model
               family = gaussian,
@@ -240,24 +219,29 @@ runmod <- brm(data = dat, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-extractVals(dat, runmod, otherConfigs, 'pkOutsideHeelLate', 'higher') 
+
+extractVals(dat, runmod, otherConfigs, 'cvHeel', 'lower') 
 
 
-###### cv Forc
+
+
+###### Heel Contact Area Late Stance
 
 dat <- dat %>% 
+  #filter(cvHeel > 0.1) %>%
   group_by(Subject) %>%
-  mutate(z_score = scale(CVForce)) %>% 
+  mutate(z_score = scale(heelArea)) %>% 
   group_by(Config)
-
 
 dat<- subset(dat, dat$z_score < 2) #removing outliers  
 dat<- subset(dat, dat$z_score > -2)
 
-ggplot(data = dat, aes(x = CVForce)) + geom_histogram() + facet_wrap(~Subject) 
+ggplot(data = dat, aes(x = heelArea)) + geom_histogram() + facet_wrap(~Subject) 
 
-withinSubPlot(dat, colName = 'CVForce', dir = 'lower')
 
+
+p <- withinSubPlot(dat, colName = 'heelArea', dir = 'higher')
+p+ ylab('Heel Contact Area Late Stance (cm^2)')
 
 runmod <- brm(data = dat, # Bayes model
               family = gaussian,
@@ -270,5 +254,5 @@ runmod <- brm(data = dat, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-extractVals(dat, runmod, otherConfigs, 'CVForce', 'lower') 
+extractVals(dat, runmod, otherConfigs, 'heelArea', 'higher') 
 

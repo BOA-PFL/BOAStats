@@ -110,9 +110,13 @@ dat <- read.csv(file.choose())
 
 dat <- as_tibble(dat)
 
+baseConfig <- 'LR' # baseline config
 
-#Change to Config names used in your data, with the baseline model listed first.
-dat$Config <- factor(dat$Config, c('TriPanel', 'DualPanel'))
+otherConfigs <- c('SP', 'MP') # list configs being tested against baseline
+
+allConfigs <- c(baseConfig, otherConfigs)
+
+dat$Config <- factor(dat$Config, allConfigs)
 
 ########################################## CMJ ###############################################
 
@@ -122,16 +126,18 @@ cmjDat <- subset(dat, dat$Movement == 'CMJ')
 ###### CMJ Contact Time
 
 cmjDat <- cmjDat %>% 
-  filter(CT > 10) %>% #remove values with impossible contact time
-  filter(CT < 100) %>%
+  filter(CT > .1) %>% #remove values with impossible contact time
+  filter(CT < 1.5) %>%
   group_by(Subject) %>%
   mutate(z_score = scale(CT)) %>% 
   group_by(Config)
 
-cmjDat<- subset(cmjDat, dat$z_score < 2) #removing outliers  
-cmjDat<- subset(cmjDat, dat$z_score > -2)
+cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
+cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
 
-ggplot(data = cmjDat, aes(x = CT)) + geom_histogram() + facet_wrap(~Subject) 
+p <-ggplot(data = cmjDat, aes(x = CT)) + geom_histogram() + facet_wrap(~Subject) 
+
+p+ ylab('Contact Time (s)')
 
 withinSubPlot(cmjDat, colName = 'CT', dir = 'lower')
 
@@ -147,26 +153,25 @@ runmod <- brm(data = cmjDat, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-# Change configName to the config you want to compare to baseline (must match config name in data sheet)
 
-extractVals(cmjDat, runmod, configName = 'DualPanel', 'CT', 'lower') 
+extractVals(cmjDat, runmod, otherConfigs, 'CT', 'lower') 
 
 ##### CMJ jump height/impulse 
 
 cmjDat <- cmjDat %>% 
-  filter(CT > 10) %>% #remove values with impossible contact time
-  filter(CT < 100) %>%
+  filter(impulse_Z < 1000) %>%
   group_by(Subject) %>%
-  mutate(z_score = scale(impulse)) %>% 
+  mutate(z_score = scale(impulse_Z)) %>% 
   group_by(Config)
 
-cmjDat<- subset(cmjDat, dat$z_score < 2) #removing outliers  
-cmjDat<- subset(cmjDat, dat$z_score > -2)
+cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
+cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
 
-ggplot(data = cmjDat, aes(x = impulse)) + geom_histogram() + facet_wrap(~Subject) 
+ggplot(data = cmjDat, aes(x = impulse_Z)) + geom_histogram() + facet_wrap(~Subject) 
 
-withinSubPlot(cmjDat, colName = 'impulse', dir = 'higher')
+p <- withinSubPlot(cmjDat, colName = 'impulse_Z', dir = 'higher')
 
+p + ylab('Impulse (Ns)')
 
 runmod <- brm(data = cmjDat, # Bayes model
               family = gaussian,
@@ -179,9 +184,103 @@ runmod <- brm(data = cmjDat, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-# Change configName to the config you want to compare to baseline (must match config name in data sheet)
 
-extractVals(cmjDat, runmod, configName = 'DualPanel', 'impulse', 'higher') 
+extractVals(cmjDat, runmod, otherConfigs, 'impulse_Z', 'higher') 
+
+
+##### CMJ Peak Plantarflexion moment
+
+cmjDat <- cmjDat %>% 
+  #filter(peakPFmom < 1000) %>%
+  group_by(Subject) %>%
+  mutate(z_score = scale(peakPFmom)) %>% 
+  group_by(Config)
+
+cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
+cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
+
+ggplot(data = cmjDat, aes(x = peakPFmom)) + geom_histogram() + facet_wrap(~Subject) 
+
+p <- withinSubPlot(cmjDat, colName = 'peakPFmom', dir = 'higher')
+
+p + ylab('Peak Plantarflexion Moment (Nm)')
+
+runmod <- brm(data = cmjDat, # Bayes model
+              family = gaussian,
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+
+extractVals(cmjDat, runmod, otherConfigs, 'peakPFmom', 'higher') 
+
+##### CMJ Peak Knee Extension moment
+
+cmjDat <- cmjDat %>% 
+  #filter(peakKneeEXTmom < 1000) %>%
+  group_by(Subject) %>%
+  mutate(z_score = scale(peakKneeEXTmom)) %>% 
+  group_by(Config)
+
+cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
+cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
+
+ggplot(data = cmjDat, aes(x = peakKneeEXTmom)) + geom_histogram() + facet_wrap(~Subject) 
+
+p <- withinSubPlot(cmjDat, colName = 'peakKneeEXTmom', dir = 'higher')
+
+p + ylab('Peak Knee Extension Moment (Nm)')
+
+runmod <- brm(data = cmjDat, # Bayes model
+              family = gaussian,
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+
+extractVals(cmjDat, runmod, otherConfigs, 'peakKneeEXTmom', 'higher') 
+
+
+##### CMJ Peak Knee Extension moment
+
+cmjDat <- cmjDat %>% 
+  #filter(peakKneeEXTmom < 1000) %>%
+  group_by(Subject) %>%
+  mutate(z_score = scale(kneeABDrom)) %>% 
+  group_by(Config)
+
+cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
+cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
+
+ggplot(data = cmjDat, aes(x = kneeABDrom)) + geom_histogram() + facet_wrap(~Subject) 
+
+p <- withinSubPlot(cmjDat, colName = 'kneeABDrom', dir = 'lower')
+
+p + ylab('Knee Frontal Plane Range of Motion (deg)')
+
+runmod <- brm(data = cmjDat, # Bayes model
+              family = gaussian,
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+
+extractVals(cmjDat, runmod, otherConfigs, 'kneeABDrom', 'lower') 
 
 
 ########################################## Skater ###############################################
@@ -192,8 +291,8 @@ skaterDat <- subset(dat, dat$Movement == 'Skater')
 ###### Skater Contact Time
 
 skaterDat <- skaterDat %>% 
-  filter(CT > 10) %>% #remove values with impossible contact time
-  filter(CT < 100) %>%
+  filter(CT > .1) %>% #remove values with impossible contact time
+  filter(CT < 1) %>%
   group_by(Subject) %>%
   mutate(z_score = scale(CT)) %>% 
   group_by(Config)
@@ -217,25 +316,23 @@ runmod <- brm(data = skaterDat, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-# Change configName to the config you want to compare to baseline (must match config name in data sheet)
 
-extractVals(skaterDat, runmod, configName = 'DualPanel', 'CT', 'lower') 
+extractVals(skaterDat, runmod, otherConfigs, 'CT', 'lower') 
 
-##### Skater jump height/impulse 
+##### Skater peak propulsive force
 
 skaterDat <- skaterDat %>% 
-  filter(CT > 10) %>% #remove values with impossible contact time
-  filter(CT < 100) %>%
   group_by(Subject) %>%
-  mutate(z_score = scale(impulse)) %>% 
+  mutate(z_score = scale(peakGRF_X)) %>% 
   group_by(Config)
 
 skaterDat<- subset(skaterDat, dat$z_score < 2) #removing outliers  
 skaterDat<- subset(skaterDat, dat$z_score > -2)
 
-ggplot(data = skaterDat, aes(x = impulse)) + geom_histogram() + facet_wrap(~Subject) 
+ggplot(data = skaterDat, aes(x = peakGRF_X)) + geom_histogram() + facet_wrap(~Subject) 
 
-withinSubPlot(skaterDat, colName = 'impulse', dir = 'higher')
+p<-withinSubPlot(skaterDat, colName = 'peakGRF_X', dir = 'higher')
+p + ylab('Peak Propulsive Force (N)')
 
 
 runmod <- brm(data = skaterDat, # Bayes model
@@ -249,9 +346,69 @@ runmod <- brm(data = skaterDat, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-# Change configName to the config you want to compare to baseline (must match config name in data sheet)
 
-extractVals(skaterDat, runmod, configName = 'DualPanel', 'impulse', 'higher') 
+extractVals(skaterDat, runmod, otherConfigs, 'peakGRF_X', 'higher') 
+
+
+##### Skater peak propulsive power
+
+skaterDat <- skaterDat %>% 
+  group_by(Subject) %>%
+  mutate(z_score = scale(peakPower)) %>% 
+  group_by(Config)
+
+skaterDat<- subset(skaterDat, dat$z_score < 2) #removing outliers  
+skaterDat<- subset(skaterDat, dat$z_score > -2)
+
+ggplot(data = skaterDat, aes(x = peakPower)) + geom_histogram() + facet_wrap(~Subject) 
+
+p<-withinSubPlot(skaterDat, colName = 'peakPower', dir = 'higher')
+p + ylab('Peak Power (W)')
+
+
+runmod <- brm(data = skaterDat, # Bayes model
+              family = gaussian,
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+extractVals(skaterDat, runmod, otherConfigs, 'peakPower', 'higher') 
+
+
+##### Skater eccentric work
+
+skaterDat <- skaterDat %>% 
+  group_by(Subject) %>%
+  mutate(z_score = scale(eccWork)) %>% 
+  group_by(Config)
+
+skaterDat<- subset(skaterDat, dat$z_score < 2) #removing outliers  
+skaterDat<- subset(skaterDat, dat$z_score > -2)
+
+ggplot(data = skaterDat, aes(x = eccWork)) + geom_histogram() + facet_wrap(~Subject) 
+
+p<-withinSubPlot(skaterDat, colName = 'eccWork', dir = 'lower')
+p + ylab('Eccentric Work (J)')
+
+
+runmod <- brm(data = skaterDat, # Bayes model
+              family = gaussian,
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+
+extractVals(skaterDat, runmod, otherConfigs, 'eccWork', 'lower') 
 
 
 
