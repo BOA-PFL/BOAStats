@@ -8,14 +8,15 @@ library(rlang)
 library(reshape2)
 library(readxl)
 
-rm(list=ls())
+rm(list=ls())# Clears the environment
 
 ####### Functions
+# Making the "Best of" line plots and defining direction
+# direction can be 'lower' or higher'. It is the direction of change that is better. 
+# For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher. 
 
-withinSubPlot <- function(inputDF, colName, dir) {
+withinSubPlot <- function(inputDF, colName, dir,ylabel) {
   
-  # direction can be 'lower' or higher'. It is the direction of change that is better. 
-  # For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher. 
   meanDat <- inputDF %>%
     group_by(Subject, Config) %>%
     summarize(mean = mean(!! sym(colName)))
@@ -38,8 +39,8 @@ withinSubPlot <- function(inputDF, colName, dir) {
   
   whichConfig <- merge(meanDat, whichConfig)
   
-  ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = mean, col = BestConfig, group = Subject)) + geom_point(size = 4) + 
-    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 16)) + ylab(paste0({{colName}})) 
+  ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = mean, col = BestConfig, group = Subject)) + geom_point(size = 4) +
+    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 26)) + ylab(ylabel)
   
 }
 
@@ -105,13 +106,15 @@ extractVals <- function(dat, mod, configNames, var, dir) {
 
 #################### Set up data
 
-dat <- read_csv(file.choose())
+dat <- read_csv(file.choose()) # Reading in the CSV
 
-dat <- as_tibble(dat)
+dat <- as_tibble(dat) # creating the data frame
 
-baseline <- 'DD'
 
-otherConfigs <- c('HL', 'PFW')
+# Defining the baseline and other configs
+baseline <- 'LRHL'
+
+otherConfigs <- c('PFHL')
 
 allConfigs <- c(baseline, otherConfigs)
 
@@ -119,21 +122,30 @@ dat$Config <- factor(dat$Config, allConfigs)
 
 
 ################### Steady Power
-
+ 
+#organizing data - grouping by subject and config by the variable being observed
 dat <- dat %>% 
   group_by(Subject) %>%
-  mutate(z_score = scale(steadyPower)) %>% 
+  mutate(z_score = scale(Power_steady)) %>% 
   group_by(Config)
 
-ggplot(data = dat, aes(x = steadyPower)) + geom_histogram() + facet_wrap(~Subject) #Change x axis variable to your variable of interest. Check for normal-ish distribution.
 
 
-withinSubPlot(dat, colName = 'steadyPower', dir = 'higher') 
+#Normalization histograms, Check for normalish distribution/outliers
+ggplot(data = dat, aes(x = Power_steady)) + geom_histogram() + facet_wrap(~Subject) 
+
+# "best of" Line graph 
+# This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally 
+withinSubPlot(dat, colName = 'Power_steady', dir = 'higher', ylabel = 'Steady Power [W]') 
 
 
+
+## Bayes model 
+# This model takes a while to run and may  crash your session 
+#Wait until you receive a warning about rtools to run anything else
 runmod <- brm(data = dat, 
               family = gaussian,
-              z_score ~ Config + (1 + Config| SubjectNo), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
                         prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
                         prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
@@ -142,25 +154,30 @@ runmod <- brm(data = dat,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
+# # Output of the Confidence Interval
+extractVals(dat, runmod, otherConfigs, 'Power_steady', 'higher')  
 
-extractVals(dat, runmod, otherConfigs, 'steadyPower', 'higher')  
-
-model1 <-lmer(steadyPower ~ Config + (1 + Config| SubjectNo),data = dat) 
-summary(model1)
+# model1 <-lmer(steadyPower ~ Config + (1 + Config| SubjectNo),data = dat) 
+# summary(model1)
 
 ######################### Sprint Power
 
+
+#organizing data - grouping by subject and config by the variable being observed
 dat <- dat %>% 
 group_by(Subject) %>%
-  mutate(z_score = scale(sprintPower)) %>% 
+  mutate(z_score = scale(Power_sprint)) %>% 
   group_by(Config)
 
-ggplot(data = dat, aes(x = Power_sprint)) + geom_histogram() + facet_wrap(~Subject) #Change x axis variable to your variable of interest. Check for normal-ish distribution.
+#Normalization histograms, Check for normalish distribution/outliers
+ggplot(data = dat, aes(x = Power_sprint)) + geom_histogram() + facet_wrap(~Subject) 
 
+# "best of" Line graph 
+withinSubPlot(dat, colName = 'Power_sprint', dir = 'higher', ylabel = 'Sprint Power [W]') 
 
-withinSubPlot(dat, colName = 'sprintPower', dir = 'higher') 
-
-
+## Bayes model 
+# This model takes a while to run and may  crash your session 
+#Wait until you receive a warning about rtools to run anything else
 runmod <- brm(data = dat, 
               family = gaussian,
               z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
@@ -173,23 +190,31 @@ runmod <- brm(data = dat,
               seed = 190831)
 
 
-extractVals(dat, runmod, otherConfigs, 'sprintPower', 'higher') 
+# # Output of the Confidence Interval
+extractVals(dat, runmod, otherConfigs, 'Power_sprint', 'higher') 
 
 
-######################### Pressure
+######################### Pressure##########
 
-### Heel pressure variation across time throughout pedal stroke
+### Heel pressure variation across time throughout pedal stroke 
+
+#organizing data - grouping by subject and config by the variable being observed
 dat <- dat %>% 
   group_by(Subject) %>%
   mutate(z_score = scale(overallHeelVar)) %>% 
   group_by(Config)
 
+#Normalization histograms, Check for normalish distribution/outliers
 ggplot(data = dat, aes(x = overallHeelVar)) + geom_histogram() + facet_wrap(~Subject) #Change x axis variable to your variable of interest. Check for normal-ish distribution.
 
 
-withinSubPlot(dat, colName = 'overallHeelVar', dir = 'lower') 
+# "best of" Line graph 
+withinSubPlot(dat, colName = 'overallHeelVar', dir = 'lower', ylabel = 'Heel Pressure Variation []') 
 
 
+## Bayes model 
+# This model takes a while to run and may  crash your session 
+#Wait until you receive a warning about rtools to run anything else
 runmod <- brm(data = dat, 
               family = gaussian,
               z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
@@ -201,22 +226,29 @@ runmod <- brm(data = dat,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-
+# # Output of the Confidence Interval
 extractVals(dat, runmod, otherConfigs, 'overallHeelVar', 'lower')
 
-### Peak pressure throughout pedal stroke 
 
+
+### Peak pressure throughout pedal stroke  
+
+
+#organizing data - grouping by subject and config by the variable being observed
 dat <- dat %>% 
   group_by(Subject) %>%
   mutate(z_score = scale(overallPeakP)) %>% 
   group_by(Config)
 
+#Normalization histograms, Check for normalish distribution/outliers
 ggplot(data = dat, aes(x = overallPeakP)) + geom_histogram() + facet_wrap(~Subject) #Change x axis variable to your variable of interest. Check for normal-ish distribution.
 
+# "best of" Line graph 
+withinSubPlot(dat, colName = 'overallPeakP', dir = 'lower', ylabel = 'Peak Heel Pressure []') 
 
-withinSubPlot(dat, colName = 'overallPeakP', dir = 'lower') 
-
-
+## Bayes model 
+# This model takes a while to run and may  crash your session 
+#Wait until you receive a warning about rtools to run anything else
 runmod <- brm(data = dat, 
               family = gaussian,
               z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
@@ -228,7 +260,7 @@ runmod <- brm(data = dat,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-
+# # Output of the Confidence Interval
 extractVals(dat, runmod, otherConfigs, 'overallPeakP', 'lower')
 
 

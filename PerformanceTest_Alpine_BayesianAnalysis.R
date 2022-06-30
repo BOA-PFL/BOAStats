@@ -6,14 +6,23 @@ library(dplyr)
 library(rlang)
 library(reshape2)
 
-rm(list=ls())
+rm(list=ls()) # Clears the environment
 
-####### Functions
+
+# This code uses Bayesian analysis specifically for variables we look for in alpine segments
+
+
+
+
+####### Functions 
+# Making the "Best of" line plots and defining direction
+# direction can be 'lower' or higher'. It is the direction of change that is better. 
+# For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher. 
+
 
 withinSubPlot <- function(inputDF, colName, dir) {
   
-  # direction can be 'lower' or higher'. It is the direction of change that is better. 
-  # For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher. 
+  
   meanDat <- inputDF %>%
     group_by(Subject, Config) %>%
     summarize(mean = mean(!! sym(colName)))
@@ -37,7 +46,7 @@ withinSubPlot <- function(inputDF, colName, dir) {
   whichConfig <- merge(meanDat, whichConfig)
   
   ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = mean, col = BestConfig, group = Subject)) + geom_point(size = 4) + 
-    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 16)) + ylab(paste0({{colName}})) 
+    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 26)) + ylab(paste0({{colName}})) 
   
 }
 
@@ -101,11 +110,12 @@ extractVals <- function(dat, mod, configNames, var, dir) {
 
 ###############################
 
-dat <- read.csv(file.choose())
+dat <- read.csv(file.choose()) # Reading in the CSV
 
-dat <- as_tibble(dat)
+dat <- as_tibble(dat) # creating the data frame
 
-
+ 
+# Defining the baseline and other configs
 baseline <- 'V1'
 
 otherConfigs <- c('V2')
@@ -117,24 +127,36 @@ dat$Config <- factor(dat$Config, allConfigs)
 
 ###### Weight transfer to outside foot
 
+#This section of code is organizing data - grouping by subject and config by the variable being observed
+#Filtering out values by removing outliers by filtering any scores that are 2sds above or below the mean
 dat <- dat %>% 
   group_by(Subject) %>%
   mutate(z_score = scale(OutsideFootForce)) %>% 
   group_by(Config)
 
 
-dat<- subset(dat, dat$z_score < 2) #removing outliers  
+dat<- subset(dat, dat$z_score < 2) 
 dat<- subset(dat, dat$z_score > -2)
 
+#Normalization histograms, Check for normalish distribution/outliers
 ggplot(data = dat, aes(x = OutsideFootForce)) + geom_histogram() + facet_wrap(~Subject) 
 
+
+# "best of" Line graph 
+# This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally 
 
 p <- withinSubPlot(dat, colName = 'OutsideFootForce', dir = 'higher')
 yTitle <- expression(Better~weight~transfer%->%"")
 p + ylab(yTitle)
 
 
-runmod <- brm(data = dat, # Bayes model
+
+
+## Bayes model 
+# This model takes a while to run and may  crash your session 
+#Wait until you receive a warning about rtools to run anything else
+runmod <- brm(data = dat, 
+
               family = gaussian,
               z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
@@ -147,27 +169,39 @@ runmod <- brm(data = dat, # Bayes model
 
 
 
+
+
+# # Output of the Confidence Interval
+
 extractVals(dat, runmod, otherConfigs, 'OutsideFootForce', 'higher') 
 
 
-###### Foot roll (Pressure targeted on medial ball of foot)
+###### Foot roll (Pressure targeted on medial ball of foot) 
 
+#This section of code is organizing data - grouping by subject and config by the variable being observed
+#Filtering out values by removing outliers by filtering any scores that are 2sds above or below the mean
 dat <- dat %>% 
   group_by(Subject) %>%
   mutate(z_score = scale(OutsideFootMedialForce)) %>% 
   group_by(Config)
 
-
 dat<- subset(dat, dat$z_score < 2) #removing outliers  
 dat<- subset(dat, dat$z_score > -2)
 
+#Normalization histograms, Check for normalish distribution/outliers
 ggplot(data = dat, aes(x = OutsideFootMedialForce)) + geom_histogram() + facet_wrap(~Subject) 
 
+
+# "best of" Line plot 
 p <- withinSubPlot(dat, colName = 'OutsideFootMedialForce', dir = 'higher')
 yTitle <- expression(Better~foot~roll%->%"")
 p + ylab(yTitle)
 
-runmod <- brm(data = dat, # Bayes model
+
+## Bayes model 
+# This model takes a while to run and may  crash your session 
+#Wait until you receive a warning about rtools to run anything else
+runmod <- brm(data = dat, 
               family = gaussian,
               z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
@@ -178,10 +212,16 @@ runmod <- brm(data = dat, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
+
+
+# # Output of the Confidence Interval
 extractVals(dat, runmod, otherConfigs, 'OutsideFootMedialForce', 'higher') 
 
 
 ###### Forward stance (Pressure on toes during early stance)
+
+#This section of code is organizing data - grouping by subject and config by the variable being observed
+#Filtering out values by removing outliers by filtering any scores that are 2sds above or below the mean
 
 dat <- dat %>% 
   group_by(Subject) %>%
@@ -192,13 +232,19 @@ dat <- dat %>%
 dat<- subset(dat, dat$z_score < 2) #removing outliers  
 dat<- subset(dat, dat$z_score > -2)
 
+#Normalization histograms, Check for normalish distribution/outliers
 ggplot(data = dat, aes(x = avgOutsideHeelStart)) + geom_histogram() + facet_wrap(~Subject) 
 
+# "best of" Line plot 
 p<-withinSubPlot(dat, colName = 'avgOutsideHeelStart', dir = 'lower')
 yTitle <- expression(""%<-%Better~forward~stance)
 p + ylab(yTitle)
 
-runmod <- brm(data = dat, # Bayes model
+
+## Bayes model 
+# This model takes a while to run and may  crash your session 
+#Wait until you receive a warning about rtools to run anything else
+runmod <- brm(data = dat, 
               family = gaussian,
               z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
@@ -209,11 +255,15 @@ runmod <- brm(data = dat, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
+# # Output of the Confidence Interval
 extractVals(dat, runmod, otherConfigs, 'avgOutsideHeelStart', 'lower') 
 
 
 ###### Balance (Even heel/toe pressure late in turn)
 
+
+#This section of code is organizing data - grouping by subject and config by the variable being observed
+#Filtering out values by removing outliers by filtering any scores that are 2sds above or below the mean
 dat <- dat %>% 
   group_by(Subject) %>%
   mutate(z_score = scale(pkOutsideHeelLate)) %>% 
@@ -223,13 +273,19 @@ dat <- dat %>%
 dat<- subset(dat, dat$z_score < 2) #removing outliers  
 dat<- subset(dat, dat$z_score > -2)
 
+
+#Normalization histograms, Check for normalish distribution/outliers
 ggplot(data = dat, aes(x = pkOutsideHeelLate)) + geom_histogram() + facet_wrap(~Subject) 
 
+# "best of" Line plot 
 p<-withinSubPlot(dat, colName = 'pkOutsideHeelLate', dir = 'higher')
 yTitle <- expression(Better~balance%->%"")
 p + ylab(yTitle)
 
-runmod <- brm(data = dat, # Bayes model
+## Bayes model 
+# This model takes a while to run and may  crash your session 
+#Wait until you receive a warning about rtools to run anything else
+runmod <- brm(data = dat, 
               family = gaussian,
               z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
@@ -240,11 +296,15 @@ runmod <- brm(data = dat, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
+
+# # Output of the Confidence Interval
 extractVals(dat, runmod, otherConfigs, 'pkOutsideHeelLate', 'higher') 
 
 
 ###### cv Forc
 
+#This section of code is organizing data - grouping by subject and config by the variable being observed
+#Filtering out values by removing outliers by filtering any scores that are 2sds above or below the mean
 dat <- dat %>% 
   group_by(Subject) %>%
   mutate(z_score = scale(CVForce)) %>% 
@@ -254,12 +314,17 @@ dat <- dat %>%
 dat<- subset(dat, dat$z_score < 2) #removing outliers  
 dat<- subset(dat, dat$z_score > -2)
 
+
+#Normalization histograms, Check for normalish distribution/outliers
 ggplot(data = dat, aes(x = CVForce)) + geom_histogram() + facet_wrap(~Subject) 
 
+# "best of" Line plot 
 withinSubPlot(dat, colName = 'CVForce', dir = 'lower')
 
-
-runmod <- brm(data = dat, # Bayes model
+## Bayes model 
+# This model takes a while to run and may  crash your session 
+#Wait until you receive a warning about rtools to run anything else
+runmod <- brm(data = dat, 
               family = gaussian,
               z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
@@ -270,5 +335,7 @@ runmod <- brm(data = dat, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
+
+# # Output of the Confidence Interval
 extractVals(dat, runmod, otherConfigs, 'CVForce', 'lower') 
 

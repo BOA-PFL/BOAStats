@@ -3,7 +3,7 @@ library(tidyverse)
 library(readxl)
 library(lme4)
 library(brms)
-dat <- read_xlsx('file.choose())
+dat <- read_xlsx(file.choose())
 
 ## Use this script by importing resuls from the Carv system. Both prob
 ## and frequentist models are written in here

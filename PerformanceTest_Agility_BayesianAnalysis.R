@@ -38,11 +38,11 @@ withinSubPlot <- function(inputDF, colName, dir) {
   whichConfig <- merge(meanDat, whichConfig)
   
   ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = mean, col = BestConfig, group = Subject)) + geom_point(size = 4) + 
-    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 16)) + ylab(paste0({{colName}})) 
+    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000","#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 16)) + ylab(paste0({{colName}})) 
   
 }
 
-
+ 
 extractVals <- function(dat, mod, configNames, var, dir) {
   
   #configNames = otherConfigs
@@ -112,7 +112,7 @@ dat <- as_tibble(dat)
 
 baseConfig <- 'LR' # baseline config
 
-otherConfigs <- c('SP', 'MP') # list configs being tested against baseline
+otherConfigs <- c('MP', 'SP') # list configs being tested against baseline
 
 allConfigs <- c(baseConfig, otherConfigs)
 
@@ -135,12 +135,12 @@ cmjDat <- cmjDat %>%
 cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
 cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
 
-p <-ggplot(data = cmjDat, aes(x = CT)) + geom_histogram() + facet_wrap(~Subject) 
+ggplot(data = cmjDat, aes(x = CT)) + geom_histogram() + facet_wrap(~Subject) 
 
+
+
+p <- withinSubPlot(cmjDat, colName = 'CT', dir = 'lower')
 p+ ylab('Contact Time (s)')
-
-withinSubPlot(cmjDat, colName = 'CT', dir = 'lower')
-
 
 runmod <- brm(data = cmjDat, # Bayes model
               family = gaussian,
@@ -251,7 +251,7 @@ runmod <- brm(data = cmjDat, # Bayes model
 extractVals(cmjDat, runmod, otherConfigs, 'peakKneeEXTmom', 'higher') 
 
 
-##### CMJ Peak Knee Extension moment
+##### CMJ Frontal plane knee ROM
 
 cmjDat <- cmjDat %>% 
   #filter(peakKneeEXTmom < 1000) %>%
@@ -302,8 +302,8 @@ skaterDat<- subset(skaterDat, skaterDat$z_score > -2)
 
 ggplot(data = skaterDat, aes(x = CT)) + geom_histogram() + facet_wrap(~Subject) ## Check for normalish distribution/outliers
 
-withinSubPlot(skaterDat, colName = 'CT', dir = 'lower')
-
+p<-withinSubPlot(skaterDat, colName = 'CT', dir = 'lower')
+p + ylab('Contact Time (s)')
 
 runmod <- brm(data = skaterDat, # Bayes model
               family = gaussian,
