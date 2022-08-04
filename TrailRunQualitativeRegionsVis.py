@@ -105,10 +105,10 @@ alph = []
 for ii, val in enumerate(diffList):
     if val > 0:
         fc.append('b')
-        alph.append(val/(max(diffList)/0.8))
+        alph.append(abs(val)/((max(diffList)-min(diffList))/0.8))
     if val < 0:
         fc.append('r')
-        alph.append(val/(min(diffList)/0.8))
+        alph.append(abs(val)/((max(diffList)-min(diffList))/0.8))
     if val == 0:
         fc.append('purple')
         alph.append(0)
