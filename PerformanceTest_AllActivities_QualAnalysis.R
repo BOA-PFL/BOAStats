@@ -4,19 +4,15 @@ library(SnowballC)
 library(RColorBrewer)
 library(wordcloud)
 library(readxl)
-library(ggplot2)
+library(brms)
 library(tidyverse)
 library(dplyr)
 library(tidyr)
-library(ggplot)
+library(ggplot2)
+
 
 rm(list=ls())
 
-<<<<<<< Updated upstream:QualAnalysis.R
-qualDat <- read_xlsx(file.choose())
-
-qualDat$Shoe <- factor(qualDat$Shoe, c('Lace', 'A','B', 'C'))
-=======
 ###############
 
 
@@ -43,28 +39,37 @@ withinSubQualPlot <- function(inputDF) {
 qualDat <- read_xlsx(file.choose())
 
 qualDat$Config <- factor(qualDat$Config, c('DD', 'LZ', 'UZ')) #List baseline first
->>>>>>> Stashed changes:PerformanceTest_AllActivities_QualAnalysis.R
 
 qualDat %>%
-  pivot_longer(cols = Overall:Heel,
+  pivot_longer(cols = OverallFit:Heel,
                names_to = "Location", values_to = "Rating") %>%
-  group_by(Location, Shoe) %>%
+  group_by(Location, Config) %>%
   summarize(
-    avg = mean(Rating),
-    medAvg = median(Rating)
+    avg = mean(Rating, na.rm = TRUE),
+    medAvg = median(Rating, na.rm = TRUE)
   )
 
+### For High Cut
+
+qualDat %>%
+  pivot_longer(cols = OverallFit:Cuff,
+               names_to = "Location", values_to = "Rating") %>%
+  group_by(Location, Config) %>%
+  summarize(
+    avg = mean(Rating, na.rm=TRUE),
+    medAvg = median(Rating, na.rm=TRUE)
+  )
 
 ### Probability of higher overall score (for radar plot)
 
 qualDat <- qualDat %>% 
-  group_by(Subject) %>%
-  mutate(z_score = scale(Overall)) %>% # Change to the variable you want to test
-  group_by(Shoe)
+  
+  mutate(z_score = scale(OverallFit))# Change to the variable you want to test
+  
 
 runmod <- brm(data = qualDat,
               family = gaussian,
-              z_score ~ Shoe + (1 | Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              z_score ~ Config + (1|Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
                         prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
                         prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
@@ -75,64 +80,32 @@ runmod <- brm(data = qualDat,
 
 posterior <- posterior_samples(runmod)
 
-<<<<<<< Updated upstream:QualAnalysis.R
-sum(posterior[,4] < 0) / length(posterior[,4]) 
-=======
 sum(posterior[,2] > 0) / length(posterior[,2]) 
->>>>>>> Stashed changes:PerformanceTest_AllActivities_QualAnalysis.R
 
 
 ####
-qualDat <- pivot_longer(qualDat, cols = Overall:Heel, names_to = "Location", values_to = "Rating")
-qualDat$Location <- factor(qualDat$Location, c("Overall", "Forefoot", "Midfoot", "Heel"))
+#qualDat <- pivot_longer(qualDat, cols = OverallFit:Heel, names_to = "Location", values_to = "Rating")
+#qualDat$Location <- factor(qualDat$Location, c("OverallFit", "Forefoot", "Midfoot", "Heel"))
 
-qualDat %>%
-  filter(Location == 'Overall') %>%
-  ggplot(mapping = aes(x = Shoe, y = Rating, group = Subject)) + geom_line(aes(color = Subject)) + geom_point(aes(color = Subject)) 
+
+withinSubQualPlot(qualDat)
+
+
+
+
+qualDat <- pivot_longer(qualDat, cols = Forefoot:Heel, names_to = 'Location', values_to = 'Rating')
   
+qualDat$Location <- factor(qualDat$Location, c('Forefoot', 'Midfoot', 'Heel')) 
 
-
-qualDat %>%
-  filter(Location != 'Overall') %>%
-    ggplot(mapping = aes(x = Rating, fill = Shoe)) + geom_density(alpha = 0.5) + facet_wrap(~Location) + scale_fill_manual(values=c("#003D4C", "#00966C", "#ECE81A","#DC582A","#CAF0E4"))
-
-
-
-<<<<<<< Updated upstream:QualAnalysis.R
-
-=======
 ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) + geom_density(aes(y = ..density..*(nrow(qualDat)/3)*0.1), alpha = 0.5) + facet_wrap(~Location) + scale_fill_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) +
 ylab('Responses') + theme(text=element_text(size=20)) + geom_vline(xintercept = 5, size = 1)
->>>>>>> Stashed changes:PerformanceTest_AllActivities_QualAnalysis.R
 
-  group_by(Subject) %>% 
-  mutate(z_score = scale(Distance)) %>%
-  group_by(Shoe)
 
-datDist <- subset(datDist, datDist$z_score < 2)
-datDist <- subset(datDist, datDist$z_score > -2)
+### For high cut 
+qualDat <- pivot_longer(qualDat, cols = Forefoot:Cuff, names_to = 'Location', values_to = 'Rating')
 
-ggplot(data = datDist) + geom_boxplot(mapping = aes(x = Subject, y = Distance, fill = Shoe)) + scale_fill_manual(values=c("#003D4C", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+qualDat$Location <- factor(qualDat$Location, c('Forefoot', 'Midfoot', 'Heel', 'Cuff')) 
 
-<<<<<<< Updated upstream:QualAnalysis.R
-runmod <- brm(data = datDist,
-              family = gaussian,
-              z_score ~ Shoe + (1 + Shoe | Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
-              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
-                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
-                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
-                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
-              iter = 2000, warmup = 1000, chains = 4, cores = 4,
-              control = list(adapt_delta = .975, max_treedepth = 20),
-              seed = 190831)
-
-# making word clouds ------------------------------------------------------
-
-A <- subset(qualDat, qualDat$Shoe == 'A', GoodComments:BadComments)
-B <- subset(qualDat, qualDat$Shoe == 'B', GoodComments:BadComments)
-C <- subset(qualDat, qualDat$Shoe == 'C', GoodComments:BadComments)
-Lace <- subset(qualDat, qualDat$Shoe == 'Lace', GoodComments:BadComments)
-=======
 ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) + geom_density(alpha = 0.5) + facet_wrap(~Location) + scale_fill_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4"))
 + theme(text=element_text(size=20)) + geom_vline(xintercept = 5, size = 1)
 
@@ -142,7 +115,6 @@ ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) + geom_density(alpha =
 
 Config1 <- subset(qualDat, qualDat$Config == 'V1', GoodComments:BadComments)
 Config2 <- subset(qualDat, qualDat$Config == 'V2', GoodComments:BadComments)
->>>>>>> Stashed changes:PerformanceTest_AllActivities_QualAnalysis.R
 
 replacePunctuation <- content_transformer(function(x) {return (gsub("[[:punct:]]", " ", x))})
 
@@ -175,7 +147,7 @@ makeWordCloud <- function(inputText) {
   vGood <- as.data.frame(vGood)
   vBad <- as.data.frame(vBad)
   
-  colorList <- c(rep('green', nrow(vGood)), rep('red', nrow(vBad)))
+  colorList <- c(rep('dark green', nrow(vGood)), rep('grey', nrow(vBad)))
   
   GoodWords <- rownames(vGood)
   GoodFrq<- vGood[,1]
@@ -200,11 +172,6 @@ makeWordCloud <- function(inputText) {
   
 }
 
-<<<<<<< Updated upstream:QualAnalysis.R
-#makeWordCloud(triNotes)
-makeWordCloud(Lace)
-=======
 makeWordCloud(Config2)
->>>>>>> Stashed changes:PerformanceTest_AllActivities_QualAnalysis.R
 
 
