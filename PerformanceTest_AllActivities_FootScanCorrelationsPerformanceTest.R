@@ -17,12 +17,21 @@ footDat <- read_excel('C:/Users/kate.harrison/Boa Technology Inc/PFL - Documents
 # Defining the movement we're looking at
 testDat <- subset(dat, dat$Movement == 'CMJ')
 
+<<<<<<< Updated upstream:PerformanceTest_AllActivities_FootScanCorrelationsPerformanceTest.R
 #Filtering impossible contact times
 testDat <- testDat %>%
    filter(ContactTime > 10) %>% 
    filter(ContactTime < 100) %>%
+=======
+testDat <- subset(testDat, testDat$Movement == 'CMJ')
+
+testDat <- testDat %>% 
+   filter(CT > 10) %>% #remove values with impossible contact time
+   filter(CT < 120) %>%
+>>>>>>> Stashed changes:footScanPerformanceTest.R
    group_by(Subject) %>%
    mutate(z_score = scale(CT)) # Change to the variable you want to test
+   mutate(z_score = scale(propImpulse)) # Change to the variable you want to test
 
 # Filtering any scores that are 2sds above or below the mean
 testDat <- subset(testDat, testDat$z_score < 2)
@@ -30,13 +39,19 @@ testDat <- subset(testDat, testDat$z_score > -2)
 
 #Defining which sides we are looking at
 RfootDat <- subset(footDat, footDat$Side == 'R')
+<<<<<<< Updated upstream:PerformanceTest_AllActivities_FootScanCorrelationsPerformanceTest.R
 LfootDat <- subset(footDat, footDat$Side == 'L') 
 
 
 #Defining the shoes we tested  
 baselineDat <- subset(testDat, testDat$Config == 'Single') # Change to baseline shoe name
+=======
+LfootDat <- subset(footDat, footDat$Side == 'L')
+ 
+baselineDat <- subset(testDat, testDat$Config == 'V1') # Change to baseline shoe name
+>>>>>>> Stashed changes:footScanPerformanceTest.R
 
-newShoeDat <- subset(testDat, testDat$Config == 'Paired') # Change to shoe you want to compare to baseline
+newShoeDat <- subset(testDat, testDat$Config == 'V2') # Change to shoe you want to compare to baseline
 
 
 #  This purpose of this For Loop is finding difference for each subject between configs, and finding the relationship between performance and foot size
@@ -75,26 +90,31 @@ corrDat$diff <- as.numeric(corrDat$diff)
 
 ggscatter(corrDat, x = "Length (cm)", y = "diff", 
           add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson", 
-          xlab = 'Foot Length', ylab = 'Change in performance from Single to Paired') 
+          xlab = 'Foot Length', ylab = 'Change in performance from baseline') 
 
 ggscatter(corrDat, x = "Width (cm)", y = "diff", 
           add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
-          xlab = 'Foot Width', ylab = 'Change in performance from Single to Paired') 
+          xlab = 'Foot Width', ylab = 'Change in performance from baseline') 
 
 ggscatter(corrDat, x = "Instep (cm)", y = "diff", 
           add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson", 
-          xlab = 'Instep height', ylab = 'Change in performance from Single to Paired')
+          xlab = 'Instep height', ylab = 'Change in performance from baseline')
 
 
 
 
-######### For golf ####################################
+######### For qualtitative Data ####################################
 
 #Clearing the environment
 rm(list=ls())
 
+<<<<<<< Updated upstream:PerformanceTest_AllActivities_FootScanCorrelationsPerformanceTest.R
 #loading in CompiledTrackMan Data
 testDat <- read_excel(file.choose())
+=======
+
+testDat <- read_excel(file.choose()) # load compiled qualitative data
+>>>>>>> Stashed changes:footScanPerformanceTest.R
 
 #Loading in foot volume BigData sheet
 footDat <- read_excel('C:/Users/kate.harrison/Boa Technology Inc/PFL - Documents/General/BigData2021/MasterSubjectSizes.xlsx')
@@ -106,10 +126,14 @@ RfootDat <- subset(footDat, footDat$Side == 'R')
 LfootDat <- subset(footDat, footDat$Side == 'L') 
 
 
+<<<<<<< Updated upstream:PerformanceTest_AllActivities_FootScanCorrelationsPerformanceTest.R
 #Defining the shoes we tested
 baselineDat <- subset(testDat, testDat$Shoe == 'Lace') # Change to baseline shoe name
+=======
+baselineDat <- subset(testDat, testDat$Shoe == 'V1') # Change to baseline shoe name
+>>>>>>> Stashed changes:footScanPerformanceTest.R
 
-newShoeDat <- subset(testDat, testDat$Shoe == 'A') # Change to shoe you want to compare to baseline
+newShoeDat <- subset(testDat, testDat$Shoe == 'V2') # Change to shoe you want to compare to baseline
 
 
 # finding difference for each sub between configs, finding relationship between performance and foot size
@@ -124,7 +148,7 @@ for (sub in unique(baselineDat$Subject)) {
    tempbaseDat <- subset(baselineDat, baselineDat$Subject == sub)
    tempnewDat <- subset(newShoeDat, newShoeDat$Subject == sub)
    
-   diff[r] <- mean(tempnewDat$Overall) - mean(tempbaseDat$Overall)
+   diff[r] <- mean(tempnewDat$OverallFit) - mean(tempbaseDat$OverallFit)
    
    r = r+1
    
@@ -144,4 +168,10 @@ corrDat[,2] <- as.numeric(corrDat[,2])
 
 ggscatter(corrDat, x = "Length (cm)", y = "diff", 
           add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson", 
+<<<<<<< Updated upstream:PerformanceTest_AllActivities_FootScanCorrelationsPerformanceTest.R
           xlab = 'Foot Length', ylab = 'Change in performance from Lace to SD')
+=======
+          xlab = 'Foot Length', ylab = 'Change in rating from V1 to V2')
+
+
+>>>>>>> Stashed changes:footScanPerformanceTest.R
