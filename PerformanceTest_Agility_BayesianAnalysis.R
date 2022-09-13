@@ -28,7 +28,7 @@ withinSubPlot <- function(inputDF, colName, dir) {
     
   } else if (dir == 'higher') {
     whichConfig <- meanDat %>%
-      group_by(Subject) %>%
+      group_by(Subject) %>% 
       summarize(
         BestConfig = Config[which.max(mean)]
       )
@@ -106,17 +106,11 @@ extractVals <- function(dat, mod, configNames, var, dir) {
 
 ###############################
 
-dat <- read.csv(file.choose())
-
-dat <- as_tibble(dat)
-
-baseConfig <- 'LR' # baseline config
-
 otherConfigs <- c('MP', 'SP') # list configs being tested against baseline
 
 allConfigs <- c(baseConfig, otherConfigs)
 
-dat$Config <- factor(dat$Config, allConfigs)
+
 
 ########################################## CMJ ###############################################
 
@@ -136,7 +130,6 @@ cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers
 cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
 
 ggplot(data = cmjDat, aes(x = CT)) + geom_histogram() + facet_wrap(~Subject) 
-
 
 
 p <- withinSubPlot(cmjDat, colName = 'CT', dir = 'lower')
