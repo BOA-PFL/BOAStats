@@ -1,6 +1,7 @@
 rm(list=ls())
 
 library(tidyverse)
+library(lme4)
 
 dat <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/FootScan Data/DataPortal_data.csv')
 dat <- dat %>%
@@ -43,14 +44,19 @@ createPlot <- function(df, sex, col, title){
       facet_wrap(~Gender) + ylab(paste0(title)) + xlab('Size')
   }
 }
+
+lmer(Avg..Length ~ Size + Region + (1|Gender), data = dat)
+
 createPlot(dat, 'Male','Avg..Length','Length')
 createPlot(dat, 'Female','Avg..Length','Length')
 
 createPlot(dat, 'Male','Avg..Width','Width')
 createPlot(dat, 'Female','Avg..Width','Width')
+lmer(Avg..Width ~ Size + Region + (1|Gender), data = dat)
 
 createPlot(dat, 'Male','Avg..DorsalHeight','DorsalHeight (cm)')
 createPlot(dat, 'Female','Avg..DorsalHeight','DorsalHeight (cm)')
+lmer(Avg..DorsalHeight ~ Size + Region + (1|Gender), data = dat)
 
 createPlot(dat, 'Male','Avg..InstepWidth','InstepWidth (cm)')
 createPlot(dat, 'Female','Avg..InstepWidth','InstepWidth (cm)')
@@ -60,6 +66,185 @@ createPlot(dat, 'Female','Avg..Girth','Girth (cm)')
 
 createPlot(dat, 'Male','Avg..HeelWidth','Heel Width (cm)')
 createPlot(dat, 'Female','Avg..Width','Heel Width (cm)')
+
+
+# average values ----------------------------------------------------------
+boaDat <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/FootScan Data/MasterSubjectSizes_Male.csv')
+
+sumDat <- dat %>%
+  group_by(Region, Size, Gender) %>%
+  summarize(
+    meanLen = mean(Avg..Length),
+    sdLen = mean(Std..Dev..Length)
+  )
+
+
+createLayeredPlot <- function(aetrexDat, boaDat, Sex, Size, Region){
+
+  ## Regions: Americas, Asia, Europe, Other
+  ## Sex: Male or Female
+  ## Size: numeric with 1 decimal (e.g. 10.0)
+  
+  tmpDat <- aetrexDat %>%
+    filter(Region == 'Americas' & Gender == 'Male' & Size == 10.0) 
+    #filter(Region == Region & Gender == Sex & Size == Size) 
+  
+  boa10s <- boaDat %>%
+    group_by(RepShoeSize, Sex)%>%
+    filter(RepShoeSize == Size)%>%
+    summarize(
+      meanLen = mean(Length),
+      sdLen = sd(Length)
+    )
+  
+  boaSimp <- boaDat %>%
+    group_by(RepShoeSize, Sex)%>%
+    filter(RepShoeSize == Size)
+  
+  ggplot() + 
+    stat_function(fun = ~ dnorm(.x, tmpDat$meanLen, tmpDat$sdLen), geom = "area",
+                  fill = "deepskyblue4", alpha = 0.5, color = "black") +
+    theme_bw(base_size = 16) + xlim(c(25.5,28.5)) +
+    
+    stat_function(fun = ~ dnorm(.x, boa10s$meanLen, boa10s$sdLen), geom = "area",
+                  fill = "red", alpha = 0.5, color = "black") +
+    theme_bw(base_size = 16) 
+}
+
+
+createLayeredPlot(sumDat, boaDat, 'Male', 10.0, 'Americas')
+
+## male widths ###
+
+sumWidthDat <- dat %>%
+  group_by(Region, Size, Gender) %>%
+  summarize(
+    meanLen = mean(Avg..Width),
+    sdLen = mean(Std..Dev..Width)
+  )
+
+
+createLayeredWidthPlot <- function(aetrexDat, boaDat, Sex, Size, Region){
+  
+  ## Regions: Americas, Asia, Europe, Other
+  ## Sex: Male or Female
+  ## Size: numeric with 1 decimal (e.g. 10.0)
+  
+  tmpDat <- aetrexDat %>%
+    filter(Region == 'Americas' & Gender == 'Male' & Size == 10.5) 
+  #filter(Region == Region & Gender == Sex & Size == Size) 
+  
+  boaSum <- boaDat %>%
+    group_by(RepShoeSize)%>%
+    filter(RepShoeSize == Size)%>%
+    summarize(
+      meanLen = mean(Width),
+      sdLen = sd(Width)
+    )
+
+  
+  ggplot() + 
+    stat_function(fun = ~ dnorm(.x, tmpDat$meanLen, tmpDat$sdLen), geom = "area",
+                  fill = "deepskyblue4", alpha = 0.5, color = "black") +
+    theme_bw(base_size = 16) +
+    
+    stat_function(fun = ~ dnorm(.x, boaSum$meanLen, boaSum$sdLen), geom = "area",
+                  fill = "red", alpha = 0.5, color = "black") +
+    theme_bw(base_size = 16) + 
+    xlim(c(5, 15)) 
+}
+
+
+createLayeredWidthPlot(sumWidthDat, boaDat, 'Male', 10.5, 'Americas')
+
+
+### Female Dat ###
+boaFDat <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/FootScan Data/MasterSubjectSizes_Female.csv')
+
+sumDat <- dat %>%
+  group_by(Region, Size, Gender) %>%
+  summarize(
+    meanLen = mean(Avg..Length),
+    sdLen = mean(Std..Dev..Length)
+  )
+
+
+createLayeredPlot2 <- function(aetrexDat, boaDat, Sex, Size, Region){
+  
+  ## Regions: Americas, Asia, Europe, Other
+  ## Sex: Male or Female
+  ## Size: numeric with 1 decimal (e.g. 10.0)
+  
+  tmpDat <- aetrexDat %>%
+    filter(Region == 'Americas' & Gender == 'Female' & Size == 8.5) 
+    #filter(Region == Region & Gender == Sex & Size == Size) 
+  
+  boa10s <- boaDat %>%
+    group_by(RepShoeSize, Sex)%>%
+    filter(RepShoeSize == Size)%>%
+    summarize(
+      meanLen = mean(Length),
+      sdLen = sd(Length)
+    )
+  
+  boaSimp <- boaDat %>%
+    group_by(RepShoeSize, Sex)%>%
+    filter(RepShoeSize == Size)
+  
+  ggplot() + 
+    stat_function(fun = ~ dnorm(.x, tmpDat$meanLen, tmpDat$sdLen), geom = "area",
+                  fill = "deepskyblue4", alpha = 0.5, color = "black") +
+    theme_bw(base_size = 16) + xlim(c(22,26)) +
+    
+    stat_function(fun = ~ dnorm(.x, boa10s$meanLen, boa10s$sdLen), geom = "area",
+                  fill = "red", alpha = 0.5, color = "black") +
+    theme_bw(base_size = 16) 
+}
+
+createLayeredPlot2(sumDat, boaDat, 'Female', 8.5, 'Americas')
+
+## Female Widths ##
+
+sumWidthDatFem <- dat %>%
+  group_by(Region, Size, Gender) %>%
+  summarize(
+    meanLen = mean(Avg..Width),
+    sdLen = mean(Std..Dev..Width)
+  )
+
+
+createLayeredWidthPlot2 <- function(aetrexDat, boaDat, Sex, Size, Region){
+  
+  ## Regions: Americas, Asia, Europe, Other
+  ## Sex: Male or Female
+  ## Size: numeric with 1 decimal (e.g. 10.0)
+  
+  tmpDat <- aetrexDat %>%
+    filter(Region == 'Americas' & Gender == 'Female' & Size == 8.5) 
+  #filter(Region == Region & Gender == Sex & Size == Size) 
+  
+  boaSum <- boaDat %>%
+    group_by(RepShoeSize)%>%
+    filter(RepShoeSize == Size)%>%
+    summarize(
+      meanLen = mean(Width),
+      sdLen = sd(Width)
+    )
+  
+  
+  ggplot() + 
+    stat_function(fun = ~ dnorm(.x, tmpDat$meanLen, tmpDat$sdLen), geom = "area",
+                  fill = "deepskyblue4", alpha = 0.5, color = "black") +
+    theme_bw(base_size = 16) +
+    
+    stat_function(fun = ~ dnorm(.x, boaSum$meanLen, boaSum$sdLen), geom = "area",
+                  fill = "red", alpha = 0.5, color = "black") +
+    theme_bw(base_size = 16) + 
+    xlim(c(5, 15)) 
+}
+
+
+createLayeredWidthPlot2(sumWidthDatFem, boaFDat, 'Female', 8.5, 'Americas')
 
 # Create distributions ----------------------------------------------------
 
@@ -75,7 +260,7 @@ lenDat <- lenDat %>%
   pivot_longer(
               cols = Length.10th:Length.95th,
               names_to=c("char","Decile"),
-              names_sep = "\\.",
+              names_sep = "//.",
               values_to="Length"
     )%>%
   separate(col = Decile, into = c('numDec', 'b'), sep = 't')
