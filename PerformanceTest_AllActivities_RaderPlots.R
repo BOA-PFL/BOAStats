@@ -26,10 +26,12 @@ power <- 44
   
 fit <- 60
 
+qualitative <- 95
+
 
 #Defining the radar plot's segments into a data frame
-data <- t(c(endurance, health, agility, power, fit))
-
+#data <- t(c(endurance, health, agility, power, fit))
+data <- t(c(endurance, health, fit, qualitative))
 data <- as.data.frame(data)
  
 
@@ -46,7 +48,6 @@ data <- rbind(max, min, improvThresh, equalThresh, data)
 
 #Defining the names on the chart and assigning the correct color
 colnames(data) <- c("Endurance", "Health", "Agility", "Power", "Fit")
-
 colors <- c("#C8C9C7","#53565A", "#00966C")
 
 create_beautiful_radarchart <- function(data, color = "#00966C", 
@@ -71,7 +72,7 @@ create_beautiful_radarchart <- function(data, color = "#00966C",
 #Replace the labels with the baseline first for the chart key
 create_beautiful_radarchart(data = data, color = colors) 
 
-legend(x = "topright", inset = c(- 0.1, 0), legend = c("threshold for confidence in improvement", "Tri Panel Performance", "Dual Panel Performance"),
+legend(x = "topright", inset = c(- 0.1, 0), legend = c("threshold for confidence in improvement", "Lace Performance", "Dual Panel Performance"),
        bty = "n", pch = 20, col = colors, text.col = "black", cex = .7, pt.cex = 1)
 
 
@@ -129,7 +130,7 @@ create_beautiful_radarchart <- function(data, color = "#00AFBB",
 #Replace the labels with the baseline first for the chart key
 create_beautiful_radarchart(data = data, color = colors) 
 
-legend(x = "topright", inset = c(0, 0), legend = c("threshold for confidence in improvement", "Lace Performance", "Heel Config A Performance"),
+legend(x = "topright", inset = c(0, 0), legend = c("threshold for confidence in improvement", "Tri-panel Performance", "Overlapping Panel Performance"),
        bty = "n", pch = 20, col = colors, text.col = "black", cex = .7, pt.cex = 1)
 
 
@@ -191,5 +192,64 @@ create_beautiful_radarchart <- function(data, color = "#00AFBB",
 create_beautiful_radarchart(data = data, color = colors)
 
 legend(x = "topright", inset = c(0, 0), legend = c("threshold for confidence in improvement", "Lace Performance", "BOA Performance"),
+       bty = "n", pch = 20, col = colors, text.col = "black", cex = .7, pt.cex = 1)
+
+
+###### Workwear########
+
+#Defining the ratings per segment
+endurance <- 74
+
+health <- 55
+
+
+fit <- 52
+
+qualitative <- 95
+
+
+#Defining the radar plot's segments into a data frame
+data <- t(c(endurance, health, fit, qualitative))
+data <- as.data.frame(data)
+
+
+###
+improvThresh<- as.data.frame(t(rep(70, 5)))
+equalThresh<- as.data.frame(t(rep(50, 5)))
+
+#Mins and maxs of the chart 
+#Including these with the thresholds
+min =as.data.frame(t(rep(0, 5)))
+max = as.data.frame(t(rep(100,5)))
+data <- rbind(max, min, improvThresh, equalThresh, data)
+
+
+#Defining the names on the chart and assigning the correct color
+colnames(data) <- c("Endurance", "Health", "Fit", "Qualitative Fit")
+colors <- c("#C8C9C7","#53565A", "#00966C")
+
+create_beautiful_radarchart <- function(data, color = "#00966C", 
+                                        vlabels = colnames(data), vlcex = 0.7,
+                                        caxislabels = NULL, title = NULL, ...){ 
+  # Scaling the chart and defining it's shape
+  radarchart(
+    data, axistype = 1,
+    # Customize the polygon
+    pcol = color, pfcol = scales::alpha(color, 0.5), plwd = 2, plty = 1,
+    # Customize the grid
+    cglcol = "grey", cglty = 1, cglwd = 0.8,
+    # Customize the axis
+    axislabcol = "grey", 
+    # Variable labels
+    vlcex = vlcex, vlabels = vlabels,
+    caxislabels = caxislabels, title = title, ...
+  )
+}
+
+#Radar chart output 
+#Replace the labels with the baseline first for the chart key
+create_beautiful_radarchart(data = data, color = colors) 
+
+legend(x = "topright", inset = c(- 0.1, 0), legend = c("threshold for confidence in improvement", "Tri Panel Performance", "Overlapping Panel Performance"),
        bty = "n", pch = 20, col = colors, text.col = "black", cex = .7, pt.cex = 1)
 

@@ -47,7 +47,7 @@ withinSubPlot <- function(inputDF, colName, dir,ylabel) {
   whichConfig <- merge(meanDat, whichConfig)
   
   ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = mean, col = BestConfig, group = Subject)) + geom_point(size = 4) +
-    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 26)) + ylab(ylabel)
+    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 40)) + ylab(ylabel)
   
 }
 
@@ -114,9 +114,9 @@ extractVals <- function(dat, mod, configNames, var, dir) {
 #################### Set up data
 
 # Angle Data
-# dat <- read_csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/Testing Segments/WorkWear_Performance/Jalas_July2022/Kinematics.csv') # Reading in the CSV
+dat <- read_csv('C:/Users/milena.singletary/Boa Technology Inc/PFL Team - Documents/General/Testing Segments/WorkWear_Performance/Jalas_July2022/Kinematics.csv') # Reading in the CSV
 # Force Data
-dat <- read_csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/Testing Segments/WorkWear_Performance/Jalas_July2022/Forces.csv') # Reading in the CSV
+dat <- read_csv('C:/Users/milena.singletary/Boa Technology Inc/PFL Team - Documents/General/Testing Segments/WorkWear_Performance/Jalas_July2022/Forces.csv') # Reading in the CSV
 
 
 dat <- as_tibble(dat) # creating the data frame
@@ -386,7 +386,7 @@ subdat <- dat %>%
 # This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally 
 withinSubPlot(subdat, colName = 'pMF', dir = 'higher','Peak Medial Force [N]') 
 
-## Bayes model 
+ ## Bayes model 
 # This model takes a while to run and may  crash your session 
 #Wait until you receive a warning about rtools to run anything else
 runmod <- brm(data = subdat, 
@@ -420,7 +420,7 @@ ggplot(data = dat, aes(x = pLF, fill = Cond)) + geom_histogram() + facet_wrap(~S
 
 # "best of" Line graph 
 # This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally 
-withinSubPlot(subdat, colName = 'pLF', dir = 'higher','Peak Force Lateral [N]') 
+withinSubPlot(subdat, colName = 'pLF', dir = 'higher','Peak Lateral Force [N]') 
 
 
 
