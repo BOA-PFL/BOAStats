@@ -383,3 +383,10 @@ dat<- dat[-which(dat$CT_HorzNorm %in% outliers),]
 plot(dat$FyPeak, dat$ContactTime)
 
 cor.test(dat$FzPeak, dat$ContactTime, method = 'pearson')
+
+
+for (config in otherConfigs) {
+  
+  print(config)
+  
+}
