@@ -1,7 +1,7 @@
-rm(list=ls())
-
 library(tidyverse)
 library(lme4)
+rm(list=ls())
+
 
 dat <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/FootScan Data/DataPortal_data.csv')
 dat <- dat %>%
@@ -70,17 +70,21 @@ createPlot(dat, 'Female','Avg..Width','Heel Width (cm)')
 
 # average values ----------------------------------------------------------
 boaDat <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/FootScan Data/MasterSubjectSizes_Male.csv')
+boaDat <- boaDat %>%
+  rename(DorsalHeight = 'Instep',
+         ArchHeight = 'ArchHt') # required to have a similar name structure to aetrexDat
 
 ### Golden Function ### 
 createLayeredPlot <- function(aetrexDat, boaDat, reqSex, reqSize, reqRegion, metric){
   
-  ## Creates an overlaid density plot. Requires averaged aetrex data before
+  ## Creates an overlaid density plot. boaDat is the raw data in BigData
+  ## aetrexDat is the 
   ## and raw boaDat
   ## Regions: Americas, Asia, Europe, Other
   ## Sex: Male or Female
   ## Size: numeric with 1 decimal (e.g. 10.0)
-  ## Metric: Length or Width
-  tmpDat <- dat %>%
+  ## Metric: Length, Width, Girth, and DorsalHeight
+  tmpDat <- aetrexDat %>%
     group_by(Region, Size, Gender) %>%
     summarize(
       meanLen = mean(.data[[paste0('Avg..',metric)]]),
@@ -110,60 +114,33 @@ createLayeredPlot <- function(aetrexDat, boaDat, reqSex, reqSize, reqRegion, met
 }
 
 
-createLayeredPlot(sumLenDat, boaDat, 'Male', 10.5, 'Americas', 'Length')
+createLayeredPlot(dat, boaDat, 'Male', 10.5, 'Americas', 'Length')
 
 ## male widths ###
+createLayeredPlot(dat, boaDat, 'Male', 10.5, 'Americas', 'Width')
+## male girths ##
+createLayeredPlot(dat, boaDat, 'Male', 10.5, 'Americas', 'Girth')
+## male dorsal ht ##
+createLayeredPlot(dat, boaDat, 'Male', 10.5, 'Americas', 'DorsalHeight')
+## male arch height ##
+createLayeredPlot(dat, boaDat, 'Male', 10.5, 'Americas', 'DorsalHeight')
 
-sumWidthDat <- dat %>%
-  group_by(Region, Size, Gender) %>%
-  summarize(
-    meanLen = mean(Avg..Width),
-    sdLen = mean(Std..Dev..Width)
-  )
-
-createLayeredPlot(sumWidthDat, boaDat, 'Male', 10.5, 'Americas', 'Width')
-
-### Female Dat ###
+### Female Data ###
 boaFDat <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/FootScan Data/MasterSubjectSizes_Female.csv')
+boaFDat <- boaFDat %>%
+  rename(DorsalHeight = 'Instep',
+         ArchHeight = 'ArchHt') # required to have a similar name structure to aetrexDat
 
-sumFLenDat <- dat %>%
-  group_by(Region, Size, Gender) %>%
-  summarize(
-    meanLen = mean(Avg..Length),
-    sdLen = mean(Std..Dev..Length)
-  )
-
-
-createLayeredPlot(sumFLenDat, boaFDat, 'Female', 9, 'Americas', 'Length')
+createLayeredPlot(dat, boaFDat, 'Female', 8.5, 'Americas', 'Length')
 
 ## Female Widths ##
-
-sumFWidthDat <- dat %>%
-  group_by(Region, Size, Gender) %>%
-  summarize(
-    meanLen = mean(Avg..Width),
-    sdLen = mean(Std..Dev..Width)
-  )
-
-
-createLayeredPlot(sumFWidthDat, boaFDat, 'Female', 8.0, 'Americas', 'Width')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+createLayeredPlot(dat, boaFDat, 'Female', 8.5, 'Americas', 'Width')
+## Female Girth ##
+createLayeredPlot(dat, boaFDat, 'Female', 8.0, 'Americas', 'Girth')
+## Female instep ##
+createLayeredPlot(dat, boaFDat, 'Female', 8.0, 'Americas', 'DorsalHeight')
+## Female arch height ##
+createLayeredPlot(dat, boaFDat, 'Female', 8.0, 'Americas', 'ArchHeight')
 
 
 
