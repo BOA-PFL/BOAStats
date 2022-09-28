@@ -80,8 +80,12 @@ createLayeredPlot <- function(aetrexDat, boaDat, reqSex, reqSize, reqRegion, met
   ## Sex: Male or Female
   ## Size: numeric with 1 decimal (e.g. 10.0)
   ## Metric: Length or Width
-  
-  tmpDat <- aetrexDat %>%
+  tmpDat <- dat %>%
+    group_by(Region, Size, Gender) %>%
+    summarize(
+      meanLen = mean(.data[[paste0('Avg..',metric)]]),
+      sdLen = mean(.data[[paste0('Std..Dev..',metric)]])
+    )%>%
     filter(Gender == reqSex & Size == reqSize & Region == reqRegion ) 
   
   boaSum <- boaDat %>%
@@ -104,13 +108,6 @@ createLayeredPlot <- function(aetrexDat, boaDat, reqSex, reqSize, reqRegion, met
     theme_bw(base_size = 16) + 
     xlim(c(lowVal, highVal)) 
 }
-
-sumLenDat <- dat %>%
-  group_by(Region, Size, Gender) %>%
-  summarize(
-    meanLen = mean(Avg..Length),
-    sdLen = mean(Std..Dev..Length)
-  )
 
 
 createLayeredPlot(sumLenDat, boaDat, 'Male', 10.5, 'Americas', 'Length')
@@ -150,6 +147,25 @@ sumFWidthDat <- dat %>%
 
 
 createLayeredPlot(sumFWidthDat, boaFDat, 'Female', 8.0, 'Americas', 'Width')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # Create distributions - use above this is a bad path --------------------------
 
