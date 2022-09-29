@@ -6,6 +6,8 @@ library(wordcloud)
 library(readxl)
 library(brms)
 library(tidyverse)
+library(tidyr)
+#library(dplyr)
 
 #Clearing the environment
 rm(list=ls())
@@ -28,7 +30,7 @@ withinSubQualPlot <- function(inputDF) {
   
   ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = OverallFit, col = BestConfig, group = Subject)) + geom_point(size = 4) + 
 
-    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 26)) + ylab('Rating') 
+    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 40)) + ylab('Rating') 
 
   
 }
@@ -100,9 +102,9 @@ extractVals <- function(dat, mod, configNames, var, dir) {
 qualDat <- read_xlsx(file.choose())
 
 
-base <- 'LR' # baseline configuration
+base <- 'TP' # baseline configuration
 
-otherConfigs <- c('MP', 'SP') # other configurations tesed against base
+otherConfigs <- c('OP') # other configurations tesed against base
 
 allConfigs <- c(base, otherConfigs)
 
@@ -110,11 +112,11 @@ qualDat$Config <- factor(qualDat$Config, allConfigs)
 
 
 #Defining our baseline and shoes being tested agaisnt the baseline
-qualDat$Config <- factor(qualDat$Config, c('ED','HED','PD')) #List baseline first then shoes you want to test against
+qualDat$Config <- factor(qualDat$Config, c('TP','OP')) #List baseline first then shoes you want to test against
 
 # Making a summary table of the average, and median ratings of fit for the different shoe sections
 qualDat %>%
-  pivot_longer(cols = OverallFit:Heel,
+  pivot_longer(cols = OverallFit:Heel, 
                names_to = "Location", values_to = "Rating") %>%
   group_by(Location, Config) %>%
   summarize(
@@ -135,7 +137,6 @@ qualDat %>%
 
 ### Probability of higher overall score (for radar plot)
 qualDat <- qualDat %>% 
-  
   mutate(z_score = scale(OverallFit))
   
 
@@ -230,6 +231,11 @@ qualDat$Location <- factor(qualDat$Location, c('Forefoot', 'Midfoot', 'Heel'))
 
 ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) + geom_density(aes(y = ..density..*(nrow(qualDat)/3)*0.1), alpha = 0.5) + facet_wrap(~Location) + scale_fill_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) +
 ylab('Responses') + theme(text=element_text(size=20)) + geom_vline(xintercept = 5, size = 1)
+
+
+ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) + 
+  geom_histogram(position = 'dodge', binwidth = 1) + facet_wrap(~Location) + scale_fill_manual(values=c("#999999", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) +
+  ylab('Responses') + theme(text=element_text(size=40)) + geom_vline(xintercept = 5, size = 1)
 
 
 ### For high cut  
