@@ -16,7 +16,26 @@ rm(list=ls()) # Clearing the environment
 ##
 ## 
 
+# cycling test ------------------------------------------------------------
+# 9/29/22 update to show architecture of V1 database 
 
+rm(list=ls())
+biomDat <- read_xlsx('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/BigData_CyclingPower.xlsx')
+
+# Loading in the data frame and organizing left and right sides into date frames
+subSizes <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/MasterSubjectSizes.csv')
+subSizes$Sex <- as.factor(subSizes$Sex)
+rightDat <- subset(subSizes, subSizes$Side == 'R')
+leftDat <- subset(subSizes, subSizes$Side == 'L')
+
+visits <- read_xlsx('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/MasterSubjectVisits.xlsx')
+shoes <- read_xlsx('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/ShoeTested.xlsx')
+
+combDat <- left_join(biomDat, visits,
+          by = c("Subject", "Brand", "Year","Month", "Model"))
+
+combDat <- left_join(combDat, shoes, 
+                     by = c("Brand","Model", "Year", "Month"))
 
 
 
@@ -56,7 +75,7 @@ replaceConfiguration <- function(DF, toReplace, newName){
 # Subject foot sizes & shapes
 
 # Loading in the data frame and organizing left and right sides into date frames
-subSizes <- read_xlsx('C:/Users/Daniel.Feeney/Boa Technology Inc/PFL - General/BigData2021/MasterSubjectSizes.xlsx')
+subSizes <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/MasterSubjectSizes.csv')
 subSizes$Sex <- as.factor(subSizes$Sex)
 rightDat <- subset(subSizes, subSizes$Side == 'R')
 leftDat <- subset(subSizes, subSizes$Side == 'L')
@@ -112,7 +131,7 @@ cohen.d(`TotalArea (cm^2)` ~ Sex, data = rightDat, paired = FALSE)
 # Agility -----------------------------------------------------------------
 #agilityDat <- read_csv('C:/Users/Daniel.Feeney/Boa Technology Inc/PFL - General/BigData2021/BigDataAgilityNew.csv')
 
-agilityDat <- read.csv(file.choose())
+agilityDat <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/BigDataAgilityNew.csv')
 
 
 #need to make sure brand, month, year, config in agility dat matches master shoes tested!!
@@ -169,7 +188,7 @@ ggplot(data = agilityDat, mapping = aes(x = CTNorm, fill = Config)) + geom_densi
 
 # add in shoe data --------------------------------------------------------
 
-shoes <- read_xlsx('C:/Users/daniel.feeney/Boa Technology Inc/PFL - General/BigData2021/ShoeTested.xlsx')
+shoes <- read_xlsx('C:/Users/daniel.feeney/Boa Technology Inc/PFL - General/BigData/ShoeTested.xlsx')
 agilityDat$Configuration <- agilityDat$Config
 agilityShoes <- merge(agilityDat, shoes)
 skaterShoes <- subset(agilityShoes, agilityShoes$Movement == 'Skater')
@@ -189,7 +208,7 @@ g/h
 
 # Endurance & Health ------------------------------------------------------
 
-endDat <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL - General/BigData2021/BigDataRun.csv')
+endDat <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL - General/BigData/BigDataRun.csv')
 endDat$VALR <- as.numeric(endDat$VALR)
 endDat <- subset(endDat, endDat$VALR > 10)
 
@@ -289,5 +308,6 @@ metData <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL - General/Big
 
 
 ggplot(metData, aes(x = as.factor(Configuration), y = EE, color = Configuration, fill = Configuration)) + geom_boxplot() + facet_wrap(~Subject + Shoe)
+
 
 

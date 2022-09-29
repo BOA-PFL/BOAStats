@@ -10,16 +10,20 @@ dat <- dat %>%
 dat$Location <- as.factor(dat$Location)
 dat$Gender <- as.factor(dat$Gender)
 
+## First look at visualization  ##
 ggplot(data = dat, aes(x = Size, Avg..Length, color = Location)) + geom_point() +
   geom_jitter() + facet_wrap(~Gender) + scale_x_continuous(limits=c(5,13)) +
   ylab('Length') + xlab('Size')
-## too hard to see things in the above plot ###
+
+## too hard to see things in the above plot ##
+## condensing countries into regions ##
 dat <- dat %>%
   mutate(Region = ifelse(Location %in% c("Brazil","Mexico","Puerto Rico","Canada","United States"),"Americas", 
                          ifelse(Location %in% c("China","Indonesia","Japan","Thailand"),"Asia",
                          ifelse(Location %in% c("Denmark","Germany","Netherlands","United Kingdom"),"Europe","Other")
                          )))
-### too reduced plot below ##
+
+### too reduced even w/ mean data in the plot below ##
 dat %>%
   group_by(Region, Size, Gender) %>%
   summarize(avgLength = mean(Avg..Length))%>%
@@ -27,7 +31,7 @@ ggplot(aes(x = Size, avgLength, color = Region)) + geom_point() +
   geom_jitter() + facet_wrap(~Gender) + scale_x_continuous(limits=c(5,13)) +
   ylab('Length') + xlab('Size')
 
-##### Final plots ###
+#### Final plots ###
 createPlot <- function(df, sex, col, title){
   if (sex == 'Male'){
     df %>%
@@ -70,6 +74,7 @@ createPlot(dat, 'Female','Avg..Width','Heel Width (cm)')
 
 # average values ----------------------------------------------------------
 boaDat <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/FootScan Data/MasterSubjectSizes_Male.csv')
+
 boaDat <- boaDat %>%
   rename(DorsalHeight = 'Instep',
          ArchHeight = 'ArchHt') # required to have a similar name structure to aetrexDat
@@ -110,7 +115,7 @@ createLayeredPlot <- function(aetrexDat, boaDat, reqSex, reqSize, reqRegion, met
     stat_function(fun = ~ dnorm(.x, boaSum$meanLen, boaSum$sdLen), geom = "area",
                   fill = "red", alpha = 0.5, color = "black") +
     theme_bw(base_size = 16) + 
-    xlim(c(lowVal, highVal)) 
+    xlim(c(lowVal, highVal)) + xlab(paste0(metric,' (cm)'))
 }
 
 
@@ -123,7 +128,7 @@ createLayeredPlot(dat, boaDat, 'Male', 10.5, 'Americas', 'Girth')
 ## male dorsal ht ##
 createLayeredPlot(dat, boaDat, 'Male', 10.5, 'Americas', 'DorsalHeight')
 ## male arch height ##
-createLayeredPlot(dat, boaDat, 'Male', 10.5, 'Americas', 'DorsalHeight')
+createLayeredPlot(dat, boaDat, 'Male', 10.5, 'Americas', 'ArchHeight')
 
 ### Female Data ###
 boaFDat <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/FootScan Data/MasterSubjectSizes_Female.csv')
