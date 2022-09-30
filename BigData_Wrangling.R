@@ -5,38 +5,43 @@ library(lme4)
 library(patchwork)
 library(effsize)
 
-
-rm(list=ls()) # Clearing the environment
-
-
 ## This code is meant to organize multiple CSVs into their respective BigData segment sections 
-## Things to keep in mind for all segments: 
-##    - Make sure all of the column names match correctly  
-##    - Make sure all of the subject names are correct
-##
-## 
-
 # cycling test ------------------------------------------------------------
 # 9/29/22 update to show architecture of V1 database 
 
 rm(list=ls())
-biomDat <- read_xlsx('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/BigData_CyclingPower.xlsx')
-
-# Loading in the data frame and organizing left and right sides into date frames
-subSizes <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/MasterSubjectSizes.csv')
-subSizes$Sex <- as.factor(subSizes$Sex)
-rightDat <- subset(subSizes, subSizes$Side == 'R')
-leftDat <- subset(subSizes, subSizes$Side == 'L')
+biomDat <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/CyclingPowerDB_V2.csv')
+biomDat <- biomDat %>%
+  rename('Subject' = ï..Subject)
 
 visits <- read_xlsx('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/MasterSubjectVisits.xlsx')
-shoes <- read_xlsx('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/ShoeTested.xlsx')
+shoes <- read_xlsx('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/ShoesTestedDB_V2.xlsx')
 
+# combine shoe data and athlete visit data
 combDat <- left_join(biomDat, visits,
           by = c("Subject", "Brand", "Year","Month", "Model"))
 
 combDat <- left_join(combDat, shoes, 
-                     by = c("Brand","Model", "Year", "Month"))
+                     by = c("Brand","Model", "Year", "Month", "Config"))
 
+# combine with athlete foot size
+# Loading in the data frame and organizing left and right sides into date frames
+subSizes <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/MasterSubjectSizes.csv')
+subSizes$Sex <- as.factor(subSizes$Sex)
+subSizes$Subject <- gsub(" ", "", subSizes$Subject) # remove spaces in names
+
+rightDat <- subset(subSizes, subSizes$Side == 'R')
+leftDat <- subset(subSizes, subSizes$Side == 'L')
+
+totalDat <- left_join(combDat, rightDat,
+          by = "Subject")
+
+
+
+
+
+
+# old work ----------------------------------------------------------------
 
 
 # This section is replacing incorrect or inconsistent names, to keep things consistent in the respective data sets
