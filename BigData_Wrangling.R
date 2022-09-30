@@ -32,11 +32,17 @@ subSizes$Subject <- gsub(" ", "", subSizes$Subject) # remove spaces in names
 
 rightDat <- subset(subSizes, subSizes$Side == 'R')
 leftDat <- subset(subSizes, subSizes$Side == 'L')
-
-totalDat <- left_join(combDat, rightDat,
+# only join one side because otherwise left join will create redundancies 
+combDat <- left_join(combDat, rightDat,
           by = "Subject")
 
-
+# now we can look across multiple tests
+combDat %>%
+  group_by(Subject, Config) %>%
+  summarize(
+    meanSteady = mean(Power_steady), 
+    meanSprint = mean(Power_sprint)
+  )
 
 
 
