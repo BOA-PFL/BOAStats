@@ -16,7 +16,14 @@ rm(list=ls())# Clears the environment
 # For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher. 
 
 withinSubPlot <- function(inputDF, colName, dir,ylabel) {
+  # Specify ylabel in function or default to the original name
+  if(missing(ylabel)){
+    ylabel = paste0({{colName}})
+  }
+
   
+  # direction can be 'lower' or higher'. It is the direction of change that is better.
+  # For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher.
   meanDat <- inputDF %>%
     group_by(Subject, Config) %>%
     summarize(mean = mean(!! sym(colName)))
@@ -37,6 +44,7 @@ withinSubPlot <- function(inputDF, colName, dir,ylabel) {
     
   }
   
+  # "Best of" line plot code
   whichConfig <- merge(meanDat, whichConfig)
   
   ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = mean, col = BestConfig, group = Subject)) + geom_point(size = 4) +
@@ -114,6 +122,7 @@ dat <- as_tibble(dat) # creating the data frame
 # Defining the baseline and other configs
 baseline <- 'LRHL'
 
+
 otherConfigs <- c('PFHL')
 
 allConfigs <- c(baseline, otherConfigs)
@@ -136,7 +145,8 @@ ggplot(data = dat, aes(x = Power_steady)) + geom_histogram() + facet_wrap(~Subje
 
 # "best of" Line graph 
 # This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally 
-withinSubPlot(dat, colName = 'Power_steady', dir = 'higher', ylabel = 'Steady Power [W]') 
+withinSubPlot(dat, colName = 'Power_sprint', dir = 'higher','Sprint Power [W]') 
+
 
 
 
@@ -157,8 +167,41 @@ runmod <- brm(data = dat,
 # # Output of the Confidence Interval
 extractVals(dat, runmod, otherConfigs, 'Power_steady', 'higher')  
 
-# model1 <-lmer(steadyPower ~ Config + (1 + Config| SubjectNo),data = dat) 
-# summary(model1)
+################### Steady Cadence
+
+#organizing data - grouping by subject and config by the variable being observed
+dat <- dat %>% 
+  group_by(Subject) %>%
+  mutate(z_score = scale(Cadence_steady)) %>% 
+  group_by(Config)
+
+
+
+#Normalization histograms, Check for normalish distribution/outliers
+ggplot(data = dat, aes(x = Cadence_steady)) + geom_histogram() + facet_wrap(~Subject) 
+
+# "best of" Line graph 
+# This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally 
+withinSubPlot(dat, colName = 'Cadence_steady', dir = 'higher') 
+
+
+
+## Bayes model 
+# This model takes a while to run and may  crash your session 
+#Wait until you receive a warning about rtools to run anything else
+runmod <- brm(data = dat, 
+              family = gaussian,
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+# # Output of the Confidence Interval
+extractVals(dat, runmod, otherConfigs, 'Cadence_steady', 'higher')
 
 ######################### Sprint Power
 
@@ -173,7 +216,8 @@ group_by(Subject) %>%
 ggplot(data = dat, aes(x = Power_sprint)) + geom_histogram() + facet_wrap(~Subject) 
 
 # "best of" Line graph 
-withinSubPlot(dat, colName = 'Power_sprint', dir = 'higher', ylabel = 'Sprint Power [W]') 
+withinSubPlot(dat, colName = 'Power_sprint', dir = 'higher','Sprint Power [W]') 
+
 
 ## Bayes model 
 # This model takes a while to run and may  crash your session 
@@ -193,6 +237,39 @@ runmod <- brm(data = dat,
 # # Output of the Confidence Interval
 extractVals(dat, runmod, otherConfigs, 'Power_sprint', 'higher') 
 
+######################### Sprint Cadence
+
+
+#organizing data - grouping by subject and config by the variable being observed
+dat <- dat %>% 
+  group_by(Subject) %>%
+  mutate(z_score = scale(Cadence_sprint)) %>% 
+  group_by(Config)
+
+#Normalization histograms, Check for normalish distribution/outliers
+ggplot(data = dat, aes(x = Cadence_sprint)) + geom_histogram() + facet_wrap(~Subject) 
+
+# "best of" Line graph 
+withinSubPlot(dat, colName = 'Cadence_sprint', dir = 'higher') 
+
+## Bayes model 
+# This model takes a while to run and may  crash your session 
+#Wait until you receive a warning about rtools to run anything else
+runmod <- brm(data = dat, 
+              family = gaussian,
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+
+# # Output of the Confidence Interval
+extractVals(dat, runmod, otherConfigs, 'Cadence_sprint', 'higher') 
+
 
 ######################### Pressure##########
 
@@ -209,7 +286,8 @@ ggplot(data = dat, aes(x = overallHeelVar)) + geom_histogram() + facet_wrap(~Sub
 
 
 # "best of" Line graph 
-withinSubPlot(dat, colName = 'overallHeelVar', dir = 'lower', ylabel = 'Heel Pressure Variation []') 
+withinSubPlot(dat, colName = 'Sprint_HeelContactArea', dir = 'higher','Contact Area [cm^2]') 
+
 
 
 ## Bayes model 
