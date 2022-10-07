@@ -28,4 +28,8 @@ dat_to_append <- data.frame(Subject, Year, Month, Benefit, Brand, Model,
 subVisits <- rbind(subVisits, dat_to_append)
 
 # write output. add a 1 to the end if you are at all unsure of ourput!!!
-write.table(subVisits, "C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/DB_V2/MasterSubjectVisits.csv", sep=',')
+a <- winDialog(type = 'yesno', message = 'about to overwrite DB')
+if (a == 'YES'){
+  write.table(subVisits, "C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/DB_V2/MasterSubjectVisits.csv", sep=',')
+  
+}
