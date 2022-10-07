@@ -10,12 +10,12 @@ library(effsize)
 # 9/29/22 update to show architecture of V1 database 
 
 rm(list=ls())
-biomDat <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/CyclingPowerDB_V2.csv')
+biomDat <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/DB_V2/CyclingPowerDB_V2.csv')
 biomDat <- biomDat %>%
   rename('Subject' = ï..Subject)
 
-visits <- read_xlsx('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/MasterSubjectVisits.xlsx')
-shoes <- read_xlsx('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/ShoesTestedDB_V2.xlsx')
+visits <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/DB_V2/MasterSubjectVisits.csv')
+shoes <- read_xlsx('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/DB_V2/ShoesTestedDB_V2.xlsx')
 
 # combine shoe data and athlete visit data
 combDat <- left_join(biomDat, visits,
@@ -26,7 +26,7 @@ combDat <- left_join(combDat, shoes,
 
 # combine with athlete foot size
 # Loading in the data frame and organizing left and right sides into date frames
-subSizes <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/MasterSubjectSizes.csv')
+subSizes <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/DB_V2/MasterSubjectSizes.csv')
 subSizes$Sex <- as.factor(subSizes$Sex)
 subSizes$Subject <- gsub(" ", "", subSizes$Subject) # remove spaces in names
 
@@ -42,13 +42,12 @@ combDat %>%
   summarize(
     meanSteady = mean(Power_steady), 
     meanSprint = mean(Power_sprint)
-  )
+  ) %>%
+  ggplot(aes(x = Subject, y = meanSprint, color = Config)) + geom_point()+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  ylab('Sprint Power (W)')
 
-
-
-
-# old work ----------------------------------------------------------------
-
+## good example of misnaming causing multiple instance
 
 # This section is replacing incorrect or inconsistent names, to keep things consistent in the respective data sets
 
@@ -61,8 +60,8 @@ replaceName <- function(DF, toReplace, newName){
 }
 replaceMove <- function(DF, toReplace, newName){
   
- #replace the movement with newName above
-    DF <- DF %>% 
+  #replace the movement with newName above
+  DF <- DF %>% 
     mutate(Movement = replace(Movement, Movement == toReplace, newName))
   return(DF)
 }
@@ -82,6 +81,44 @@ replaceConfiguration <- function(DF, toReplace, newName){
     mutate(Configuration = replace(Configuration, Configuration == toReplace, newName))
   return(DF)
 }
+
+combDat <- replaceName(combDat, 'AmeliaShae', 'AmeliaShea')
+combDat <- replaceName(combDat, 'Grant', 'GrantBrownback')
+combDat <- replaceName(combDat, 'Brendan Lee', 'BrendanLee')
+
+
+combDat %>%
+  group_by(Subject, Config) %>%
+  summarize(
+    meanSteady = mean(Power_steady), 
+    meanSprint = mean(Power_sprint)
+  ) %>%
+  ggplot(aes(x = Subject, y = meanSprint, color = Config)) + geom_point()+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  ylab('Sprint Power (W)')
+
+
+# DuckDB test -------------------------------------------------------------
+library(duckdb)
+library(DBI)
+
+# In memory connection
+con = dbConnect(duckdb::duckdb(), dbdir=":memory:", read_only=FALSE)
+# Create a table called CYCLING_POWER
+dbExecute(con, "CREATE TABLE CYCLING_POWER AS SELECT * FROM read_csv_auto('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/DB_V2/CyclingPowerDB_V2.csv');")
+dbExecute(con, "CREATE TABLE SHOES_TESTED AS SELECT * FROM read_csv_auto('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/DB_V2/ShoesTestedDB_V2.csv');")
+
+
+print(dbGetQuery(con, "SELECT * FROM CYCLING_POWER ;"))
+print(dbGetQuery(con, "SELECT * FROM SHOES_TESTED ;"))
+
+print(dbGetQuery(con, "SELECT P.Subject, P.Config, P.Year, P.Month, P.Brand, P.Model, P.Power_steady,
+                  S.TestName, S.Brand, S.Model, S.Config, S.Year FROM CYCLING_POWER P JOIN SHOES_TESTED S ON P.Config=S.Config;"))
+
+# old work ----------------------------------------------------------------
+
+
+
 # -------------------------------------------------------------------------
 # Subject foot sizes & shapes
 
