@@ -5,20 +5,49 @@ library(lme4)
 library(patchwork)
 library(effsize)
 
-
-rm(list=ls()) # Clearing the environment
-
-
 ## This code is meant to organize multiple CSVs into their respective BigData segment sections 
-## Things to keep in mind for all segments: 
-##    - Make sure all of the column names match correctly  
-##    - Make sure all of the subject names are correct
-##
-## 
+# cycling test ------------------------------------------------------------
+# 9/29/22 update to show architecture of V1 database 
 
+rm(list=ls())
+biomDat <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/DB_V2/CyclingPowerDB_V2.csv')
+biomDat <- biomDat %>%
+  rename('Subject' = ï..Subject)
 
+visits <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/DB_V2/MasterSubjectVisits.csv')
+shoes <- read_xlsx('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/DB_V2/ShoesTestedDB_V2.xlsx')
 
+# combine shoe data and athlete visit data
+combDat <- left_join(biomDat, visits,
+          by = c("Subject", "Brand", "Year","Month", "Model"))
 
+combDat <- left_join(combDat, shoes, 
+                     by = c("Brand","Model", "Year", "Month", "Config"))
+
+# combine with athlete foot size
+# Loading in the data frame and organizing left and right sides into date frames
+subSizes <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/DB_V2/MasterSubjectSizes.csv')
+subSizes$Sex <- as.factor(subSizes$Sex)
+subSizes$Subject <- gsub(" ", "", subSizes$Subject) # remove spaces in names
+
+rightDat <- subset(subSizes, subSizes$Side == 'R')
+leftDat <- subset(subSizes, subSizes$Side == 'L')
+# only join one side because otherwise left join will create redundancies 
+combDat <- left_join(combDat, rightDat,
+          by = "Subject")
+
+# now we can look across multiple tests
+combDat %>%
+  group_by(Subject, Config) %>%
+  summarize(
+    meanSteady = mean(Power_steady), 
+    meanSprint = mean(Power_sprint)
+  ) %>%
+  ggplot(aes(x = Subject, y = meanSprint, color = Config)) + geom_point()+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  ylab('Sprint Power (W)')
+
+## good example of misnaming causing multiple instance
 
 # This section is replacing incorrect or inconsistent names, to keep things consistent in the respective data sets
 
@@ -31,8 +60,8 @@ replaceName <- function(DF, toReplace, newName){
 }
 replaceMove <- function(DF, toReplace, newName){
   
- #replace the movement with newName above
-    DF <- DF %>% 
+  #replace the movement with newName above
+  DF <- DF %>% 
     mutate(Movement = replace(Movement, Movement == toReplace, newName))
   return(DF)
 }
@@ -52,11 +81,49 @@ replaceConfiguration <- function(DF, toReplace, newName){
     mutate(Configuration = replace(Configuration, Configuration == toReplace, newName))
   return(DF)
 }
+
+combDat <- replaceName(combDat, 'AmeliaShae', 'AmeliaShea')
+combDat <- replaceName(combDat, 'Grant', 'GrantBrownback')
+combDat <- replaceName(combDat, 'Brendan Lee', 'BrendanLee')
+
+
+combDat %>%
+  group_by(Subject, Config) %>%
+  summarize(
+    meanSteady = mean(Power_steady), 
+    meanSprint = mean(Power_sprint)
+  ) %>%
+  ggplot(aes(x = Subject, y = meanSprint, color = Config)) + geom_point()+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  ylab('Sprint Power (W)')
+
+
+# DuckDB test -------------------------------------------------------------
+library(duckdb)
+library(DBI)
+
+# In memory connection
+con = dbConnect(duckdb::duckdb(), dbdir=":memory:", read_only=FALSE)
+# Create a table called CYCLING_POWER
+dbExecute(con, "CREATE TABLE CYCLING_POWER AS SELECT * FROM read_csv_auto('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/DB_V2/CyclingPowerDB_V2.csv');")
+dbExecute(con, "CREATE TABLE SHOES_TESTED AS SELECT * FROM read_csv_auto('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/DB_V2/ShoesTestedDB_V2.csv');")
+
+
+print(dbGetQuery(con, "SELECT * FROM CYCLING_POWER ;"))
+print(dbGetQuery(con, "SELECT * FROM SHOES_TESTED ;"))
+
+print(dbGetQuery(con, "SELECT P.Subject, P.Config, P.Year, P.Month, P.Brand, P.Model, P.Power_steady,
+                  S.TestName, S.Brand, S.Model, S.Config, S.Year FROM CYCLING_POWER P JOIN SHOES_TESTED S ON P.Config=S.Config;"))
+
+# old work ----------------------------------------------------------------
+
+
+
 # -------------------------------------------------------------------------
 # Subject foot sizes & shapes
 
 # Loading in the data frame and organizing left and right sides into date frames
-subSizes <- read_xlsx('C:/Users/Daniel.Feeney/Boa Technology Inc/PFL - General/BigData2021/MasterSubjectSizes.xlsx')
+subSizes <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/MasterSubjectSizes.csv')
 subSizes$Sex <- as.factor(subSizes$Sex)
 rightDat <- subset(subSizes, subSizes$Side == 'R')
 leftDat <- subset(subSizes, subSizes$Side == 'L')
@@ -112,7 +179,7 @@ cohen.d(`TotalArea (cm^2)` ~ Sex, data = rightDat, paired = FALSE)
 # Agility -----------------------------------------------------------------
 #agilityDat <- read_csv('C:/Users/Daniel.Feeney/Boa Technology Inc/PFL - General/BigData2021/BigDataAgilityNew.csv')
 
-agilityDat <- read.csv(file.choose())
+agilityDat <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/BigDataAgilityNew.csv')
 
 
 #need to make sure brand, month, year, config in agility dat matches master shoes tested!!
@@ -169,7 +236,7 @@ ggplot(data = agilityDat, mapping = aes(x = CTNorm, fill = Config)) + geom_densi
 
 # add in shoe data --------------------------------------------------------
 
-shoes <- read_xlsx('C:/Users/daniel.feeney/Boa Technology Inc/PFL - General/BigData2021/ShoeTested.xlsx')
+shoes <- read_xlsx('C:/Users/daniel.feeney/Boa Technology Inc/PFL - General/BigData/ShoeTested.xlsx')
 agilityDat$Configuration <- agilityDat$Config
 agilityShoes <- merge(agilityDat, shoes)
 skaterShoes <- subset(agilityShoes, agilityShoes$Movement == 'Skater')
@@ -189,7 +256,7 @@ g/h
 
 # Endurance & Health ------------------------------------------------------
 
-endDat <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL - General/BigData2021/BigDataRun.csv')
+endDat <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL - General/BigData/BigDataRun.csv')
 endDat$VALR <- as.numeric(endDat$VALR)
 endDat <- subset(endDat, endDat$VALR > 10)
 
@@ -289,5 +356,6 @@ metData <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL - General/Big
 
 
 ggplot(metData, aes(x = as.factor(Configuration), y = EE, color = Configuration, fill = Configuration)) + geom_boxplot() + facet_wrap(~Subject + Shoe)
+
 
 
