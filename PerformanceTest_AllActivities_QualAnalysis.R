@@ -1,3 +1,4 @@
+library(tidyverse)
 library(readxl)
 library(tm)
 library(SnowballC)
@@ -5,7 +6,8 @@ library(RColorBrewer)
 library(wordcloud)
 library(readxl)
 library(brms)
-library(tidyverse)
+library(patchwork)
+
 
 #Clearing the environment
 rm(list=ls())
@@ -28,7 +30,6 @@ withinSubQualPlot <- function(inputDF) {
   
   ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = OverallFit, col = BestConfig, group = Subject)) + geom_point(size = 4) + 
     geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 26)) + ylab('Rating') 
-  
 }
 
 ################
@@ -87,14 +88,18 @@ sum(posterior[,3] > 0) / length(posterior[,3])
 
 # Best of Line plot for overall ratings of the shoe
 withinSubQualPlot(qualDat)
-
 #Defining the rating for the location 
 #Density plots for fit ratings of shoe locations
 qualDat <- pivot_longer(qualDat, cols = Forefoot:Heel, names_to = 'Location', values_to = 'Rating')
+
+FF <- qualDat %>% 
+  filter(Location=="Forefoot")
+
+ggplot(FF,mapping = aes(x = Rating, fill = Config, ..count.. )) + geom_density(alpha = 0.5)
   
 qualDat$Location <- factor(qualDat$Location, c('Forefoot', 'Midfoot', 'Heel')) 
 
-ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) + geom_density(alpha = 0.5) + facet_wrap(~Location) + scale_fill_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4"))
+ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) + geom_density(alpha = 0.5) + facet_wrap(~Location) + scale_fill_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 26))
 
 
 
