@@ -25,5 +25,5 @@ newDat$Year <- Year
 
 dat <- rbind(dat, newDat)
 
-# write output - this alter the original file!
+# write output - this alter the original file!add a 1 to the end if you are at all unsure of ourput!!!
 write.table(dat, "C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/DB_V2/CyclingPowerDB_V2.csv", sep=',')
