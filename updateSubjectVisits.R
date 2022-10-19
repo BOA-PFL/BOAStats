@@ -7,6 +7,10 @@ subVisits <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - Gene
 subVisits <- subVisits %>%
   rename('Subject' = ï..Subject)
 
+subVisits %>%
+    group_by(Year) %>%
+    summarize(count <- n_distinct(Subject))
+
 # Add Subject name brand, year, month, shoe name
 
 Subject <- 'TestSub'
