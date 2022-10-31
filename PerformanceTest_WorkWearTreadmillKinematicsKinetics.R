@@ -47,7 +47,7 @@ withinSubPlot <- function(inputDF, colName, dir,ylabel) {
   whichConfig <- merge(meanDat, whichConfig)
   
   ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = mean, col = BestConfig, group = Subject)) + geom_point(size = 4) +
-    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 40)) + ylab(ylabel)
+    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 20)) + ylab(ylabel)
   
 }
 
@@ -469,3 +469,62 @@ runmod <- brm(data = subdat,
 
 # # Output of the Confidence Interval
 extractVals(subdat, runmod, otherConfigs, 'pLF', 'higher')
+
+
+
+
+####### Set up Data #######
+
+#  Data
+dat <- read_csv('C:/Users/milena.singletary/Boa Technology Inc/PFL Team - Documents/General/Testing Segments/WorkWear_Performance/Jalas_July2022/TreadmillCompiledCOMLevelData.csv') # Reading in the CSV
+
+
+dat <- as_tibble(dat) # creating the data frame
+
+
+# Defining the baseline and other configs
+baseline <- 'TP'
+
+otherConfigs <- c('OP')
+
+allConfigs <- c(baseline, otherConfigs)
+
+dat$Config <- factor(dat$Config, allConfigs)
+
+
+
+################### COM work pos
+# Level
+#organizing data - grouping by subject and config by the variable being observed
+subdat <- dat %>% 
+  filter(COMwkPos < 200) %>%
+  # group_by(Subject) %>%
+  mutate(z_score = scale(COMwkPos))
+  
+
+#Normalization histograms, Check for normalish distribution/outliers
+ggplot(data = dat, aes(x = COMwkPos, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
+ggplot(data = subdat, aes(x = COMwkPos, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
+
+# "best of" Line graph 
+# This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally 
+withinSubPlot(subdat, colName = 'COMwkPos', dir = 'lower','Pos Center of Mass Work []') 
+
+
+
+## Bayes model 
+# This model takes a while to run and may  crash your session 
+#Wait until you receive a warning about rtools to run anything else
+runmod <- brm(data = subdat, 
+              family = gaussian,
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+# # Output of the Confidence Interval
+extractVals(subdat, runmod, otherConfigs, 'COMp', 'lower')
