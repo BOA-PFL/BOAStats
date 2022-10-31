@@ -3,55 +3,45 @@ library(tidyverse)
 library(readxl)
 rm(list=ls())
 
-# Set path for the master big data folder
-masterQual <- read.csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/BigData/DB_V2/QualitativeBigData_v2.csv')
-masterQual <- masterQual %>%
+# Read the existing database: Only to get column name order
+ParentDat <- read.csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/BigData/DB_V2/QualitativeBigData_v2.csv',nrows=1)
+ParentDat <- ParentDat %>%
   rename('Subject' = ï..Subject)
-
+name_order = colnames(ParentDat)
 
 # Read the qualitative data to be added to master data
-qualDat <- read_xlsx('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/Testing Segments/Hike/ZonalFit_Midcut_Aug2022/CompiledQualData.xlsx')
-noSub <- length(qualDat$Subject)
+ChildDat <- read_xlsx('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/Testing Segments/Hike/ZonalFit_Midcut_Aug2022/CompiledQualData.xlsx')
+ChildDat <- ChildDat %>%
+  rename('Overall' = OverallFit)
+noSub <- length(ChildDat$Subject)
 
 ### Set up data to append ###
 # Data to be set for each study
-Year <- rep('2022', each = noSub)
-Month <- rep('August', each = noSub)
-Brand <- rep('Tecnica', each = noSub)
-Model <- rep('Forge GTX', each = noSub)
-# Data to be pulled from qual sheet from each study
-Subject <- qualDat$Subject
-Config <- qualDat$Config
-Overall <- qualDat$OverallFit
-Forefoot <- qualDat$Forefoot
-Midfoot <- qualDat$Midfoot
-Heel <- qualDat$Heel
-GoodComments <- qualDat$GoodComments
-BadComments <- qualDat$BadComments
+ChildDat$Year <- rep('2022', each = noSub)
+ChildDat$Month <- rep('August', each = noSub)
+ChildDat$Brand <- rep('Tecnica', each = noSub)
+ChildDat$Model <- rep('Forge GTX', each = noSub)
 
-if ('Cuff' %in% colnames(qualDat)) {
-  Cuff <- qualDat$Cuff
+if ('Cuff' %in% colnames(ChildDat)) {
+  Cuff <- ChildDat$Cuff
 } else {
-  Cuff <- rep('NA', each = noSub)
+  ChildDat$Cuff <- rep('NA', each = noSub)
 }
 
-if ('GeneralComments' %in% colnames(qualDat)) {
-  GeneralComments <- qualDat$GeneralComments
+if ('GeneralComments' %in% colnames(ChildDat)) {
+  GeneralComments <- ChildDat$GeneralComments
 } else {
-  GeneralComments <- rep('NA', each = noSub)
+  ChildDat$GeneralComments <- rep('NA', each = noSub)
 }
 
-
-# Conglomerate all metrics together
-dat_to_append <- data.frame(Subject, Config, Year, Month, Brand, Model,
-                            Overall, Forefoot, Midfoot, Heel, Cuff,
-                            GoodComments, BadComments, GeneralComments)
-
-masterQual <- rbind(masterQual, dat_to_append)
+# Sort the qual data into the correct order
+ChildDat <- subset(ChildDat,select = -c(Notes))
+ChildDat <- ChildDat[,name_order]
 
 # write output. add a 1 to the end if you are at all unsure of output!!!
-a <- winDialog(type = 'yesno', message = 'about to overwrite DB')
+a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?')
 if (a == 'YES'){
-  write.table(masterQual, "C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/BigData/DB_V2/QualitativeBigData_v2.csv", sep=',', row.names = FALSE)
+  write.table(ChildDat, "C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/BigData/DB_V2/QualitativeBigData_v2.csv", sep=',', 
+              append = TRUE,col.names = FALSE, row.names = FALSE)
   
 }
