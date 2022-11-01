@@ -63,7 +63,9 @@ ChildDat <- subset(ChildDat,select = -c(Trial))
 # Sort the DataFrame columns into the right order (from the Parent)
 ChildDat <- ChildDat[,name_order]
 
-
-# Check the Child Data before!!
-write.table(ChildDat, file = 'C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/BigData/DB_V2/CyclingPowerDB_V2.csv', sep = ',',
-            append = TRUE,col.names = FALSE, row.names = FALSE)
+a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?')
+if (a == 'YES'){
+  # Check the Child Data before!!
+  write.table(ChildDat, file = 'C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/BigData/DB_V2/CyclingPowerDB_V2.csv', sep = ',',
+              append = TRUE,col.names = FALSE, row.names = FALSE)
+}
