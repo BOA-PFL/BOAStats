@@ -30,6 +30,7 @@ subSizes <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - Gener
 subSizes$Sex <- as.factor(subSizes$Sex)
 subSizes$Subject <- gsub(" ", "", subSizes$Subject) # remove spaces in names
 
+
 rightDat <- subset(subSizes, subSizes$Side == 'R')
 leftDat <- subset(subSizes, subSizes$Side == 'L')
 # only join one side because otherwise left join will create redundancies 
