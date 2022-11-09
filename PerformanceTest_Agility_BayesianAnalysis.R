@@ -38,17 +38,20 @@ withinSubPlot <- function(inputDF, colName, dir) {
   whichConfig <- merge(meanDat, whichConfig)
   
   ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = mean, col = BestConfig, group = Subject)) + geom_point(size = 4) + 
-    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000","#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 16)) + ylab(paste0({{colName}})) 
+    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000","#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 26)) + ylab(paste0({{colName}})) 
   
 }
 
  
-extractVals <- function(dat, mod, configNames, var, dir) {
+extractVals <- function(dat, mod, configNames, baseConfig, var, dir) {
   
-  #configNames = otherConfigs
-  #mod = runmod
-  #dir = 'higher'
-  #var = 'CarryFlatLength'
+  #dat <- skaterDat
+  #mod <- runmod
+  #configNames <- otherConfigs
+  #baseConfig <- baseline
+  #var <- 'peakPFmom'
+  #dir <- 'higher'
+  
   
   Config = rep(NA, length(configNames))
   ProbImp = matrix(0, length(configNames))
@@ -75,7 +78,7 @@ extractVals <- function(dat, mod, configNames, var, dir) {
       prob <- sum(posterior[,configColName] > 0) / length(posterior[,configColName])
     }
     
-    ci <- posterior_interval(mod, prob = 0.95)
+    ci <- posterior_interval(mod, prob = 0.80)
     ciLow <- ci[configColName,1] 
     ciHigh <- ci[configColName,2]
     
@@ -94,23 +97,52 @@ extractVals <- function(dat, mod, configNames, var, dir) {
     lowCI[i] = ci_LowPct
     highCI[i] = ci_HighPct
   }
-  ProbImp = round(ProbImp, 2)
+  ProbImp = round(ProbImp*100)
   lowCI = round(lowCI, 1)
   highCI = round(highCI,1)
   output = cbind(Config, ProbImp, lowCI, highCI)
   
   colnames(output) = c('Config', 'Probability of Improvement', 'Low end of CI', 'High end of CI')
-  return(output)
+  
+  sentences = rep(NA, nrow(output))
+  
+  for (i in 1:nrow(output)){
+    if (as.numeric(output[i,2]) >= 90){
+      sentences[i] <- paste('We have meaningful confidence that',output[i,1], 'outperformed', baseConfig, '(',output[i,2], '%)','Estimated difference:',output[i,3],'to',output[i,4],'%')
+    } else if (as.numeric(output[i,2]) >= 80) {      
+      sentences[i] <- paste('We have moderate confidence that',output[i,1], 'outperformed', baseConfig, '(',output[i,2], '%)','Estimated difference:',output[i,3],'to',output[i,4],'%')
+    } else if (as.numeric(output[i,2]) >= 70){
+      sentences[i] <- paste('We have minimal confidence that',output[i,1], 'outperformed', baseConfig, '(',output[i,2], '%)','Estimated difference:',output[i,3],'to',output[i,4],'%')
+    } else if (as.numeric(output[i,2]) >= 30){
+      sentences[i] <- paste('There were inconsistent differences between',output[i,1],'and',baseConfig,'(',output[i,2],'%)','Estimated difference:',output[i,3],'to',output[i,4],'%')
+    } else if (as.numeric(output[i,2]) >= 20){
+      sentences[i] <- paste('We have minimal confidence that',output[i,1],'performed worse than',baseConfig,'(',(100 - as.numeric(output[i,2])),'%)','Estimated difference:',output[i,3],'to',output[i,4],'%')
+    } else if (as.numeric(output[i,2]) >= 10){
+      sentences[i] <- paste('We have moderate confidence that',output[i,1],'performed worse than',baseConfig,'(',(100 - as.numeric(output[i,2])),'%)','Estimated difference:',output[i,3],'to',output[i,4],'%')
+    } else {
+      sentences[i] <- paste('We have meaningful confidence that',output[i,1],'performed worse than',baseConfig,'(',(100 - as.numeric(output[i,2])),'%)','Estimated difference:',output[i,3],'to',output[i,4],'%')
+    }
+  }
+      
+  return(sentences)
 }
 
 
 ###############################
 
-otherConfigs <- c('MP', 'SP') # list configs being tested against baseline
+dat <- read_csv(file.choose()) # Reading in the CSV
 
-allConfigs <- c(baseConfig, otherConfigs)
+dat <- as_tibble(dat) # creating the data frame
 
 
+# Defining the baseline and other configs
+baseline <- 'Lace'
+
+otherConfigs <- c('WM','WL')
+
+allConfigs <- c(baseline, otherConfigs)
+
+dat$Config <- factor(dat$Config, allConfigs)
 
 ########################################## CMJ ###############################################
 
@@ -126,10 +158,10 @@ cmjDat <- cmjDat %>%
   mutate(z_score = scale(CT)) %>% 
   group_by(Config)
 
-cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
-cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
+#cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
+#cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
 
-ggplot(data = cmjDat, aes(x = CT)) + geom_histogram() + facet_wrap(~Subject) 
+ggplot(data = cmjDat, aes(x = CT, color = Config)) + geom_histogram() + facet_wrap(~Subject) 
 
 
 p <- withinSubPlot(cmjDat, colName = 'CT', dir = 'lower')
@@ -147,24 +179,23 @@ runmod <- brm(data = cmjDat, # Bayes model
               seed = 190831)
 
 
-extractVals(cmjDat, runmod, otherConfigs, 'CT', 'lower') 
+extractVals(cmjDat, runmod, otherConfigs, baseline, 'CT', 'lower') 
 
-##### CMJ jump height/impulse 
+##### CMJ jump peak propulsive (vertical) force 
 
 cmjDat <- cmjDat %>% 
-  filter(impulse_Z < 1000) %>%
+  #filter(impulse_Z < 1000) %>%
   group_by(Subject) %>%
-  mutate(z_score = scale(impulse_Z)) %>% 
+  mutate(z_score = scale(peakGRF_Z)) %>% 
   group_by(Config)
 
-cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
-cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
+#cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
+#cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
 
-ggplot(data = cmjDat, aes(x = impulse_Z)) + geom_histogram() + facet_wrap(~Subject) 
+ggplot(data = cmjDat, aes(x = peakGRF_Z, color = Config)) + geom_histogram() + facet_wrap(~Subject) 
 
-p <- withinSubPlot(cmjDat, colName = 'impulse_Z', dir = 'higher')
-
-p + ylab('Impulse (Ns)')
+p <- withinSubPlot(cmjDat, colName = 'peakGRF_Z', dir = 'higher')
+p + ylab('Peak Propulsive Force (N)')
 
 runmod <- brm(data = cmjDat, # Bayes model
               family = gaussian,
@@ -178,21 +209,21 @@ runmod <- brm(data = cmjDat, # Bayes model
               seed = 190831)
 
 
-extractVals(cmjDat, runmod, otherConfigs, 'impulse_Z', 'higher') 
+extractVals(cmjDat, runmod, otherConfigs, baseline, 'peakGRF_Z', 'higher') 
 
 
 ##### CMJ Peak Plantarflexion moment
 
 cmjDat <- cmjDat %>% 
-  #filter(peakPFmom < 1000) %>%
+  filter(peakPFmom < 500) %>%
   group_by(Subject) %>%
   mutate(z_score = scale(peakPFmom)) %>% 
   group_by(Config)
 
-cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
-cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
+#cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
+#cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
 
-ggplot(data = cmjDat, aes(x = peakPFmom)) + geom_histogram() + facet_wrap(~Subject) 
+ggplot(data = cmjDat, aes(x = peakPFmom, color = Config)) + geom_histogram() + facet_wrap(~Subject) 
 
 p <- withinSubPlot(cmjDat, colName = 'peakPFmom', dir = 'higher')
 
@@ -210,7 +241,7 @@ runmod <- brm(data = cmjDat, # Bayes model
               seed = 190831)
 
 
-extractVals(cmjDat, runmod, otherConfigs, 'peakPFmom', 'higher') 
+extractVals(cmjDat, runmod, otherConfigs, baseline, 'peakPFmom', 'higher') 
 
 ##### CMJ Peak Knee Extension moment
 
@@ -223,7 +254,7 @@ cmjDat <- cmjDat %>%
 cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
 cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
 
-ggplot(data = cmjDat, aes(x = peakKneeEXTmom)) + geom_histogram() + facet_wrap(~Subject) 
+ggplot(data = cmjDat, aes(x = peakKneeEXTmom, color = Config)) + geom_histogram() + facet_wrap(~Subject) 
 
 p <- withinSubPlot(cmjDat, colName = 'peakKneeEXTmom', dir = 'higher')
 
@@ -241,7 +272,7 @@ runmod <- brm(data = cmjDat, # Bayes model
               seed = 190831)
 
 
-extractVals(cmjDat, runmod, otherConfigs, 'peakKneeEXTmom', 'higher') 
+extractVals(cmjDat, runmod, otherConfigs, baseline, 'peakKneeEXTmom', 'higher') 
 
 
 ##### CMJ Frontal plane knee ROM
@@ -255,7 +286,7 @@ cmjDat <- cmjDat %>%
 cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
 cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
 
-ggplot(data = cmjDat, aes(x = kneeABDrom)) + geom_histogram() + facet_wrap(~Subject) 
+ggplot(data = cmjDat, aes(x = kneeABDrom, color = Config)) + geom_histogram() + facet_wrap(~Subject) 
 
 p <- withinSubPlot(cmjDat, colName = 'kneeABDrom', dir = 'lower')
 
@@ -273,7 +304,7 @@ runmod <- brm(data = cmjDat, # Bayes model
               seed = 190831)
 
 
-extractVals(cmjDat, runmod, otherConfigs, 'kneeABDrom', 'lower') 
+extractVals(cmjDat, runmod, otherConfigs, baseline, 'kneeABDrom', 'lower') 
 
 
 ########################################## Skater ###############################################
@@ -284,16 +315,16 @@ skaterDat <- subset(dat, dat$Movement == 'Skater')
 ###### Skater Contact Time
 
 skaterDat <- skaterDat %>% 
-  filter(CT > .1) %>% #remove values with impossible contact time
-  filter(CT < 1) %>%
+  #filter(CT > .1) %>% #remove values with impossible contact time
+  #filter(CT < 1) %>%
   group_by(Subject) %>%
   mutate(z_score = scale(CT)) %>% 
   group_by(Config)
 
-skaterDat<- subset(skaterDat, skaterDat$z_score < 2) #removing outliers  
-skaterDat<- subset(skaterDat, skaterDat$z_score > -2)
+#skaterDat<- subset(skaterDat, skaterDat$z_score < 2) #removing outliers  
+#skaterDat<- subset(skaterDat, skaterDat$z_score > -2)
 
-ggplot(data = skaterDat, aes(x = CT)) + geom_histogram() + facet_wrap(~Subject) ## Check for normalish distribution/outliers
+ggplot(data = skaterDat, aes(x = CT, color = Config)) + geom_histogram() + facet_wrap(~Subject) ## Check for normalish distribution/outliers
 
 p<-withinSubPlot(skaterDat, colName = 'CT', dir = 'lower')
 p + ylab('Contact Time (s)')
@@ -310,19 +341,19 @@ runmod <- brm(data = skaterDat, # Bayes model
               seed = 190831)
 
 
-extractVals(skaterDat, runmod, otherConfigs, 'CT', 'lower') 
+extractVals(skaterDat, runmod, otherConfigs, baseline, 'CT', 'lower') 
 
-##### Skater peak propulsive force
+###### Skater peak propulsive force
 
 skaterDat <- skaterDat %>% 
   group_by(Subject) %>%
   mutate(z_score = scale(peakGRF_X)) %>% 
   group_by(Config)
 
-skaterDat<- subset(skaterDat, dat$z_score < 2) #removing outliers  
-skaterDat<- subset(skaterDat, dat$z_score > -2)
+#skaterDat<- subset(skaterDat, dat$z_score < 2) #removing outliers  
+#skaterDat<- subset(skaterDat, dat$z_score > -2)
 
-ggplot(data = skaterDat, aes(x = peakGRF_X)) + geom_histogram() + facet_wrap(~Subject) 
+ggplot(data = skaterDat, aes(x = peakGRF_X, color = Config)) + geom_histogram() + facet_wrap(~Subject) 
 
 p<-withinSubPlot(skaterDat, colName = 'peakGRF_X', dir = 'higher')
 p + ylab('Peak Propulsive Force (N)')
@@ -340,8 +371,38 @@ runmod <- brm(data = skaterDat, # Bayes model
               seed = 190831)
 
 
-extractVals(skaterDat, runmod, otherConfigs, 'peakGRF_X', 'higher') 
+extractVals(skaterDat, runmod, otherConfigs, baseline, 'peakGRF_X', 'higher') 
 
+
+###### Skater peak plantarflexion moment
+
+skaterDat <- skaterDat %>% 
+  group_by(Subject) %>%
+  mutate(z_score = scale(peakPFmom)) %>% 
+  group_by(Config)
+
+#skaterDat<- subset(skaterDat, dat$z_score < 2) #removing outliers  
+#skaterDat<- subset(skaterDat, dat$z_score > -2)
+
+ggplot(data = skaterDat, aes(x = peakPFmom, color = Config)) + geom_histogram() + facet_wrap(~Subject) 
+
+p<-withinSubPlot(skaterDat, colName = 'peakPFmom', dir = 'higher')
+p + ylab('Peak Plantarflexion Moment (Nm)')
+
+
+runmod <- brm(data = skaterDat, # Bayes model
+              family = gaussian,
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+
+extractVals(skaterDat, runmod, otherConfigs, baseline, 'peakPFmom', 'higher') 
 
 ##### Skater peak propulsive power
 
@@ -370,7 +431,7 @@ runmod <- brm(data = skaterDat, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-extractVals(skaterDat, runmod, otherConfigs, 'peakPower', 'higher') 
+extractVals(skaterDat, runmod, otherConfigs, baseline, 'peakPower', 'higher') 
 
 
 ##### Skater eccentric work
@@ -401,7 +462,7 @@ runmod <- brm(data = skaterDat, # Bayes model
               seed = 190831)
 
 
-extractVals(skaterDat, runmod, otherConfigs, 'eccWork', 'lower') 
+extractVals(skaterDat, runmod, otherConfigs, baseline, 'eccWork', 'lower') 
 
 
 
