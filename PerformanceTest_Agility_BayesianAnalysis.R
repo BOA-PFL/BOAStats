@@ -108,25 +108,25 @@ extractVals <- function(dat, mod, configNames, baseConfig, var, dir) {
   
   for (i in 1:nrow(output)){
     if (as.numeric(output[i,2]) >= 90){
-      sentences[i] <- paste('We have meaningful confidence that',output[i,1], 'outperformed', baseConfig, '(',output[i,2], '%)','Estimated difference:',output[i,3],'to',output[i,4],'%')
+      sentences[i] <- paste0('We have meaningful confidence that ',output[i,1], ' outperformed ', baseConfig, ' (',output[i,2], '%)', '\n', '\t', '- Estimated difference: ',output[i,3],' to ',output[i,4],'%' )
     } else if (as.numeric(output[i,2]) >= 80) {      
-      sentences[i] <- paste('We have moderate confidence that',output[i,1], 'outperformed', baseConfig, '(',output[i,2], '%)','Estimated difference:',output[i,3],'to',output[i,4],'%')
+      sentences[i] <- paste('We have moderate confidence that',output[i,1], 'outperformed', baseConfig, '(',output[i,2], '%)','\n', '\t', '- Estimated difference:',output[i,3],'to',output[i,4],'%')
     } else if (as.numeric(output[i,2]) >= 70){
-      sentences[i] <- paste('We have minimal confidence that',output[i,1], 'outperformed', baseConfig, '(',output[i,2], '%)','Estimated difference:',output[i,3],'to',output[i,4],'%')
+      sentences[i] <- paste('We have minimal confidence that',output[i,1], 'outperformed', baseConfig, '(',output[i,2], '%)','\n', '\t', 'Estimated difference:',output[i,3],'to',output[i,4],'%')
     } else if (as.numeric(output[i,2]) >= 30){
-      sentences[i] <- paste('There were inconsistent differences between',output[i,1],'and',baseConfig,'(',output[i,2],'%)','Estimated difference:',output[i,3],'to',output[i,4],'%')
+      sentences[i] <- paste('There were inconsistent differences between',output[i,1],'and',baseConfig,'(',output[i,2],'%)','\n', '\t', 'Estimated difference:',output[i,3],'to',output[i,4],'%')
     } else if (as.numeric(output[i,2]) >= 20){
-      sentences[i] <- paste('We have minimal confidence that',output[i,1],'performed worse than',baseConfig,'(',(100 - as.numeric(output[i,2])),'%)','Estimated difference:',output[i,3],'to',output[i,4],'%')
+      sentences[i] <- paste('We have minimal confidence that',output[i,1],'performed worse than',baseConfig,'(',(100 - as.numeric(output[i,2])),'%)','\n', '\t', 'Estimated difference:',output[i,3],'to',output[i,4],'%')
     } else if (as.numeric(output[i,2]) >= 10){
-      sentences[i] <- paste('We have moderate confidence that',output[i,1],'performed worse than',baseConfig,'(',(100 - as.numeric(output[i,2])),'%)','Estimated difference:',output[i,3],'to',output[i,4],'%')
+      sentences[i] <- paste('We have moderate confidence that',output[i,1],'performed worse than',baseConfig,'(',(100 - as.numeric(output[i,2])),'%)','\n', '\t', 'Estimated difference:',output[i,3],'to',output[i,4],'%')
     } else {
-      sentences[i] <- paste('We have meaningful confidence that',output[i,1],'performed worse than',baseConfig,'(',(100 - as.numeric(output[i,2])),'%)','Estimated difference:',output[i,3],'to',output[i,4],'%')
+      sentences[i] <- paste('We have meaningful confidence that',output[i,1],'performed worse than',baseConfig,'(',(100 - as.numeric(output[i,2])),'%)','\n', '\t', 'Estimated difference:',output[i,3],'to',output[i,4],'%')
     }
   }
-      
-  return(sentences)
+  
+  writeLines(sentences)
+  return()
 }
-
 
 ###############################
 
@@ -211,7 +211,6 @@ runmod <- brm(data = cmjDat, # Bayes model
 
 extractVals(cmjDat, runmod, otherConfigs, baseline, 'peakGRF_Z', 'higher') 
 
-
 ##### CMJ Peak Plantarflexion moment
 
 cmjDat <- cmjDat %>% 
@@ -242,6 +241,7 @@ runmod <- brm(data = cmjDat, # Bayes model
 
 
 extractVals(cmjDat, runmod, otherConfigs, baseline, 'peakPFmom', 'higher') 
+
 
 ##### CMJ Peak Knee Extension moment
 
@@ -342,6 +342,7 @@ runmod <- brm(data = skaterDat, # Bayes model
 
 
 extractVals(skaterDat, runmod, otherConfigs, baseline, 'CT', 'lower') 
+
 
 ###### Skater peak propulsive force
 
@@ -460,7 +461,6 @@ runmod <- brm(data = skaterDat, # Bayes model
               iter = 2000, warmup = 1000, chains = 4, cores = 4,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
-
 
 extractVals(skaterDat, runmod, otherConfigs, baseline, 'eccWork', 'lower') 
 
