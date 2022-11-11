@@ -51,8 +51,14 @@ withinSubPlot <- function(inputDF, colName, dir) {
 }
 
 
-extractVals <- function(dat, mod, configNames, var, dir) {
+extractVals <- function(dat, mod, configNames, baseConfig, var, dir) {
   
+  #dat <- skaterDat
+  #mod <- runmod
+  #configNames <- otherConfigs
+  #baseConfig <- baseline
+  #var <- 'peakPFmom'
+  #dir <- 'higher'
   
   
   Config = rep(NA, length(configNames))
@@ -99,15 +105,36 @@ extractVals <- function(dat, mod, configNames, var, dir) {
     lowCI[i] = ci_LowPct
     highCI[i] = ci_HighPct
   }
-  ProbImp = round(ProbImp, 2)
+  ProbImp = round(ProbImp*100)
   lowCI = round(lowCI, 1)
   highCI = round(highCI,1)
   output = cbind(Config, ProbImp, lowCI, highCI)
   
   colnames(output) = c('Config', 'Probability of Improvement', 'Low end of CI', 'High end of CI')
-  return(output)
+  
+  sentences = rep(NA, nrow(output))
+  
+  for (i in 1:nrow(output)){
+    if (as.numeric(output[i,2]) >= 90){
+      sentences[i] <- paste0('We have meaningful confidence that ',output[i,1], ' outperformed ', baseConfig, ' (',output[i,2], '%)', '\n', '\t', '- Estimated difference: ',output[i,3],' to ',output[i,4],'%' )
+    } else if (as.numeric(output[i,2]) >= 80) {      
+      sentences[i] <- paste('We have moderate confidence that',output[i,1], 'outperformed', baseConfig, '(',output[i,2], '%)','\n', '\t', '- Estimated difference:',output[i,3],'to',output[i,4],'%')
+    } else if (as.numeric(output[i,2]) >= 70){
+      sentences[i] <- paste('We have minimal confidence that',output[i,1], 'outperformed', baseConfig, '(',output[i,2], '%)','\n', '\t', 'Estimated difference:',output[i,3],'to',output[i,4],'%')
+    } else if (as.numeric(output[i,2]) >= 30){
+      sentences[i] <- paste('There were inconsistent differences between',output[i,1],'and',baseConfig,'(',output[i,2],'%)','\n', '\t', 'Estimated difference:',output[i,3],'to',output[i,4],'%')
+    } else if (as.numeric(output[i,2]) >= 20){
+      sentences[i] <- paste('We have minimal confidence that',output[i,1],'performed worse than',baseConfig,'(',(100 - as.numeric(output[i,2])),'%)','\n', '\t', 'Estimated difference:',output[i,3],'to',output[i,4],'%')
+    } else if (as.numeric(output[i,2]) >= 10){
+      sentences[i] <- paste('We have moderate confidence that',output[i,1],'performed worse than',baseConfig,'(',(100 - as.numeric(output[i,2])),'%)','\n', '\t', 'Estimated difference:',output[i,3],'to',output[i,4],'%')
+    } else {
+      sentences[i] <- paste('We have meaningful confidence that',output[i,1],'performed worse than',baseConfig,'(',(100 - as.numeric(output[i,2])),'%)','\n', '\t', 'Estimated difference:',output[i,3],'to',output[i,4],'%')
+    }
+  }
+  
+  writeLines(sentences)
+  return()
 }
-
 ###############################
 
 dat <- read.csv(file.choose()) # Reading in the CSV
@@ -174,7 +201,6 @@ runmod <- brm(data = dat,
 # # Output of the Confidence Interval
 
 extractVals(dat, runmod, otherConfigs, 'OutsideFootForce', 'higher') 
-
 
 ###### Foot roll (Pressure targeted on medial ball of foot) 
 

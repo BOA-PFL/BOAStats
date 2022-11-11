@@ -109,25 +109,25 @@ extractVals <- function(dat, mod, configNames, baseConfig, var, dir) {
   
   for (i in 1:nrow(output)){
     if (as.numeric(output[i,2]) >= 90){
-      sentences[i] <- paste('We have meaningful confidence that',output[i,1], 'outperformed', baseConfig, '(',output[i,2], '%)','Estimated difference:',output[i,3],'to',output[i,4],'%')
+      sentences[i] <- paste0('We have meaningful confidence that ',output[i,1], ' outperformed ', baseConfig, ' (',output[i,2], '%)', '\n', '\t', '- Estimated difference: ',output[i,3],' to ',output[i,4],'%' )
     } else if (as.numeric(output[i,2]) >= 80) {      
-      sentences[i] <- paste('We have moderate confidence that',output[i,1], 'outperformed', baseConfig, '(',output[i,2], '%)','Estimated difference:',output[i,3],'to',output[i,4],'%')
+      sentences[i] <- paste('We have moderate confidence that',output[i,1], 'outperformed', baseConfig, '(',output[i,2], '%)','\n', '\t', '- Estimated difference:',output[i,3],'to',output[i,4],'%')
     } else if (as.numeric(output[i,2]) >= 70){
-      sentences[i] <- paste('We have minimal confidence that',output[i,1], 'outperformed', baseConfig, '(',output[i,2], '%)','Estimated difference:',output[i,3],'to',output[i,4],'%')
+      sentences[i] <- paste('We have minimal confidence that',output[i,1], 'outperformed', baseConfig, '(',output[i,2], '%)','\n', '\t', 'Estimated difference:',output[i,3],'to',output[i,4],'%')
     } else if (as.numeric(output[i,2]) >= 30){
-      sentences[i] <- paste('There were inconsistent differences between',output[i,1],'and',baseConfig,'(',output[i,2],'%)','Estimated difference:',output[i,3],'to',output[i,4],'%')
+      sentences[i] <- paste('There were inconsistent differences between',output[i,1],'and',baseConfig,'(',output[i,2],'%)','\n', '\t', 'Estimated difference:',output[i,3],'to',output[i,4],'%')
     } else if (as.numeric(output[i,2]) >= 20){
-      sentences[i] <- paste('We have minimal confidence that',output[i,1],'performed worse than',baseConfig,'(',(100 - as.numeric(output[i,2])),'%)','Estimated difference:',output[i,3],'to',output[i,4],'%')
+      sentences[i] <- paste('We have minimal confidence that',output[i,1],'performed worse than',baseConfig,'(',(100 - as.numeric(output[i,2])),'%)','\n', '\t', 'Estimated difference:',output[i,3],'to',output[i,4],'%')
     } else if (as.numeric(output[i,2]) >= 10){
-      sentences[i] <- paste('We have moderate confidence that',output[i,1],'performed worse than',baseConfig,'(',(100 - as.numeric(output[i,2])),'%)','Estimated difference:',output[i,3],'to',output[i,4],'%')
+      sentences[i] <- paste('We have moderate confidence that',output[i,1],'performed worse than',baseConfig,'(',(100 - as.numeric(output[i,2])),'%)','\n', '\t', 'Estimated difference:',output[i,3],'to',output[i,4],'%')
     } else {
-      sentences[i] <- paste('We have meaningful confidence that',output[i,1],'performed worse than',baseConfig,'(',(100 - as.numeric(output[i,2])),'%)','Estimated difference:',output[i,3],'to',output[i,4],'%')
+      sentences[i] <- paste('We have meaningful confidence that',output[i,1],'performed worse than',baseConfig,'(',(100 - as.numeric(output[i,2])),'%)','\n', '\t', 'Estimated difference:',output[i,3],'to',output[i,4],'%')
     }
   }
   
-  return(sentences)
+  writeLines(sentences)
+  return()
 }
-
 
 ###############################
 
@@ -139,7 +139,7 @@ dat <- as_tibble(dat)
 
 baseConfig <- 'Lace' # baseline config
 
-otherConfigs <- c('WM', "WL") # list configs being tested against baseline
+otherConfigs <- c('WM', 'WL') # list configs being tested against baseline
 
 allConfigs <- c(baseConfig, otherConfigs)
 
@@ -271,6 +271,7 @@ runmod <- brm(data = dat, # Bayes model
 
 extractVals(dat, runmod, otherConfigs, baseConfig, 'meanFf', 'higher') 
 
+
 ###### Forefoot contact area Early stance
 
 dat <- dat %>% 
@@ -367,6 +368,7 @@ runmod <- brm(data = dat, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
+
 extractVals(dat, runmod, otherConfigs, baseConfig, 'maxmeanToes', 'lower') 
 
 
@@ -387,9 +389,42 @@ dat <- dat %>%
 ggplot(data = dat, aes(x = maxToePnorm, color = Config)) + geom_histogram() + facet_wrap(~Subject) 
 
 
-
 p <- withinSubPlot(dat, colName = 'maxToePnorm', dir = 'lower')
-p+ ylab('Maximum Toe Pressure (kPa)')
+p+ ylab('Toe pressure/Mean pressure')
+
+runmod <- brm(data = dat, # Bayes model
+              family = gaussian,
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+extractVals(dat, runmod, otherConfigs, baseConfig, 'maxToePnorm', 'lower') 
+
+
+###### Max of the Max Toe Pressure Normalized to Mean Pressure Across the entire foot
+
+dat <- dat %>% 
+  #filter(ffAreaEarly > 30) %>%
+  #filter(meanFf < 100) %>%
+  group_by(Subject) %>%
+  mutate(maxMaxToePnorm = maxmaxToes/meanTotalP) %>%
+  mutate(z_score = scale(maxToePnorm)) %>% 
+  group_by(Config)
+
+#dat<- subset(dat, dat$z_score < 2) #removing outliers  
+#dat<- subset(dat, dat$z_score > -2)
+
+ggplot(data = dat, aes(x = maxMaxToePnorm, color = Config)) + geom_histogram() + facet_wrap(~Subject) 
+
+
+
+p <- withinSubPlot(dat, colName = 'maxMaxToePnorm', dir = 'lower')
+p+ ylab('Toe pressure/Mean pressure')
 
 runmod <- brm(data = dat, # Bayes model
               family = gaussian,
