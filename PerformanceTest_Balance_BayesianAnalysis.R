@@ -173,4 +173,4 @@ runmod <- brm(data = dat, # Bayes model
 
 # Change configName to the config you want to compare to baseline (must match config name in data sheet)
 
-extractVals(dat, runmod, otherConfigs, 'timeToStab', 'lower') 
+extractVals(dat, runmod, otherConfigs, baseConfig, 'timeToStab', 'lower') 
