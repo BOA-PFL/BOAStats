@@ -134,9 +134,9 @@ dat <- read.csv(file.choose())
 dat <- as_tibble(dat)
 
 
-baseline <- 'SD'
+baseline <- 'Flex'
 
-otherConfigs <- c('3OTT')
+otherConfigs <- c('Stiff')
 
 allConfigs <- c(baseline, otherConfigs)
 
@@ -144,6 +144,32 @@ dat$Config <- factor(dat$Config, allConfigs)
 
 
 ###### Heel Hold
+
+dat %>%
+  group_by(Config)%>%
+  summarize(
+    meanF = mean(MaxTotalF_BothToes),
+    meanProp = mean(MaxToeF_BothToes),
+    meanRFD = mean(maxToeRFDup_BothToes),
+    meanTTP = mean(timeToTotalPeak_BothToes),
+    meanToeP = mean(timeToTotalPeak_BothToes),
+    heelCT = mean(meanHeelContact_BothToes),
+    heelF = mean(absHeelContact_BothToes),
+    heelSD = mean(absHeelContactSD_BothToes)
+  )
+
+dat %>%
+  group_by(Config)%>%
+  summarize(
+    meanF = sd(MaxTotalF_BothToes),
+    meanProp = sd(MaxToeF_BothToes),
+    meanRFD = sd(maxToeRFDup_BothToes),
+    meanTTP = sd(timeToTotalPeak_BothToes),
+    meanToeP = sd(timeToTotalPeak_BothToes),
+    heelCT = sd(meanHeelContact_BothToes),
+    heelF = sd(absHeelContact_BothToes),
+    heelSD = sd(absHeelContactSD_BothToes)
+  )
 
 dat <- dat %>% 
   group_by(Subject) %>%
