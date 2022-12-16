@@ -42,16 +42,8 @@ withinSubPlot <- function(inputDF, colName, dir) {
   
 }
 
- 
+
 extractVals <- function(dat, mod, configNames, baseConfig, var, dir) {
-  
-  #dat <- skaterDat
-  #mod <- runmod
-  #configNames <- otherConfigs
-  #baseConfig <- baseline
-  #var <- 'peakPFmom'
-  #dir <- 'higher'
-  
   
   Config = rep(NA, length(configNames))
   ProbImp = matrix(0, length(configNames))
@@ -158,14 +150,12 @@ cmjDat <- cmjDat %>%
   mutate(z_score = scale(CT)) %>% 
   group_by(Config)
 
-#cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
-#cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
 
 ggplot(data = cmjDat, aes(x = CT, color = Config)) + geom_histogram() + facet_wrap(~Subject) 
 
 
 p <- withinSubPlot(cmjDat, colName = 'CT', dir = 'lower')
-p+ ylab('Contact Time (s)')
+p + ylab('Contact Time (s)')
 
 runmod <- brm(data = cmjDat, # Bayes model
               family = gaussian,
@@ -180,6 +170,13 @@ runmod <- brm(data = cmjDat, # Bayes model
 
 
 extractVals(cmjDat, runmod, otherConfigs, baseline, 'CT', 'lower') 
+
+tmpPost <- posterior_samples(runmod)
+
+ggplot(data = cmjDat, aes(x = Config, y = z_score, color = Config )) + 
+  geom_point(aes(color=Config)) +facet_wrap(~Subject)
+
+
 
 ##### CMJ jump peak propulsive (vertical) force 
 
@@ -211,6 +208,7 @@ runmod <- brm(data = cmjDat, # Bayes model
 
 extractVals(cmjDat, runmod, otherConfigs, baseline, 'peakGRF_Z', 'higher') 
 
+tmpPost <- posterior_samples(runmod)
 ##### CMJ Peak Plantarflexion moment
 
 cmjDat <- cmjDat %>% 
