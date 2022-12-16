@@ -43,3 +43,21 @@ ggplot(data = dat, aes(x = Subject, y = shinCVPressure, color = Config)) +
 
 # Summary: 4/5 testers had substantially greater contact on their calf &
 # improved closure. 
+
+contactMod <- lmer(calfContact ~ Config + (1|Subject), data = dat)
+summary(contactMod)
+
+# positive means greater contact area (good)
+dat %>%
+  group_by(Subject)%>%
+  mutate(pctChange = ((calfContact - calfContact[Config=='Buckle']) / calfContact) * 100 )%>%
+  select('pctChange')%>%
+  filter(pctChange != 0)
+
+# negative means lower CV (good thing)
+dat %>%
+  group_by(Subject)%>%
+  mutate(pctChange = ((calfCVPressure - calfCVPressure[Config=='Buckle']) / calfCVPressure) * 100 )%>%
+  select('pctChange')%>%
+  filter(pctChange != 0)
+
