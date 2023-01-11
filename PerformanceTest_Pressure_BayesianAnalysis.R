@@ -69,7 +69,7 @@ extractVals <- function(dat, mod, configNames, baseConfig, var, dir) {
     
     configName = configNames[i]
     configColName <- paste('b_Config', configName, sep = "")
-    posterior <- posterior_samples(mod)
+    posterior <- as_draws_matrix(mod)
     
     if (dir == 'lower'){
       prob <- sum(posterior[,configColName] < 0) / length(posterior[,configColName])
