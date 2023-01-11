@@ -85,19 +85,40 @@ allDat %>%
 
 
 allDat %>%
+  filter(pBF > 200) %>%
+  ggplot(aes(x= pBF ,y=Velocity)) +
+  geom_point(alpha=0.5) +
+  labs(x= "Peak Braking Force", y="Throw Velocity (mph)")+
+  geom_smooth(method=lm) + 
+  stat_cor(method = "pearson")
+
+allDat %>%
+  filter(pVGRF > 500) %>%
+  ggplot(aes(x= pVGRF ,y=Velocity)) +
+  geom_point(alpha=0.5) +
+  labs(x= "Peak Vertical Force", y="Throw Velocity (mph)")+
+  geom_smooth(method=lm) + 
+  stat_cor(method = "pearson")
+
+allDat %>%
+  #filter(pAF > 500) %>%
+  ggplot(aes(x= pAF ,y=Velocity)) +
+  geom_point(alpha=0.5) +
+  labs(x= "Peak Anterior Force", y="Throw Velocity (mph)")+
+  geom_smooth(method=lm) + 
+  stat_cor(method = "pearson")
+
+
+
+
+
+allDat %>%
   ggplot(aes(x= pelVel,y=Velocity)) +
   geom_point(alpha=0.5) +
   labs(x= "Pelvis Velocity (deg/s)", y="Throw Velocity (mph)")+
   geom_smooth(method=lm) + 
   stat_cor(method = "pearson")
 
-
-allDat %>%
-  ggplot(aes(x= rearKneeExtVel,y=Velocity)) +
-  geom_point(alpha=0.5) +
-  labs(x= "Rear Knee Ext Vel", y="Throw Velocity (mph)")+
-  geom_smooth(method=lm) + 
-  stat_cor(method = "pearson")
 
 allDat %>%
   filter(kneeExtROM>0)%>%
