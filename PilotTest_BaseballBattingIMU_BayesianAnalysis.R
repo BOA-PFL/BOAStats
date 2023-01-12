@@ -69,7 +69,7 @@ extractVals <- function(dat, mod, configNames, baseConfig, var, dir) {
     
     configName = configNames[i]
     configColName <- paste('b_Config', configName, sep = "")
-    posterior <- posterior_samples(mod)
+    posterior <- as_draws_matrix(mod)
     
     if (dir == 'lower'){
       prob <- sum(posterior[,configColName] < 0) / length(posterior[,configColName])
@@ -180,7 +180,7 @@ runmod <- brm(data = dat,
               seed = 190831)
 
 # # Output of the Confidence Interval
-extractVals(dat, runmod, otherConfigs, 'BatSpeed_mph', 'higher') 
+extractVals(dat, runmod, otherConfigs, baseline, 'BatSpeed_mph', 'higher') 
 
 
 
@@ -219,7 +219,7 @@ runmod <- brm(data = dat,
               seed = 190831)
 
 # # Output of the Confidence Interval
-extractVals(dat, runmod, otherConfigs, 'BatRotAcc_g', 'higher') 
+extractVals(dat, runmod, otherConfigs, baseline, 'BatRotAcc_g', 'higher') 
 
 
 
@@ -257,7 +257,7 @@ runmod <- brm(data = dat,
               seed = 190831)
 
 # # Output of the Confidence Interval
-extractVals(dat, runmod, otherConfigs, 'PlaneScore', 'higher') 
+extractVals(dat, runmod, otherConfigs, baseline, 'PlaneScore', 'higher') 
 
 
 
