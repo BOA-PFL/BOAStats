@@ -61,3 +61,10 @@ dat %>%
   select('pctChange')%>%
   filter(pctChange != 0)
 
+# negative means lower CV (good thing)
+dat %>%
+  group_by(Subject)%>%
+  mutate(pctChange = ((shinCVPressure - shinCVPressure[Config=='Buckle']) / shinCVPressure) * 100 )%>%
+  select('pctChange')%>%
+  filter(pctChange != 0)
+
