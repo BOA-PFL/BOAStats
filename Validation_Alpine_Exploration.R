@@ -106,9 +106,10 @@ rfdMod <- brm(data = cleanedDat,
               control = list(adapt_delta = .975, max_treedepth = 20), sample_prior = TRUE,
               seed = 190831)
 summary(rfdMod)
-plot(rfdMod)
 post <- posterior_samples(rfdMod)
 length(post$b_ConfigBuckle[post$b_ConfigBuckle < 0])/length(post$b_ConfigBuckle)
+ss <- posterior_predict(rfdMod)
+str(ss)
 
 
 testMod <- brm(data = cleanedDat, 
