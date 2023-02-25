@@ -5,7 +5,7 @@ library(emmeans)
 
 rm(list=ls())
 
-dat <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/Testing Segments/Snow Performance/SkiValidation_Dec2022/Loadsol/CompiledResultsTest3.csv')
+dat <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/Testing Segments/Snow Performance/SkiValidation_Dec2022/Loadsol/CompiledResultsTestBothSides.csv')
 dat$Config <- as.factor(dat$Config)
 
 remove_outliers <- function(x, na.rm = TRUE, ...) {
@@ -22,6 +22,22 @@ expPlot <- function(inputDF, colName) {
   # Specify ylabel in function or default to the original name
   ggplot(data = inputDF, aes(x = .data[[colName]], fill = Config)) +
     geom_histogram() + facet_wrap(~Subject + TurnDir)
+}
+
+testAnovaSimp <- function(metric, df) {
+  
+  myformula <- as.formula(paste0(metric," ~ Config", "+ TurnDir", " + TrialNo", " + (Config|Subject)"))
+  myformula2 <- as.formula(paste0(metric, " ~ TurnDir", " + TrialNo", " + (Config|Subject)"))
+  
+  full.mod = lmer(myformula, data = df, REML = TRUE, na.action = "na.omit" )
+  red.mod = lmer(myformula2, data = df, REML = TRUE, na.action = "na.omit" )
+  
+  conditions.emm <- emmeans(full.mod, "Config", lmer.df = "asymptotic")
+  
+  newList <- list("randEffectMod" = summary(full.mod), "anovaBetweenMods" = anova(full.mod, red.mod), "Coefs" = coef(full.mod),
+                  "contrasts" = conditions.emm, "Contrasts2" = contrast(conditions.emm, "trt.vs.ctrl", ref = "Buckle"))
+  return(newList)
+  
 }
 
 testAnova <- function(metric, df) {
@@ -66,25 +82,28 @@ cleanedDat <- rbind(cleanedDat, S18Good)
 
 
 expPlot(cleanedDat, 'OutTotMaxForce')
-testAnova('OutTotMaxForce', cleanedDat)
+testAnovaSimp('OutTotMaxForce', cleanedDat)
 
 expPlot(cleanedDat, 'RFD')
-testAnova('RFD', cleanedDat)
+testAnovaSimp('RFD', cleanedDat)
 
 expPlot(cleanedDat, 'RFDtime')
 testAnova('RFDtime',cleanedDat)
 
 expPlot(cleanedDat, 'OutTotAvgForce')
-testAnova('OutTotAvgForce', cleanedDat)
+testAnovaSimp('OutTotAvgForce', cleanedDat)
 
 expPlot(cleanedDat, 'OutToeMaxForce')
-testAnova('OutToeMaxForce', cleanedDat)
+testAnovaSimp('OutToeMaxForce', cleanedDat)
 
 expPlot(cleanedDat, 'OutMedMaxForce')
-testAnova('OutMedMaxForce', cleanedDat)
+testAnovaSimp('OutMedMaxForce', cleanedDat)
 
 expPlot(dat, 'OutToeFracImpulseEarly')
-testAnova('OutToeFracImpulseEarly', cleanedDat)
+testAnovaSimp('OutToeFracImpulseEarly', cleanedDat)
+
+expPlot(cleanedDat, 'InsideTotMaxForce')
+testAnovaSimp('InsideTotMaxForce', cleanedDat)
 
 
 # bayes -------------------------------------------------------------------
@@ -157,9 +176,10 @@ length(post$b_ConfigBuckle[post$b_ConfigBuckle < 0])/length(post$b_ConfigBuckle)
 
 # in lab pressures --------------------------------------------------------
 
-pDat <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/Testing Segments/Snow Performance/SkiValidation_Dec2022/InLabPressure/CompiledResults.csv')
+pDat <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/Testing Segments/Snow Performance/SkiValidation_Dec2022/InLabPressure/CompiledResults2.csv')
 pDat$CVDorsal <- pDat$sdDorsalpressure / pDat$meanDorsalPressure
 
+pDat$Config <- str_replace(pDat$Config, "BuckP", "BuckleP")
 pDat <- pDat %>%
   filter(Config != 'FootCal')
 
@@ -169,24 +189,37 @@ expPlot2 <- function(inputDF, colName) {
     geom_point() + facet_wrap(~Subject)
 }
 
+pAnova <- function(metric, df) {
+  
+  myformula <- as.formula(paste0(metric," ~ Config", " + (1|Subject)"))
+  myformula2 <- as.formula(paste0(metric, " ~ (1|Subject)"))
+  
+  full.mod = lmer(myformula, data = df, REML = TRUE, na.action = "na.omit" )
+  red.mod = lmer(myformula2, data = df, REML = TRUE, na.action = "na.omit" )
+  
+  conditions.emm <- emmeans(full.mod, "Config", lmer.df = "asymptotic")
+  
+  newList <- list("randEffectMod" = summary(full.mod), "anovaBetweenMods" = anova(full.mod, red.mod), "Coefs" = coef(full.mod),
+                  "contrasts" = conditions.emm, "Contrasts2" = contrast(conditions.emm, "trt.vs.ctrl", ref = "BuckleP"))
+  return(newList)
+  
+}
+
 ### Dorsal Pressures ###
 expPlot2(pDat, 'meanDorsalPressure') #3/4 lower in BOA. People leave BOA a little less tight
-summary(lmer(meanDorsalPressure ~ Config + (1|Subject), data = pDat)) # 0.5 PSI greater mean pressure in Buckle
-
+pAnova('meanDorsalPressure',pDat)
 
 expPlot2(pDat, 'maxDorsalPressure') #Similar story
-summary(lmer(maxDorsalPressure ~ Config + (1|Subject), data = pDat)) # 0.5 PSI greater mean pressure in Buckle
-
+pAnova('maxDorsalPressure',pDat)
 
 expPlot2(pDat, 'sdDorsalpressure') #Lower deviation in BOA
-summary(lmer(sdDorsalpressure ~ Config + (1|Subject), data = pDat)) # 0.5 PSI greater mean pressure in Buckle
-
-expPlot2(pDat, 'CVDorsal') #Lower deviation in BOA but closerwhen normalized to mean
-summary(lmer(CVDorsal ~ Config + (1|Subject), data = pDat)) # 0.5 PSI greater mean pressure in Buckle
+pAnova('sdDorsalpressure',pDat)
 
 expPlot2(pDat, 'totalDorsalPressure') #greatest in Buckles in 3/4 and the 1/4 did not tighten buckles as much
-summary(lmer(totalDorsalPressure ~ Config + (1|Subject), data = pDat)) # 0.5 PSI greater mean pressure in Buckle
+pAnova('totalDorsalPressure',pDat)
 
+expPlot2(pDat, 'DorsalContact') #greatest in Buckles in 3/4 and the 1/4 did not tighten buckles as much
+pAnova('DorsalContact',pDat)
 
 ## Heel ##
 expPlot2(pDat, 'avgMHeel')
