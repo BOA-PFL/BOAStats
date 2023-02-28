@@ -3,6 +3,7 @@ library(tidyverse)
 library(readxl)
 library(lme4)
 library(brms)
+# data library: C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/Testing Segments/Snow_Alpine_Pilot/AlpinePilot
 dat <- read_xlsx(file.choose())
 
 ## Use this script by importing resuls from the Carv system. Both prob
