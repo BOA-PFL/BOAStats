@@ -205,20 +205,24 @@ pAnova <- function(metric, df) {
   
 }
 
+# removing S03 as they were dropped from on snow test too
+pDat <- pDat %>%
+  filter(Subject != 'S03')
+
 ### Dorsal Pressures ###
-expPlot2(pDat, 'meanDorsalPressure') #3/4 lower in BOA. People leave BOA a little less tight
+expPlot2(pDat, 'meanDorsalPressure') 
 pAnova('meanDorsalPressure',pDat)
 
-expPlot2(pDat, 'maxDorsalPressure') #Similar story
+expPlot2(pDat, 'maxDorsalPressure') 
 pAnova('maxDorsalPressure',pDat)
 
 expPlot2(pDat, 'sdDorsalpressure') #Lower deviation in BOA
 pAnova('sdDorsalpressure',pDat)
 
-expPlot2(pDat, 'totalDorsalPressure') #greatest in Buckles in 3/4 and the 1/4 did not tighten buckles as much
+expPlot2(pDat, 'totalDorsalPressure') 
 pAnova('totalDorsalPressure',pDat)
 
-expPlot2(pDat, 'DorsalContact') #greatest in Buckles in 3/4 and the 1/4 did not tighten buckles as much
+expPlot2(pDat, 'DorsalContact') 
 pAnova('DorsalContact',pDat)
 
 ## Heel ##
