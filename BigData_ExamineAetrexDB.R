@@ -13,16 +13,16 @@ library(effsize)
 footAnth <- read.csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/BigData/FootScan Data/March23_export.csv')
 colnames(footAnth)[which(names(footAnth) == 'Gender')] <- 'Sex'
 
-footAnth$ï..Loc
+footAnth$Ã¯..Loc
 
 NAdat <- footAnth %>%
-  filter(ï..Location == 'Canada' | ï..Location == 'Mexico' | ï..Location == 'Puerto Rico' | ï..Location == 'United States')
+  filter(Ã¯..Location == 'Canada' | Ã¯..Location == 'Mexico' | Ã¯..Location == 'Puerto Rico' | Ã¯..Location == 'United States')
 
 Eurodat <- footAnth %>%
-  filter(ï..Location == 'Denmark' | ï..Location == 'Germany' | ï..Location == 'Netherlands' | ï..Location == 'Russia' | ï..Location == 'Spain' | ï..Location == 'United Kingdom')
+  filter(Ã¯..Location == 'Denmark' | Ã¯..Location == 'Germany' | Ã¯..Location == 'Netherlands' | Ã¯..Location == 'Russia' | Ã¯..Location == 'Spain' | Ã¯..Location == 'United Kingdom')
 
 Asiadat <- footAnth %>%
-  filter(ï..Location == 'China' | ï..Location == 'Indonesia' | ï..Location == 'Japan' | ï..Location == 'United Arab Emirates')
+  filter(Ã¯..Location == 'China' | Ã¯..Location == 'Indonesia' | Ã¯..Location == 'Japan' | Ã¯..Location == 'United Arab Emirates')
 
 
 ggplot(footAnth, aes(x=Avg..Length*10,y=Avg..Width,color=Sex)) + geom_point(size=2) + xlab('Foot Length (mm)') + ylab('Forefoot Width (mm)')
@@ -37,11 +37,11 @@ ggplot(Asiadat, aes(x=Avg..Length*10,y=Avg..Width*10,color=Sex)) + geom_point(si
 ggplot(footAnth, aes(x=Avg..Length*10,y=Avg..DorsalHeight*10,color=Sex)) + geom_point(size=2) + 
   xlab('Foot Length (mm)') + ylab('Instep Height (mm)') + theme(text = element_text(size = 30))
 
-ggplot(NAdat, aes(x=Avg..Length*10,y=Avg..DorsalHeight*10,color=Gender)) + geom_point(size=2) + xlab('Foot Length (mm)') + ylab('Dorsal Height (mm)')
+ggplot(NAdat, aes(x=Avg..Length*10,y=Avg..DorsalHeight*10,color=Sex)) + geom_point(size=2) + xlab('Foot Length (mm)') + ylab('Dorsal Height (mm)')
 
-ggplot(Eurodat, aes(x=Avg..Length*10,y=Avg..DorsalHeight*10,color=Gender)) + geom_point(size=2) + xlab('Foot Length (mm)') + ylab('Dorsal Height (mm)')
+ggplot(Eurodat, aes(x=Avg..Length*10,y=Avg..DorsalHeight*10,color=Sex)) + geom_point(size=2) + xlab('Foot Length (mm)') + ylab('Dorsal Height (mm)')
 
-ggplot(Asiadat, aes(x=Avg..Length*10,y=Avg..DorsalHeight*10,color=Gender)) + geom_point(size=2) + xlab('Foot Length (mm)') + ylab('Dorsal Height (mm)')
+ggplot(Asiadat, aes(x=Avg..Length*10,y=Avg..DorsalHeight*10,color=Sex)) + geom_point(size=2) + xlab('Foot Length (mm)') + ylab('Dorsal Height (mm)')
 
 
 
