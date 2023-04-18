@@ -11,7 +11,7 @@ library(reshape2)
 rm(list=ls())
 
 
-### Import Static Pressure data
+### Import Dynamic Pressure data
 
 ChildDat <- read.csv(file.choose())
 
