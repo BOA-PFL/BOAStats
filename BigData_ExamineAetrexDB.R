@@ -13,16 +13,16 @@ library(effsize)
 footAnth <- read.csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/BigData/FootScan Data/March23_export.csv')
 colnames(footAnth)[which(names(footAnth) == 'Gender')] <- 'Sex'
 
-footAnth$ï..Loc
+footAnth <- footAnth %>% rename('Location' = '�..Location')
 
 NAdat <- footAnth %>%
-  filter(ï..Location == 'Canada' | ï..Location == 'Mexico' | ï..Location == 'Puerto Rico' | ï..Location == 'United States')
+  filter(Location == 'Canada' | Location == 'Mexico' | Location == 'Puerto Rico' | Location == 'United States')
 
 Eurodat <- footAnth %>%
-  filter(ï..Location == 'Denmark' | ï..Location == 'Germany' | ï..Location == 'Netherlands' | ï..Location == 'Russia' | ï..Location == 'Spain' | ï..Location == 'United Kingdom')
+  filter(Location == 'Denmark' | Location == 'Germany' | Location == 'Netherlands' | Location == 'Russia' | Location == 'Spain' | Location == 'United Kingdom')
 
 Asiadat <- footAnth %>%
-  filter(ï..Location == 'China' | ï..Location == 'Indonesia' | ï..Location == 'Japan' | ï..Location == 'United Arab Emirates')
+  filter(Location == 'China' | Location == 'Indonesia' | Location == 'Japan' | Location == 'United Arab Emirates')
 
 
 ggplot(footAnth, aes(x=Avg..Length*10,y=Avg..Width,color=Sex)) + geom_point(size=2) + xlab('Foot Length (mm)') + ylab('Forefoot Width (mm)')
