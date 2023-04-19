@@ -10,6 +10,11 @@ library(reshape2)
 
 rm(list=ls())
 
+### Import Parent Data
+
+ParentDat <- read.csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/BigData/DB_V2/CyclingPowerDB_V2.csv',nrows=1)
+
+name_order = colnames(ParentDat)
 
 ### Import Dynamic Pressure data
 
@@ -24,6 +29,7 @@ ChildDat$Brand <- rep('NoBull', dim(ChildDat)[1])
 ChildDat$Model <- rep('Trainer', dim(ChildDat)[1]) 
 #childDat$Subject == 'WesWebber'] <- 'WesWeber'
 
+ChildDat <- ChildDat[,name_order]
 
 
 a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?')
