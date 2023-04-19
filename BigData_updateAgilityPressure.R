@@ -12,7 +12,7 @@ rm(list=ls())
 
 ### Import Parent Data
 
-ParentDat <- read.csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/BigData/DB_V2/CyclingPowerDB_V2.csv',nrows=1)
+ParentDat <- read.csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/BigData/DB_V2/AgilityPressureDB_V2.csv',nrows=1)
 
 name_order = colnames(ParentDat)
 
