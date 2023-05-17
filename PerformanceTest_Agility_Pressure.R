@@ -1,4 +1,3 @@
-
 library(tidyverse)
 library(brms)
 library(tidybayes)
@@ -6,23 +5,15 @@ library(lme4)
 library(dplyr)
 library(rlang)
 library(reshape2)
-library(readxl)
 
-rm(list=ls())# Clears the environment
+rm(list=ls())
 
 ####### Functions
-# Making the "Best of" line plots and defining direction
-# direction can be 'lower' or higher'. It is the direction of change that is better. 
-# For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher. 
 
-withinSubPlot <- function(inputDF, colName, dir,ylabel) {
-  # Specify ylabel in function or default to the original name
-  if(missing(ylabel)){
-    ylabel = paste0({{colName}})
-  }
+withinSubPlot <- function(inputDF, colName, dir) {
   
-  # direction can be 'lower' or higher'. It is the direction of change that is better.
-  # For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher.
+  # direction can be 'lower' or higher'. It is the direction of change that is better. 
+  # For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher. 
   meanDat <- inputDF %>%
     group_by(Subject, Config) %>%
     summarize(mean = mean(!! sym(colName)))
@@ -36,20 +27,20 @@ withinSubPlot <- function(inputDF, colName, dir,ylabel) {
     
   } else if (dir == 'higher') {
     whichConfig <- meanDat %>%
-      group_by(Subject) %>%
+      group_by(Subject) %>% 
       summarize(
         BestConfig = Config[which.max(mean)]
       )
     
   }
   
-  # "Best of" line plot code
   whichConfig <- merge(meanDat, whichConfig)
   
-  ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = mean, col = BestConfig, group = Subject)) + geom_point(size = 4) +
-    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 20)) + ylab(ylabel)
+  ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = mean, col = BestConfig, group = Subject)) + geom_point(size = 4) + 
+    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000","#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 26)) + ylab(paste0({{colName}})) 
   
 }
+
 
 extractVals <- function(dat, mod, configNames, baseConfig, var, dir) {
   
@@ -135,52 +126,44 @@ extractVals <- function(dat, mod, configNames, baseConfig, var, dir) {
   writeLines(sentences)
   return()
 }
-#################### Set up data
 
-# Angle Data
-dat <- read_csv('C:/Users/milena.singletary/Boa Technology Inc/PFL Team - Documents/General/Testing Segments/WorkWear_Performance/Jalas_July2022/Kinematics.csv') # Reading in the CSV
-# Force Data
-dat <- read_csv('C:/Users/milena.singletary/Boa Technology Inc/PFL Team - Documents/General/Testing Segments/WorkWear_Performance/Jalas_July2022/Forces.csv') # Reading in the CSV
+###############################
 
+dat <- read_csv(file.choose()) # Reading in the CSV
 
 dat <- as_tibble(dat) # creating the data frame
 
 
 # Defining the baseline and other configs
-baseline <- 'TP'
+baseline <- 'PFS-FFW'
 
-otherConfigs <- c('OP')
+otherConfigs <- c('PFS')
 
 allConfigs <- c(baseline, otherConfigs)
 
 dat$Config <- factor(dat$Config, allConfigs)
 
-################### Ankle Eversion
+########################################## CMJ ###############################################
 
-#organizing data - grouping by subject and config by the variable being observed
-subdat <- dat %>% 
-  filter(Cond == 'Level', pAnkEvVel != 'nan') %>%
+cmjDat <- subset(dat, dat$Movement == 'CMJ')
+
+###### CMJ Toe contact area midstance
+
+cmjDat <- cmjDat %>% 
   group_by(Subject) %>%
-  mutate(z_score = scale(pAnkEvVel)) %>% 
+  mutate(z_score = scale(toeAreamidstance)) %>% 
   group_by(Config)
 
-#Normalization histograms, Check for normalish distribution/outliers
-ggplot(data = dat, aes(x = pAnkEvVel, fill = Cond)) + geom_histogram() + facet_wrap(~Subject) 
+#cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
+#cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
 
-# Subset the data for level vs downhill walking
-ggplot(data = subdat, aes(x = pAnkEvVel, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
-
-
-# "best of" Line graph 
-# This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally 
-withinSubPlot(subdat, colName = 'pAnkEvVel', dir = 'lower','Peak Eversion Velocity [deg/s]') 
+ggplot(data = cmjDat, aes(x = toeAreamidstance, color = Config)) + geom_histogram() + facet_wrap(~Subject) + scale_color_manual(values=c("#000000","#00966C", "#ECE81A","#DC582A","#CAF0E4"))
 
 
+p <- withinSubPlot(cmjDat, colName = 'toeAreamidstance', dir = 'higher')
+p+ ylab('Pressure (kPa)')
 
-## Bayes model 
-# This model takes a while to run and may  crash your session 
-#Wait until you receive a warning about rtools to run anything else
-runmod <- brm(data = subdat, 
+runmod <- brm(data = cmjDat, # Bayes model
               family = gaussian,
               z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
@@ -191,35 +174,28 @@ runmod <- brm(data = subdat,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-# # Output of the Confidence Interval
-extractVals(subdat, runmod, otherConfigs, 'pAnkEvVel', 'lower')  
+
+extractVals(cmjDat, runmod, otherConfigs, baseline, 'toeAreamidstance', 'higher') 
 
 
-# Downhill
-#organizing data - grouping by subject and config by the variable being observed
-subdat <- dat %>% 
-  filter(Cond == 'Downhill', pAnkEvVel != 'nan') %>%
+
+###### CMJ Toe pressure midstance
+
+cmjDat <- cmjDat %>% 
   group_by(Subject) %>%
-  mutate(z_score = scale(pAnkEvVel)) %>% 
+  mutate(z_score = scale(toePmidstance)) %>% 
   group_by(Config)
 
-#Normalization histograms, Check for normalish distribution/outliers
-ggplot(data = dat, aes(x = pAnkEvVel, fill = Cond)) + geom_histogram() + facet_wrap(~Subject) 
+#cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
+#cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
 
-# Subset the data for level vs downhill walking
-ggplot(data = subdat, aes(x = pAnkEvVel, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
-
-
-# "best of" Line graph 
-# This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally 
-withinSubPlot(subdat, colName = 'pAnkEvVel', dir = 'lower','Peak Eversion Velocity [deg/s]') 
+ggplot(data = cmjDat, aes(x = toePmidstance, color = Config)) + geom_histogram() + facet_wrap(~Subject) + scale_color_manual(values=c("#000000","#00966C", "#ECE81A","#DC582A","#CAF0E4"))
 
 
+p <- withinSubPlot(cmjDat, colName = 'toePmidstance', dir = 'higher')
+p+ ylab('Pressure (kPa)')
 
-## Bayes model 
-# This model takes a while to run and may  crash your session 
-#Wait until you receive a warning about rtools to run anything else
-runmod <- brm(data = subdat, 
+runmod <- brm(data = cmjDat, # Bayes model
               family = gaussian,
               z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
@@ -230,34 +206,28 @@ runmod <- brm(data = subdat,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-# # Output of the Confidence Interval
-extractVals(subdat, runmod, otherConfigs, 'pAnkEvVel', 'lower') 
+
+extractVals(cmjDat, runmod, otherConfigs, baseline, 'toePmidstance', 'higher') 
 
 
 
-################### Braking Impulse
-# Level
-#organizing data - grouping by subject and config by the variable being observed
-subdat <- dat %>% 
-  filter(Cond == 'Level') %>%
+###### CMJ Forefoot Pressure Late Stance
+
+cmjDat <- cmjDat %>% 
   group_by(Subject) %>%
-  mutate(z_score = scale(brakeImpulse)) %>% 
+  mutate(z_score = scale(ffPLate)) %>% 
   group_by(Config)
 
-#Normalization histograms, Check for normalish distribution/outliers
-ggplot(data = dat, aes(x = brakeImpulse, fill = Cond)) + geom_histogram() + facet_wrap(~Subject) 
+#cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
+#cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
+
+ggplot(data = cmjDat, aes(x = ffPLate, color = Config)) + geom_histogram() + facet_wrap(~Subject) + scale_color_manual(values=c("#000000","#00966C", "#ECE81A","#DC582A","#CAF0E4"))
 
 
-# "best of" Line graph 
-# This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally 
-withinSubPlot(subdat, colName = 'brakeImpulse', dir = 'higher','Breaking Impulse [N*s]') 
+p <- withinSubPlot(cmjDat, colName = 'ffPLate', dir = 'higher')
+p+ ylab('Pressure (kPa)')
 
-
-
-## Bayes model 
-# This model takes a while to run and may  crash your session 
-#Wait until you receive a warning about rtools to run anything else
-runmod <- brm(data = subdat, 
+runmod <- brm(data = cmjDat, # Bayes model
               family = gaussian,
               z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
@@ -268,27 +238,28 @@ runmod <- brm(data = subdat,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-# # Output of the Confidence Interval
-extractVals(subdat, runmod, otherConfigs, 'brakeImpulse', 'higher')
+
+extractVals(cmjDat, runmod, otherConfigs, baseline, 'ffPLate', 'higher') 
 
 
 
-# Downhill
-#organizing data - grouping by subject and config by the variable being observed
-subdat <- dat %>% 
-  filter(Cond == 'Downhill') %>%
+###### CMJ Forefoot area Late
+
+cmjDat <- cmjDat %>% 
   group_by(Subject) %>%
-  mutate(z_score = scale(brakeImpulse)) %>% 
+  mutate(z_score = scale(ffAreaLate)) %>% 
   group_by(Config)
 
-# "best of" Line graph 
-# This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally 
-withinSubPlot(subdat, colName = 'brakeImpulse', dir = 'higher','Breaking Impulse [N*s]') 
+#cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
+#cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
 
-## Bayes model 
-# This model takes a while to run and may  crash your session 
-#Wait until you receive a warning about rtools to run anything else
-runmod <- brm(data = subdat, 
+ggplot(data = cmjDat, aes(x = ffAreaLate, color = Config)) + geom_histogram() + facet_wrap(~Subject) + scale_color_manual(values=c("#000000","#00966C", "#ECE81A","#DC582A","#CAF0E4"))
+
+
+p <- withinSubPlot(cmjDat, colName = 'ffAreaLate', dir = 'higher')
+p+ ylab('Area (%)')
+
+runmod <- brm(data = cmjDat, # Bayes model
               family = gaussian,
               z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
@@ -299,34 +270,27 @@ runmod <- brm(data = subdat,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-# # Output of the Confidence Interval
-extractVals(subdat, runmod, otherConfigs, 'brakeImpulse', 'higher')
+
+extractVals(cmjDat, runmod, otherConfigs, baseline, 'ffAreaLate', 'higher') 
 
 
+###### CMJ Heel Pressure Late Stance
 
-################### Peak Breaking Force
-# Level
-#organizing data - grouping by subject and config by the variable being observed
-subdat <- dat %>% 
-  filter(Cond == 'Level') %>%
+cmjDat <- cmjDat %>% 
   group_by(Subject) %>%
-  mutate(z_score = scale(pBF)) %>% 
+  mutate(z_score = scale(heelPLate)) %>% 
   group_by(Config)
 
-#Normalization histograms, Check for normalish distribution/outliers
-ggplot(data = dat, aes(x = pBF, fill = Cond)) + geom_histogram() + facet_wrap(~Subject) 
+#cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
+#cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
+
+ggplot(data = cmjDat, aes(x = heelPLate, color = Config)) + geom_histogram() + facet_wrap(~Subject) + scale_color_manual(values=c("#000000","#00966C", "#ECE81A","#DC582A","#CAF0E4"))
 
 
-# "best of" Line graph 
-# This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally 
-withinSubPlot(subdat, colName = 'pBF', dir = 'higher','Breaking Force [N]') 
+p <- withinSubPlot(cmjDat, colName = 'heelPLate', dir = 'higher')
+p+ ylab('Pressure (kPa)')
 
-
-
-## Bayes model 
-# This model takes a while to run and may  crash your session 
-#Wait until you receive a warning about rtools to run anything else
-runmod <- brm(data = subdat, 
+runmod <- brm(data = cmjDat, # Bayes model
               family = gaussian,
               z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
@@ -337,26 +301,28 @@ runmod <- brm(data = subdat,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-# # Output of the Confidence Interval
-extractVals(subdat, runmod, otherConfigs, 'pBF', 'higher')
+
+extractVals(cmjDat, runmod, otherConfigs, baseline, 'heelPLate', 'higher') 
 
 
-# Downhill
-#organizing data - grouping by subject and config by the variable being observed
-subdat <- dat %>% 
-  filter(Cond == 'Downhill') %>%
+
+###### CMJ heel area Late
+
+cmjDat <- cmjDat %>% 
   group_by(Subject) %>%
-  mutate(z_score = scale(pBF)) %>% 
+  mutate(z_score = scale(heelAreaLate)) %>% 
   group_by(Config)
 
-# "best of" Line graph 
-# This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally 
-withinSubPlot(subdat, colName = 'pBF', dir = 'higher','Breaking Force [N]') 
+#cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
+#cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
 
-## Bayes model 
-# This model takes a while to run and may  crash your session 
-#Wait until you receive a warning about rtools to run anything else
-runmod <- brm(data = subdat, 
+ggplot(data = cmjDat, aes(x = heelAreaLate, color = Config)) + geom_histogram() + facet_wrap(~Subject) + scale_color_manual(values=c("#000000","#00966C", "#ECE81A","#DC582A","#CAF0E4"))
+
+
+p <- withinSubPlot(cmjDat, colName = 'heelAreaLate', dir = 'higher')
+p+ ylab('Area (%)')
+
+runmod <- brm(data = cmjDat, # Bayes model
               family = gaussian,
               z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
@@ -367,34 +333,34 @@ runmod <- brm(data = subdat,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-# # Output of the Confidence Interval
-extractVals(subdat, runmod, otherConfigs, 'pBF', 'higher')
+
+extractVals(cmjDat, runmod, otherConfigs, baseline, 'heelAreaLate', 'higher') 
 
 
 
-################### Peak Medial Force
-# Level
-#organizing data - grouping by subject and config by the variable being observed
-subdat <- dat %>% 
-  filter(Cond == 'Level') %>%
+
+
+########################################## Skater ###############################################
+
+skateDat <- subset(dat, dat$Movement == 'Skater')
+
+###### Skater Toe contact area midstance
+
+skateDat <- skateDat %>% 
   group_by(Subject) %>%
-  mutate(z_score = scale(pMF)) %>% 
+  mutate(z_score = scale(toeAreamidstance)) %>% 
   group_by(Config)
 
-#Normalization histograms, Check for normalish distribution/outliers
-ggplot(data = dat, aes(x = pMF, fill = Cond)) + geom_histogram() + facet_wrap(~Subject) 
+#cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
+#cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
+
+ggplot(data = skateDat, aes(x = toeAreamidstance, color = Config)) + geom_histogram() + facet_wrap(~Subject) + scale_color_manual(values=c("#000000","#00966C", "#ECE81A","#DC582A","#CAF0E4"))
 
 
-# "best of" Line graph 
-# This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally 
-withinSubPlot(subdat, colName = 'pMF', dir = 'lower','Peak Medial Force [N]') 
+p <- withinSubPlot(skateDat, colName = 'toeAreamidstance', dir = 'higher')
+p+ ylab('Pressure (kPa)')
 
-
-
-## Bayes model 
-# This model takes a while to run and may  crash your session 
-#Wait until you receive a warning about rtools to run anything else
-runmod <- brm(data = subdat, 
+runmod <- brm(data = skateDat, # Bayes model
               family = gaussian,
               z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
@@ -405,26 +371,28 @@ runmod <- brm(data = subdat,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-# # Output of the Confidence Interval
-extractVals(subdat, runmod, otherConfigs, 'pMF', 'lower')
+
+extractVals(skateDat, runmod, otherConfigs, baseline, 'toeAreamidstance', 'higher') 
 
 
-# Downhill
-#organizing data - grouping by subject and config by the variable being observed
-subdat <- dat %>% 
-  filter(Cond == 'Downhill') %>%
+
+###### Skater Toe pressure midstance
+
+skateDat <- skateDat %>% 
   group_by(Subject) %>%
-  mutate(z_score = scale(pMF)) %>% 
+  mutate(z_score = scale(toePmidstance)) %>% 
   group_by(Config)
 
-# "best of" Line graph 
-# This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally 
-withinSubPlot(subdat, colName = 'pMF', dir = 'higher','Peak Medial Force [N]') 
+#cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
+#cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
 
- ## Bayes model 
-# This model takes a while to run and may  crash your session 
-#Wait until you receive a warning about rtools to run anything else
-runmod <- brm(data = subdat, 
+ggplot(data = skateDat, aes(x = toePmidstance, color = Config)) + geom_histogram() + facet_wrap(~Subject) + scale_color_manual(values=c("#000000","#00966C", "#ECE81A","#DC582A","#CAF0E4"))
+
+
+p <- withinSubPlot(skateDat, colName = 'toePmidstance', dir = 'higher')
+p+ ylab('Pressure (kPa)')
+
+runmod <- brm(data = skateDat, # Bayes model
               family = gaussian,
               z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
@@ -435,34 +403,28 @@ runmod <- brm(data = subdat,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-# # Output of the Confidence Interval
-extractVals(subdat, runmod, otherConfigs, 'pMF', 'lower')
+
+extractVals(skateDat, runmod, otherConfigs, baseline, 'toePmidstance', 'higher') 
 
 
 
-################### Peak Lateral Force
-# Level
-#organizing data - grouping by subject and config by the variable being observed
-subdat <- dat %>% 
-  filter(Cond == 'Level') %>%
+###### Skater Forefoot Pressure Late Stance
+
+skateDat <- skateDat %>% 
   group_by(Subject) %>%
-  mutate(z_score = scale(pLF)) %>% 
+  mutate(z_score = scale(ffPLate)) %>% 
   group_by(Config)
 
-#Normalization histograms, Check for normalish distribution/outliers
-ggplot(data = dat, aes(x = pLF, fill = Cond)) + geom_histogram() + facet_wrap(~Subject) 
+#cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
+#cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
+
+ggplot(data = skateDat, aes(x = ffPLate, color = Config)) + geom_histogram() + facet_wrap(~Subject) + scale_color_manual(values=c("#000000","#00966C", "#ECE81A","#DC582A","#CAF0E4"))
 
 
-# "best of" Line graph 
-# This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally 
-withinSubPlot(subdat, colName = 'pLF', dir = 'higher','Peak Lateral Force [N]') 
+p <- withinSubPlot(skateDat, colName = 'ffPLate', dir = 'higher')
+p+ ylab('Pressure (kPa)')
 
-
-
-## Bayes model 
-# This model takes a while to run and may  crash your session 
-#Wait until you receive a warning about rtools to run anything else
-runmod <- brm(data = subdat, 
+runmod <- brm(data = skateDat, # Bayes model
               family = gaussian,
               z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
@@ -473,27 +435,28 @@ runmod <- brm(data = subdat,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-# # Output of the Confidence Interval
-extractVals(subdat, runmod, otherConfigs, 'pLF', 'higher')
+
+extractVals(skateDat, runmod, otherConfigs, baseline, 'ffPLate', 'higher') 
 
 
 
-# Downhill
-#organizing data - grouping by subject and config by the variable being observed
-subdat <- dat %>% 
-  filter(Cond == 'Downhill') %>%
+###### Skater Forefoot area Late
+
+skateDat <- skateDat %>% 
   group_by(Subject) %>%
-  mutate(z_score = scale(pLF)) %>% 
+  mutate(z_score = scale(ffAreaLate)) %>% 
   group_by(Config)
 
-# "best of" Line graph 
-# This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally 
-withinSubPlot(subdat, colName = 'pLF', dir = 'higher','Peak Lateral Force [N]') 
+#cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
+#cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
 
-## Bayes model 
-# This model takes a while to run and may  crash your session 
-#Wait until you receive a warning about rtools to run anything else
-runmod <- brm(data = subdat, 
+ggplot(data = skateDat, aes(x = ffAreaLate, color = Config)) + geom_histogram() + facet_wrap(~Subject) + scale_color_manual(values=c("#000000","#00966C", "#ECE81A","#DC582A","#CAF0E4"))
+
+
+p <- withinSubPlot(skateDat, colName = 'ffAreaLate', dir = 'higher')
+p+ ylab('Area (%)')
+
+runmod <- brm(data = skateDat, # Bayes model
               family = gaussian,
               z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
@@ -504,54 +467,27 @@ runmod <- brm(data = subdat,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-# # Output of the Confidence Interval
-extractVals(subdat, runmod, otherConfigs, 'pLF', 'higher')
+
+extractVals(skateDat, runmod, otherConfigs, baseline, 'ffAreaLate', 'higher') 
 
 
+###### Skater Heel Pressure Late Stance
 
-####### Set up Data #######
+skateDat <- skateDat %>% 
+  group_by(Subject) %>%
+  mutate(z_score = scale(heelPLate)) %>% 
+  group_by(Config)
 
-#  Data
-dat <- read_csv('C:/Users/milena.singletary/Boa Technology Inc/PFL Team - Documents/General/Testing Segments/WorkWear_Performance/Jalas_July2022/TreadmillCompiledCOMLevelData.csv') # Reading in the CSV
+#cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
+#cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
 
-
-dat <- as_tibble(dat) # creating the data frame
-
-
-# Defining the baseline and other configs
-baseline <- 'TP'
-
-otherConfigs <- c('OP')
-
-allConfigs <- c(baseline, otherConfigs)
-
-dat$Config <- factor(dat$Config, allConfigs)
+ggplot(data = skateDat, aes(x = heelPLate, color = Config)) + geom_histogram() + facet_wrap(~Subject) + scale_color_manual(values=c("#000000","#00966C", "#ECE81A","#DC582A","#CAF0E4"))
 
 
+p <- withinSubPlot(skateDat, colName = 'heelPLate', dir = 'higher')
+p+ ylab('Pressure (kPa)')
 
-################### COM work pos
-# Level
-#organizing data - grouping by subject and config by the variable being observed
-subdat <- dat %>% 
-  filter(COMwkPos < 200) %>%
-  # group_by(Subject) %>%
-  mutate(z_score = scale(COMwkPos))
-  
-
-#Normalization histograms, Check for normalish distribution/outliers
-ggplot(data = dat, aes(x = COMwkPos, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
-ggplot(data = subdat, aes(x = COMwkPos, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
-
-# "best of" Line graph 
-# This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally 
-withinSubPlot(subdat, colName = 'COMwkPos', dir = 'lower','Pos Center of Mass Work []') 
-
-
-
-## Bayes model 
-# This model takes a while to run and may  crash your session 
-#Wait until you receive a warning about rtools to run anything else
-runmod <- brm(data = subdat, 
+runmod <- brm(data = skateDat, # Bayes model
               family = gaussian,
               z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
@@ -562,5 +498,38 @@ runmod <- brm(data = subdat,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-# # Output of the Confidence Interval
-extractVals(subdat, runmod, otherConfigs, 'COMp', 'lower')
+
+extractVals(skateDat, runmod, otherConfigs, baseline, 'heelPLate', 'higher') 
+
+
+
+###### Skater heel area Late
+
+skateDat <- skateDat %>% 
+  group_by(Subject) %>%
+  mutate(z_score = scale(heelAreaLate)) %>% 
+  group_by(Config)
+
+#cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
+#cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
+
+ggplot(data = skateDat, aes(x = heelAreaLate, color = Config)) + geom_histogram() + facet_wrap(~Subject) + scale_color_manual(values=c("#000000","#00966C", "#ECE81A","#DC582A","#CAF0E4"))
+
+
+p <- withinSubPlot(skateDat, colName = 'heelAreaLate', dir = 'higher')
+p+ ylab('Area (%)')
+
+runmod <- brm(data = skateDat, # Bayes model
+              family = gaussian,
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+
+extractVals(skateDat, runmod, otherConfigs, baseline, 'heelAreaLate', 'higher') 
+
