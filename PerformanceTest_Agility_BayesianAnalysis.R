@@ -130,7 +130,7 @@ dat <- as_tibble(dat) # creating the data frame
 # Defining the baseline and other configs
 baseline <- 'Lace'
 
-otherConfigs <- c('WM','WL')
+otherConfigs <- c('FWL','WLM')
 
 allConfigs <- c(baseline, otherConfigs)
 
@@ -151,7 +151,7 @@ cmjDat <- cmjDat %>%
   group_by(Config)
 
 
-ggplot(data = cmjDat, aes(x = CT, color = Config)) + geom_histogram() + facet_wrap(~Subject) 
+ggplot(data = cmjDat, aes(x = CT, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
 
 
 p <- withinSubPlot(cmjDat, colName = 'CT', dir = 'lower')
