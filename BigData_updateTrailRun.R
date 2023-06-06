@@ -10,7 +10,7 @@ ParentDat <- read.csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - Genera
 name_order = colnames(ParentDat)
 
 # Read and summarize the IMU Data:
-IMUDat <- read.csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/Testing Segments/EndurancePerformance/TrailRun_2022/IMUmetrics.csv')
+IMUDat <- read.csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/Testing Segments/EndurancePerformance/EH_Trail_HeelLockTrail_Perf_May23/IMU/IMUmetrics.csv')
 
 IMUDat <- IMUDat %>%
   filter(Label > 0) %>%
@@ -19,7 +19,7 @@ IMUDat <- IMUDat %>%
             PeakAcc = mean(pAcc),RangeMLAcc = mean(rMLacc)) 
 
 # Read and summarize the pressure data
-PressDat <- read.csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/Testing Segments/EndurancePerformance/TrailRun_2022/PressureOutcomes.csv')
+PressDat <- read.csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/Testing Segments/EndurancePerformance/EH_Trail_HeelLockTrail_Perf_May23/Xsensor/PressureOutcomes.csv')
 
 PressDat <- PressDat %>%
   filter(Label > 0) %>%
@@ -36,17 +36,17 @@ ChildDat <- merge(x=IMUDat,y=PressDat,all=TRUE) %>%
 colnames(ChildDat)[which(names(ChildDat) == 'Label')] <- 'Movement'
 #_______________________________________________________________________________
 # Only need this step for replacing subject names
-SubNames <- read_xlsx('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/Testing Segments/EndurancePerformance/TrailRun_2022/MasterListOutdoor.xlsx')
-SubNames <- SubNames %>% filter(Name != 'NA')
-SubNames <-  subset(SubNames,select = c('Subject Number','Name'))
-SubNames <- setNames(SubNames, c('Subject','Name'))
-ChildDat <- merge(x=ChildDat,y=SubNames, all = TRUE)
-ChildDat$Subject <- ChildDat$Name
-ChildDat <- subset(ChildDat,select = -c(Name, Sesh))
+# SubNames <- read_xlsx('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/Testing Segments/EndurancePerformance/TrailRun_2022/MasterListOutdoor.xlsx')
+# SubNames <- SubNames %>% filter(Name != 'NA')
+# SubNames <-  subset(SubNames,select = c('Subject Number','Name'))
+# SubNames <- setNames(SubNames, c('Subject','Name'))
+# ChildDat <- merge(x=ChildDat,y=SubNames, all = TRUE)
+# ChildDat$Subject <- ChildDat$Name
+# ChildDat <- subset(ChildDat,select = -c(Name, Sesh))
 #_______________________________________________________________________________
 # Append other necessary information to the DataFrame
-ChildDat$Year <- rep(2022, dim(ChildDat)[1])
-ChildDat$Month <- rep('July', dim(ChildDat)[1])
+ChildDat$Year <- rep(2023, dim(ChildDat)[1])
+ChildDat$Month <- rep('May', dim(ChildDat)[1])
 ChildDat$Brand <- rep('LaSportiva', dim(ChildDat)[1])
 ChildDat$Model <- rep('Cyklon', dim(ChildDat)[1])
 
