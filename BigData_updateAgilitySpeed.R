@@ -3,35 +3,35 @@ library(tidyverse)
 rm(list=ls())
 
 # Read the existing database: Only to get column name order
-ParentDat <- read.csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/BigData/DB_V2/AgilitySpeedDB.csv',nrows=1)
+ParentDat <- read.csv('C:/Users/kate.harrison/Boa Technology Inc/PFL Team - General/BigData/DB_V2/AgilitySpeedDB.csv',nrows=1)
 ParentDat <- ParentDat %>%
   rename('Subject' = ï..Subject)
 name_order = colnames(ParentDat)
 
 # Read and summarize the overground data:
-AgilityDat <- read.csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/Testing Segments/AgilityPerformanceData/CPDMech_ForefootFit_July2022/Overground/CompiledAgilityData.csv')
+AgilityDat <- read.csv(file.choose())
 
 CMJDat <- AgilityDat %>%
   filter(Movement == 'CMJ') %>%
   group_by(Subject, Config, Movement) %>%
   summarise(ContactTime = mean(CT), PeakAnklePFMoment = mean(peakPFmom), PropForce = mean(peakGRF_Z),
-            PeakAnkleInMoment = mean(peakINVmom), KneeAbAdROM = mean(kneeABDrom), COMEccWork = mean(eccWork))
+            PeakAnkleInMoment = mean(peakINVmom), KneeAbAdROM = mean(kneeABDrom), COMEccWork = mean(eccWork), COMConWork = mean(conWork))
 
 SKTDat <- AgilityDat %>%
   filter(Movement == 'Skater') %>%
   group_by(Subject, Config, Movement) %>%
   summarise(ContactTime = mean(CT), PeakAnklePFMoment = mean(peakPFmom), PropForce = mean(peakGRF_X),
-            PeakAnkleInMoment = mean(peakINVmom), KneeAbAdROM = mean(kneeABDrom), COMEccWork = mean(eccWork))
+            PeakAnkleInMoment = mean(peakINVmom), KneeAbAdROM = mean(kneeABDrom), COMEccWork = mean(eccWork), COMConWork = mean(conWork))
 
 ChildDat <- merge(x=CMJDat,y=SKTDat,all=TRUE)
-ChildDat$Year <- rep(2022, dim(ChildDat)[1])
+ChildDat$Year <- rep(2023, dim(ChildDat)[1])
 ChildDat$Month <- rep('May', dim(ChildDat)[1])
-ChildDat$Brand <- rep('nobull', dim(ChildDat)[1])
-ChildDat$Model <- rep('Trainer', dim(ChildDat)[1])
+ChildDat$Brand <- rep('Speedland', dim(ChildDat)[1])
+ChildDat$Model <- rep('HSV', dim(ChildDat)[1])
 
 #_______________________________________________________________________________
 # Place NaNs for missing data
-ChildDat$COMConWork <- rep('NA', dim(ChildDat)[1])
+# ChildDat$COMConWork <- rep('NA', dim(ChildDat)[1])
 ChildDat$PeakKneeAbMoment <- rep('NA', dim(ChildDat)[1])
 # ChildDat$PeakAnklePFMoment <- rep('NA', dim(ChildDat)[1])
 # ChildDat$PropForce <- rep('NA', dim(ChildDat)[1])
@@ -45,7 +45,7 @@ ChildDat <- ChildDat[,name_order]
 
 a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?')
 if (a == 'YES'){
-  write.table(ChildDat, "C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/BigData/DB_V2/AgilitySpeedDB.csv", sep=',', 
+  write.table(ChildDat, "C:/Users/kate.harrison/Boa Technology Inc/PFL Team - General/BigData/DB_V2/AgilitySpeedDB.csv", sep=',', 
               append = TRUE,col.names = FALSE, row.names = FALSE)
 }
 
