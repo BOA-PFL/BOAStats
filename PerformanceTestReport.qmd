@@ -1,10 +1,16 @@
 ---
-title: "Test Performance Test Report"
-format: docx
+title: "PFL DATA REPORT"
+format: 
+  docx:
+    reference-doc: 'C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/Testing Segments/Report_Template.docx'
 editor: visual
 editor_options: 
   chunk_output_type: console
 ---
+
+(\^Delete)
+
+# CONFIDENTAL CONTENT FOR BOA EMPLOYEES ONLY. PLEASE CONTACT PFL DIRECTLY WITH ANY QUESTIONS.
 
 +--------------------+-------------------------------------+
 | Test Name          | AS_Trail_HeelLockAgility_Perf_Apr23 |

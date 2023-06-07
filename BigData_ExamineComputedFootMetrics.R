@@ -24,7 +24,7 @@ for (ii in 1:nrow(footmetrics)){
 footmetrics <- footmetrics %>% select(-c(Name_Side))
 
 # Open the Aetrex Master Scan
-aetrexdat <- read_xlsx('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/BigData/FootScan Data/MasterSubjectSizes.xlsx')
+aetrexdat <- read.csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/BigData/FootScan Data/MasterSubjectSizes_March2023.csv')
 
 # Just grab the columns of interest
 aetrexdat <- aetrexdat %>%
@@ -43,3 +43,4 @@ ggplot(test, aes(x=FootLength*1000,y=MTP1/FootLength*100,color=Sex)) + geom_poin
   xlab('Foot Length (mm)') + ylab('Location of MTP1 (%)') + theme(text = element_text(size = 30))
 
 ggplot(test, aes(x=MTP1/FootLength*100,color=Sex)) + geom_histogram() + xlab('Location of MTP1 (% Foot Length)')                  
+
