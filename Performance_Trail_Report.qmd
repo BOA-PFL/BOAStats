@@ -8,8 +8,6 @@ editor_options:
   chunk_output_type: console
 ---
 
-(\^Delete)
-
 # CONFIDENTAL CONTENT FOR BOA EMPLOYEES ONLY. PLEASE CONTACT PFL DIRECTLY WITH ANY QUESTIONS.
 
 +--------------------+-----------------------------------+
