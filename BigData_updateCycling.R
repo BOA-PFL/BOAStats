@@ -32,6 +32,7 @@ PressSteadyDat <- PressDat %>%
 
 
 PressSprintDat <- PressDat %>%
+  filter(Movement == 'Sprint') %>%
   group_by(Subject, Config) %>%
   summarize(HeelContact_sprint = mean(heelAreaP, na.rm = TRUE), PeakToePress_sprint = mean(maxmaxToes, na.rm = TRUE))
   # mutate(Subject= replace(Subject, Subject == 'EricHoner','EricHonert')) %>%
