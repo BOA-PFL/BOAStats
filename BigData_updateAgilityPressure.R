@@ -24,9 +24,7 @@ ChildDat <- subset(ChildDat, ChildDat$Movement == ('cmj')|ChildDat$Movement == (
 
 ChildDat <- ChildDat %>%
   group_by(Subject, Config, Movement) %>%
-  summarise(ContactTime = mean(ContactTime), PeakToePressure = mean(maxmaxToes), HeelContactArea = mean(heelAreaP), LateralProportionForce = mean(latPropMid), 
-            DorsalVariation = mean(dorsalVar), PeakDorsalPressure = mean(maxDorsalP), MeanFFpressure = mean(ffDorsalMidP), MeanMFpressure = mean(mfDorsalMidP), 
-            meanInsteppressure = mean(instepMidP), maxFFpressure = mean(ffDorsalMax), maxMFpressure = mean(mfDorsalMax), maxInsteppressure = mean(instepMax))
+  summarise_all(mean)
 
 #staticDat$Subject[stati
 ChildDat$Year <- rep(2023, dim(ChildDat)[1])
