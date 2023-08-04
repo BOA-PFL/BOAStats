@@ -3,23 +3,24 @@ library(tidyverse)
 rm(list=ls())
 
 # Read the existing database: Only to get column name order
-ParentDat <- read.csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/BigData/DB_V2/CyclingPowerDB_V2.csv',nrows=1)
+ParentDat <- read.csv('C:/Users/kate.harrison/Boa Technology Inc/PFL Team - General/BigData/DB_V2/CyclingPowerDB_V2.csv',nrows=1)
 ParentDat <- ParentDat %>%
   rename('Subject' = ï..Subject)
 name_order = colnames(ParentDat)
 
 # Read the Watt Bike Data:
-CycleDat <- read.csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/Testing Segments/Cycling Performance Tests/CyclingDD_Jan2022/WattBike/CompiledPowerData.csv')
+CycleDat <- read.csv(file.choose())
 # If any configurations need to be renamed
 CycleDat <- CycleDat
   # mutate(Subject= replace(Subject, Subject == 'RobinFassett','RobinFassettCarman'))
 
 # Read and summarize the steady-state:
-PressSteadyDat <- read.csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/Testing Segments/Cycling Performance Tests/CyclingDD_Jan2022/XSENSOR Data/TestDataSteadyPressureData_DDJan22.csv')
+PressDat <- read.csv(file.choose())
 
-PressSteadyDat <- PressSteadyDat %>%
-  group_by(Subject, Config, Trial) %>%
-  summarize(HeelContact_steady = mean(Steady_HeelContactArea, na.rm = TRUE), PeakToePress_steady = mean(PeakToePressure, na.rm = TRUE))
+PressSteadyDat <- PressDat %>%
+  filter(Movement == 'Steady') %>%
+  group_by(Subject, Config) %>%
+  summarize(HeelContact_steady = mean(heelAreaP, na.rm = TRUE), PeakToePress_steady = mean(maxmaxToes, na.rm = TRUE))
   # mutate(Subject= replace(Subject, Subject == 'EricHoner','EricHonert')) %>%
   # mutate(Subject= replace(Subject, Subject == 'AmeliaShea','AmeliaShae')) %>%
   # mutate(Subject= replace(Subject, Subject == 'Matt Kjowski','MattKijowski')) %>%
@@ -29,12 +30,11 @@ PressSteadyDat <- PressSteadyDat %>%
 
 #   mutate(Config= replace(Config, Config == 'LRHL','HL'))  %>%
 
-# Read and summarize the sprint:
-PressSprintDat <- read.csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/Testing Segments/Cycling Performance Tests/CyclingDD_Jan2022/XSENSOR Data/TestDataSprintPressureData_DDJan22.csv')
 
-PressSprintDat <- PressSprintDat %>%
-  group_by(Subject, Config, Trial) %>%
-  summarize(HeelContact_sprint = mean(Sprint_HeelContactArea, na.rm = TRUE), PeakToePress_sprint = mean(PeakToePressure, na.rm = TRUE))
+PressSprintDat <- PressDat %>%
+  filter(Movement == 'Sprint') %>%
+  group_by(Subject, Config) %>%
+  summarize(HeelContact_sprint = mean(heelAreaP, na.rm = TRUE), PeakToePress_sprint = mean(maxmaxToes, na.rm = TRUE))
   # mutate(Subject= replace(Subject, Subject == 'EricHoner','EricHonert')) %>%
   # mutate(Subject= replace(Subject, Subject == 'AmeliaShea','AmeliaShae')) %>%
   # mutate(Subject= replace(Subject, Subject == 'Matt Kjowski','MattKijowski')) %>%
@@ -54,11 +54,11 @@ PressSprintDat <- PressSprintDat %>%
 ChildDat <- list(CycleDat,PressSteadyDat,PressSprintDat) %>%
   reduce(full_join)
 
-ChildDat$Year <- rep(2022, dim(ChildDat)[1])
-ChildDat$Month <- rep('January', dim(ChildDat)[1])
+ChildDat$Year <- rep(2023, dim(ChildDat)[1])
+ChildDat$Month <- rep('June', dim(ChildDat)[1])
 ChildDat$Brand <- rep('Giro', dim(ChildDat)[1])
 ChildDat$Model <- rep('Regime', dim(ChildDat)[1])
-ChildDat <- subset(ChildDat,select = -c(Trial))
+#ChildDat <- subset(ChildDat,select = -c(Trial))
 
 # Sort the DataFrame columns into the right order (from the Parent)
 ChildDat <- ChildDat[,name_order]
@@ -66,6 +66,6 @@ ChildDat <- ChildDat[,name_order]
 a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?')
 if (a == 'YES'){
   # Check the Child Data before!!
-  write.table(ChildDat, file = 'C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/BigData/DB_V2/CyclingPowerDB_V2.csv', sep = ',',
+  write.table(ChildDat, file = 'C:/Users/kate.harrison/Boa Technology Inc/PFL Team - General/BigData/DB_V2/CyclingPowerDB_V2.csv', sep = ',',
               append = TRUE,col.names = FALSE, row.names = FALSE)
 }
