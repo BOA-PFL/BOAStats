@@ -6,6 +6,7 @@ library(lme4)
 library(dplyr)
 library(rlang)
 library(reshape2)
+library(posterior)
 
 rm(list=ls())
 
@@ -122,7 +123,9 @@ extractVals <- function(dat, mod, configNames, baseConfig, var, dir) {
 
 ###############################
 
-dat <- read_csv(file.choose()) # Reading in the CSV
+#dat <- read_csv(file.choose()) # Reading in the CSV
+dat <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/Testing Segments/Material Testing/2022/CarbonTest_Speedland_Performance_Oct2022/Overground/CompiledAgilityDataTestNewer.csv')
+
 
 dat <- as_tibble(dat) # creating the data frame
 
@@ -130,7 +133,7 @@ dat <- as_tibble(dat) # creating the data frame
 # Defining the baseline and other configs
 baseline <- 'Lace'
 
-otherConfigs <- c('FWL','WLM')
+otherConfigs <- c('LaceP','DD','DDP')
 
 allConfigs <- c(baseline, otherConfigs)
 
@@ -321,15 +324,24 @@ skaterDat <- skaterDat %>%
 
 #skaterDat<- subset(skaterDat, skaterDat$z_score < 2) #removing outliers  
 #skaterDat<- subset(skaterDat, skaterDat$z_score > -2)
+library(lmerTest)
 
 ggplot(data = skaterDat, aes(x = CT, color = Config)) + geom_histogram() + facet_wrap(~Subject) ## Check for normalish distribution/outliers
+ggplot(data = skaterDat, aes(x = Config,y = z_score, color = Config)) + geom_boxplot() + facet_wrap(~Subject)
+ggplot(data = skaterDat, aes(x = Config,y = z_score, color = Config)) + geom_boxplot() 
+ggplot(data = skaterDat, aes(x = Config, y = CT, color = Config)) + geom_boxplot()
+
+mod1 <- lmer(CT ~ Config + (1|Subject), data = skaterDat)
+summary(mod1)
+mod2 <- lmer(z_score ~ Config + (1|Subject), data = skaterDat)
+summary(mod2)
 
 p<-withinSubPlot(skaterDat, colName = 'CT', dir = 'lower')
 p + ylab('Contact Time (s)')
 
 runmod <- brm(data = skaterDat, # Bayes model
               family = gaussian,
-              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              z_score ~ Config + (1|Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
                         prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
                         prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
@@ -339,8 +351,9 @@ runmod <- brm(data = skaterDat, # Bayes model
               seed = 190831)
 
 
-extractVals(skaterDat, runmod, otherConfigs, baseline, 'CT', 'lower') 
-
+plot(runmod)
+a <- posterior_samples(runmod)
+(length(a$b_ConfigLaceP[a$b_ConfigLaceP > 0])/length(a$b_ConfigLaceP))*100
 
 ###### Skater peak propulsive force
 
