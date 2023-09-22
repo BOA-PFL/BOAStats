@@ -1,0 +1,652 @@
+---
+title: "PFL DATA REPORT"
+format: 
+  docx:
+    reference-doc: 'C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/Testing Segments/Report_Template.docx'
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+# CONFIDENTAL CONTENT FOR BOA EMPLOYEES ONLY. PLEASE CONTACT PFL DIRECTLY WITH ANY QUESTIONS.
+
++--------------------+-----------------------------------+
+| Test Name          | EH_Medical_KneeBracePilotII_Aug23 |
++====================+===================================+
+| **Benefit:**       | Endurance & Health                |
++--------------------+-----------------------------------+
+| **Date:**          | 8/2023                            |
++--------------------+-----------------------------------+
+| **Test Type:**     | Mechanistic                       |
++--------------------+-----------------------------------+
+| **Configurations** | Baseline: Breg Stock Brace        |
+|                    |                                   |
+|                    | Test configurations:              |
+|                    |                                   |
+|                    | -   BOA Brace                     |
++--------------------+-----------------------------------+
+
+## Purpose & Background
+
+-   Brace migration may affect biomechanics and injury risk
+
+-   5mm is suggested as the maximum allowable distal brace migration before inhibiting joint mechanics (Brownstein (1998), Walker et al., (1988))
+
+-   A previous knee brace pilot test found that the Breg Stock brace migrated between -2.55mm to 6.58mm, which is considered to be past the threshold of in proposed injury risk.
+
+-   The purpose of this test was to assess if a BOA fit system on a Ligament Brace will limit brace migration
+
+## Hypothesis
+
+H1: The heel lock will improve heel hold and the dual dial heel lock will provide the best fit. Heel hold will be measured as contact area between the heel and the midsole during trail running. The heel hold will be evaluated during uphill, technical, and downhill running
+
+H2: The heel lock will improve ankle stability with dual dial heel lock providing the most stability. Ankle stability will be measured as the peak eversion velocity. The
+
+H3: The heel lock will improve running speed with no change in heart rate. The dual dial will provide the most improvement.
+
+## Methods
+
++------------------+---------------+------------------+----------------------------+
+| Subjects         | Movements     | Equipment        | Measurements               |
++==================+===============+==================+============================+
+| 10 Male Athletes | Trail Running | Pressure insoles | Endurance:                 |
+|                  |               |                  |                            |
+|                  |               |                  | -   Running speed          |
+|                  |               |                  |                            |
+|                  |               |                  | -   Heart Rate             |
+|                  |               |                  |                            |
+|                  |               |                  | Health:                    |
+|                  |               |                  |                            |
+|                  |               |                  | -   Peak eversion velocity |
+|                  |               |                  |                            |
+|                  |               |                  | Fit:                       |
+|                  |               |                  |                            |
+|                  |               |                  | -   Heel contact area      |
+|                  |               |                  |                            |
+|                  |               |                  | -   Forefoot pressure      |
++------------------+---------------+------------------+----------------------------+
+
+## Configurations
+
++-----------------------------+------------------------------+-----------------------------+
+| Baseline: Single Dial (SD)  | Single Dial Heel Lock (SDHL) | Dual Dial Heel Lock (DDHL)  |
++=============================+==============================+=============================+
+| ![](images/config1_LAT.png) | ![](images/config2_LAT.png)  | ![](images/config3_LAT.png) |
++-----------------------------+------------------------------+-----------------------------+
+
+## Summary of Findings
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: false
+library(ggplot2)
+library(sjPlot)
+library(tidyverse)
+library(brms)
+library(tidybayes)
+library(lme4)
+library(rlang)
+library(reshape2)
+library(readxl)
+library(effects)
+library(effsize)
+rm(list=ls())
+```
+
+```{r}
+#| echo: false
+#| include: false
+
+#Load in Compiled Qualitative Sheet
+qualDat <- read_xlsx('C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/Testing Segments/EndurancePerformance/EH_KneeBracePilotII_Aug23/CompiledQualData_KneeBrace.xlsx')
+
+# Load in the Brace Static Data
+braceDat <- read_csv('C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/Testing Segments/EndurancePerformance/EH_KneeBracePilotII_Aug23/Overground/Static/CompiledKneeBraceData.csv')
+
+# Load in the IMU data
+agilityDat <- read_csv('C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/Testing Segments/EndurancePerformance/EH_KneeBracePilotII_Aug23/Overground/CompiledAgilityData.csv')
+
+
+baseline <- 'STOCK' # baseline configuration
+
+otherConfigs <- c('BOA') # other configurations tested against base
+allConfigs <- c(baseline, otherConfigs)
+
+
+qualDat$Config <- factor(qualDat$Config, allConfigs)
+
+
+braceDat <- as_tibble(braceDat) # creating the data frame
+braceDat$Config <- factor(braceDat$Config, allConfigs)
+
+agilityDat <- as_tibble(agilityDat) # creating the data frame
+agilityDat$Config <- factor(agilityDat$Config, allConfigs)
+
+
+
+withinSubPlot <- function(inputDF, colName, dir) {
+  
+  # direction can be 'lower' or higher'. It is the direction of change that is better. 
+  # For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher. 
+  meanDat <- inputDF %>%
+    group_by(Subject, Config) %>%
+    summarize(mean = mean(!! sym(colName)))
+  
+  if (dir == 'lower'){
+    whichConfig <- meanDat %>%
+      group_by(Subject) %>%
+      summarize(
+        BestConfig = Config[which.min(mean)]
+      )
+    
+  } else if (dir == 'higher') {
+    whichConfig <- meanDat %>%
+      group_by(Subject) %>% 
+      summarize(
+        BestConfig = Config[which.max(mean)]
+      )
+    
+  }
+  
+  whichConfig <- merge(meanDat, whichConfig)
+  
+  ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = mean, col = BestConfig, group = Subject)) + geom_point(size = 4) + 
+    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000","#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 16)) + ylab(paste0({{colName}})) 
+  
+}
+
+
+extractVals <- function(dat, mod, configNames, baseConfig, var, dir) {
+  
+  Config = rep(NA, length(configNames))
+  ProbImp = matrix(0, length(configNames))
+  lowCI = matrix(0, length(configNames))
+  highCI = matrix(0, length(configNames))
+  
+  for (i in 1:length(configNames)) {
+    # This function takes the original dataframe (dat, same one entered into runmod), the Bayesian model from brms (runmod), 
+    # the configuration Name, and the variable you are testing. It returns:
+    # [1] the probabality the variable was better in the test config vs. the baseline config
+    # [3] the lower bound of the bayesian 95% posterior interval (as percent change from baseline) 
+    # [4] the upper bound of the bayesian 95% posterior interval (as percent change from baseline)
+    #i = 1
+    
+    configName = configNames[i]
+    configColName <- paste('b_Config', configName, sep = "")
+    posterior <- posterior_samples(mod)
+    
+    if (dir == 'lower'){
+      prob <- sum(posterior[,configColName] < 0) / length(posterior[,configColName])
+      
+    } else if (dir == 'higher') {
+      
+      prob <- sum(posterior[,configColName] > 0) / length(posterior[,configColName])
+    }
+    
+    ci <- posterior_interval(mod, prob = 0.80)
+    ciLow <- ci[configColName,1] 
+    ciHigh <- ci[configColName,2]
+    
+    SDdat <- dat %>%
+      group_by(Subject) %>%
+      summarize(sd = sd(!! sym(var), na.rm = TRUE), mean = mean(!! sym(var), na.rm = TRUE))
+    
+    meanSD = mean(SDdat$sd , na.rm = TRUE)
+    mean = mean(SDdat$mean, na.rm = TRUE)
+    ci_LowPct <- meanSD*ciLow/mean*100
+    ci_HighPct <- meanSD*ciHigh/mean*100
+    
+    output = list('Config:', configName, 'Probability of Improvement:', prob, 'Worse end of CI:', ci_LowPct, 'Best end of CI:', ci_HighPct)
+    Config[i] = configName
+    ProbImp[i] = prob
+    lowCI[i] = ci_LowPct
+    highCI[i] = ci_HighPct
+  }
+  ProbImp = round(ProbImp*100)
+  lowCI = round(lowCI, 1)
+  highCI = round(highCI,1)
+  output = cbind(Config, ProbImp, lowCI, highCI)
+  
+  colnames(output) = c('Config', 'Probability of Improvement', 'Low end of CI', 'High end of CI')
+  
+  sentences = rep(NA, nrow(output))
+  
+  for (i in 1:nrow(output)){
+    if (as.numeric(output[i,2]) >= 90){
+      sentences[i] <- paste0('We have meaningful confidence that ',output[i,1], ' outperformed ', baseConfig, ' (',output[i,2], '%)', '/n', '\t', '- Estimated difference: ',output[i,3],' to ',output[i,4],'%' )
+    } else if (as.numeric(output[i,2]) >= 80) {      
+      sentences[i] <- paste('We have moderate confidence that',output[i,1], 'outperformed', baseConfig, '(',output[i,2], '%)','\n', '\t', '- Estimated difference:',output[i,3],'to',output[i,4],'%')
+    } else if (as.numeric(output[i,2]) >= 70){
+      sentences[i] <- paste('We have minimal confidence that',output[i,1], 'outperformed', baseConfig, '(',output[i,2], '%)','\n', '\t', 'Estimated difference:',output[i,3],'to',output[i,4],'%')
+    } else if (as.numeric(output[i,2]) >= 30){
+      sentences[i] <- paste('There were inconsistent differences between',output[i,1],'and',baseConfig,'(',output[i,2],'%)','\n', '\t', 'Estimated difference:',output[i,3],'to',output[i,4],'%')
+    } else if (as.numeric(output[i,2]) >= 20){
+      sentences[i] <- paste('We have minimal confidence that',output[i,1],'performed worse than',baseConfig,'(',(100 - as.numeric(output[i,2])),'%)','\n', '\t', 'Estimated difference:',output[i,3],'to',output[i,4],'%')
+    } else if (as.numeric(output[i,2]) >= 10){
+      sentences[i] <- paste('We have moderate confidence that',output[i,1],'performed worse than',baseConfig,'(',(100 - as.numeric(output[i,2])),'%)','\n', '\t', 'Estimated difference:',output[i,3],'to',output[i,4],'%')
+    } else {
+      sentences[i] <- paste('We have meaningful confidence that',output[i,1],'performed worse than',baseConfig,'(',(100 - as.numeric(output[i,2])),'%)','\n', '\t', 'Estimated difference:',output[i,3],'to',output[i,4],'%')
+    }
+  }
+  
+  writeLines(sentences)
+  return()
+}
+
+# Setting up  "Best Of" line plots 
+withinSubQualPlot <- function(inputDF) {
+  
+  # direction can be 'lower' or higher'. It is the direction of change that is better. 
+  # For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher. 
+  
+  whichConfig <- inputDF %>%
+    group_by(Subject) %>%
+    summarize(
+      BestConfig = Config[which.max(OverallFit)]
+    )
+  
+  whichConfig <- merge(inputDF, whichConfig)
+  
+  ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = OverallConfidence, col = BestConfig, group = Subject)) + geom_point(size = 4) + 
+    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + ylab('Rating') + theme(text = element_text(size = 16))
+  
+}  
+
+
+replaceName <- function(DF, toReplace, newName){ 
+  
+  # replace incorrect subject names with new name
+  DF <- DF %>% 
+    mutate(Trial = replace(Trial, Trial == toReplace, newName))
+  return(DF)
+} 
+
+###############################
+```
+
+**Qualitative**
+
+```{r}
+#| echo: false
+#| warning: false
+
+qualDat %>%
+  pivot_longer(cols = ThighSnugness :CalfSnugness  , 
+               names_to = "Location", values_to = "Rating") %>%
+  group_by(Location, Config) %>%
+  summarize(
+    avg = mean(Rating, na.rm = TRUE),
+    medAvg = median(Rating, na.rm = TRUE)
+  ) 
+ 
+qualDat %>%
+  pivot_longer(cols = OverallConfidence , 
+               names_to = "Location", values_to = "Rating") %>%
+  group_by(Location, Config) %>%
+  summarize(
+    avg = mean(Rating, na.rm = TRUE),
+    medAvg = median(Rating, na.rm = TRUE)
+  ) 
+
+#Defining the rating for the location 
+#Density plots for fit ratings of shoe locations
+qualDat <- pivot_longer(qualDat, cols = Forefoot:Heel, names_to = 'Location', values_to = 'Rating')
+
+FF <- qualDat %>% 
+  filter(Location=="Forefoot")
+
+
+qualDat$Location <- factor(qualDat$Location, c('Forefoot', 'Midfoot', 'Heel')) 
+
+```
+
+```{r}
+#| echo: false
+withinSubQualPlot(qualDat)
+ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) + 
+  geom_histogram(position = 'dodge', binwidth = 1) + facet_wrap(~Location) + scale_fill_manual(values=c("#999999", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) +
+  ylab('Responses') + theme(text=element_text(size=20)) + geom_vline(xintercept = 5, linewidth = 1)
+```
+
+**Dial Torque**
+
+```{r}
+#| echo: false
+#| warning: false
+qualDat <- subset(qualDat, qualDat$Config !='STOCK')  
+
+
+Subject <- qualDat$Subject
+Config <- qualDat$Config
+ThiTorque <- qualDat$ThiTorque
+ShankTorque <- qualDat$ShankTorque
+
+qualDat  <- data.frame(Subject, Config,ThiTorque, ShankTorque)
+qualDat<- pivot_longer(qualDat, cols = ThiTorque:ShankTorque , names_to = 'Location', values_to = 'Torque')
+  # mutate(Location= replace(Location, Location == 'ThiTorque','Thigh Torque'))
+
+
+
+qualDat %>%
+  group_by(Config)%>%
+  summarize(
+    R_Torque_Prox = mean(ThiTorque, na.rm = TRUE),
+    R_Torque_Proxsd = sd(ThiTorque, na.rm = TRUE),
+    R_Torque_Dist = mean(ShankTorque, na.rm = TRUE),
+    R_Torque_Distsd = sd(ShankTorque, na.rm = TRUE)
+   
+  )
+  gt() 
+
+
+
+ggplot(qualDat, aes(x=Config, y = Torque, color = Location, group = Location)) + 
+    geom_boxplot()+ 
+    geom_jitter(shape=16, position=position_jitter(0.2))+
+  # facet_wrap(~Subject)+
+    theme(text = element_text(size = 16))+ 
+    ylab('Dial Torque [N-cm]')+ 
+    xlab('Location')+
+    ggtitle('BOA Brace Dial Torque')  
+
+
+
+```
+
+## Brace Position Over Time
+
+**Four Static Trials taken throughout the test**
+
+```{r}
+
+# Dot plot with means and SDs for Trial by Trial 
+ggplot(deltaDat, aes(x =Trial , y = DeltaTrials,  color= Config, group = Config)) +
+  geom_point(size=5)+
+  # geom_line()+
+  scale_color_manual(values=c("#000000","#00966C", "#ECE81A","#DC582A","#CAF0E4"))+
+  facet_wrap(~Subject)+
+  theme(text = element_text(size = 26))+
+  ylab('Knee Brace Vertical Position (mm)')+
+  xlab('Static Trial')+
+  # geom_text( aes(label = Subject), color = "black", check_overlap = TRUE) +
+  stat_summary(fun = 'mean',geom = 'line', size = 1) 
+  # stat_summary(geom = 'errorbar', color = 'black', fun.min = function(x) mean(x) - sd(x), fun.max=function(x) mean(x) + sd(x), width = 0.5)+
+
+  # geom_smooth(method=lm)
+
+
+```
+
+**Brace Position**
+
+```{r}
+#Changing brace names to be factorable
+braceDat <- braceDat %>% 
+  mutate(Trial = replace(Trial, Trial == '1', 'One'))
+
+braceDat <- braceDat %>% 
+  mutate(Trial = replace(Trial, Trial == '2', 'Two'))
+braceDat <- braceDat %>% 
+  mutate(Trial = replace(Trial, Trial == '3', 'Three'))
+
+braceDat <- braceDat %>% 
+  mutate(Trial = replace(Trial, Trial == '4', 'Four'))  
+
+# Setting the brace static trials to factors
+allTrials <- c("One","Two","Three","Four")
+braceDat$Trial <- factor(braceDat$Trial, allTrials) 
+
+###### 
+# This part of the set is separating out the configs into separate dfs and then diferencing the static trials 
+# Then the two dfs are joined back together and eventually combined with the agility dat
+
+####Separating out by configurations #####
+STOCKdat <- subset(braceDat, braceDat$Config =='STOCK')
+
+BOAdat<- subset(braceDat, braceDat$Config == 'BOA')
+
+#Separating by Trial
+t1STOCK <- subset(STOCKdat, STOCKdat$Trial == 'One')
+t2STOCK <- subset(STOCKdat, STOCKdat$Trial == 'Two')
+t3STOCK <- subset(STOCKdat, STOCKdat$Trial == 'Three')
+t4STOCK <- subset(STOCKdat, STOCKdat$Trial == 'Four')
+
+
+#Finding the difference between Trials
+deltaOne <- (t1STOCK$RKneeBrace_VertPos - t1STOCK$RKneeBrace_VertPos) # Setting Trial one to 0 as the baseline
+deltaFour <- (t1STOCK$RKneeBrace_VertPos - t4STOCK$RKneeBrace_VertPos) # trial 1 - trial 4
+deltaTwo <- (t1STOCK$RKneeBrace_VertPos - t2STOCK$RKneeBrace_VertPos) # Trail 1 - trial 2
+deltaThree <- (t1STOCK$RKneeBrace_VertPos - t3STOCK$RKneeBrace_VertPos) # Trial 1 - trial 3
+
+
+
+
+Subject <- t1STOCK$Subject
+
+Config <- t1STOCK$Config
+#Combining the trials into one data set
+STOCKDelta <- data.frame(Subject, Config, deltaOne,deltaTwo,deltaThree,deltaFour)  
+STOCKDelta<- pivot_longer(STOCKDelta, cols = deltaOne:deltaFour , names_to = 'Trial', values_to = 'DeltaTrials')
+
+
+##### BOA 
+
+#Separating by Trial
+t1BOA <- subset(BOAdat, BOAdat$Trial == 'One')
+t2BOA <- subset(BOAdat, BOAdat$Trial == 'Two')
+t3BOA <- subset(BOAdat, BOAdat$Trial == 'Three')
+t4BOA <- subset(BOAdat, BOAdat$Trial == 'Four')
+
+t14BOAdata <- rbind(t1BOA,t4BOA)
+
+#Finding the difference between Trials  
+
+deltaOne <- (t1BOA$RKneeBrace_VertPos - t1BOA$RKneeBrace_VertPos)# Setting Trial one to 0 as the baseline
+
+deltaFour <- (t1BOA$RKneeBrace_VertPos - t4BOA$RKneeBrace_VertPos) # trial 1 - trial 4
+deltaTwo <- (t1BOA$RKneeBrace_VertPos - t2BOA$RKneeBrace_VertPos) # trial 1 - trial 2
+deltaThree <- (t1BOA$RKneeBrace_VertPos - t3BOA$RKneeBrace_VertPos) # trial 1 - trial 3
+
+Subject <- t1BOA$Subject
+
+Config <- t1BOA$Config 
+
+#Combining into a data frame 
+BOADelta <- data.frame(Subject, Config, deltaOne,deltaTwo,deltaThree,deltaFour)  
+BOADelta <- pivot_longer(BOADelta, cols = deltaOne:deltaFour , names_to = 'Trial', values_to = 'DeltaTrials')
+
+#Merging the config data frames
+deltaDat <-rbind(BOADelta, STOCKDelta) 
+ 
+
+
+# Renaming the trials 
+deltaDat <- replaceName(deltaDat, 'deltaOne', 'One')
+deltaDat <- replaceName(deltaDat, 'deltaTwo', 'Two')
+deltaDat <- replaceName(deltaDat, 'deltaThree', 'Three')
+deltaDat <- replaceName(deltaDat, 'deltaFour', 'Four')
+
+# Making the trials and configs factors 
+allTrials <- c("One","Two","Three","Four")
+
+deltaDat$Trial <- factor(deltaDat$Trial, allTrials)
+# 
+deltaDat$Config <- factor(deltaDat$Config, allConfigs)
+
+
+#Multiplying by -1 so that the migration is more clearly shown in negative values from the baseline
+deltaDat$DeltaTrials <-(deltaDat$DeltaTrials*-1)   
+
+mod1 <- lmer(RKneeBrace_VertPos ~ Config + (1|Config), data = braceDat)
+summary(mod1)
+
+braceDat <- braceDat %>% 
+  #filter(peakKneeEXTmom < 1000) %>%
+  group_by(Subject) %>%
+  mutate(z_score = scale(RKneeBrace_VertPos)) %>% 
+  group_by(Config)
+
+
+runmod_brace <- brm(data = braceDat, # Bayes model
+              family = gaussian,
+              RKneeBrace_VertPos ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(5, 10), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 5), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 2), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 2), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 500, chains = 4, cores = 4,
+              control = list(adapt_delta = .999, max_treedepth = 20),
+              seed = 190831)
+
+extractVals(braceDat, 
+runmod_brace, otherConfigs, baseline, 'RKneeBrace_VertPos', 'higher') 
+
+SDdat <- braceDat %>%
+      group_by(Subject) %>%
+      group_by(Config) %>%
+      summarize(sd = sd(!! sym(var), na.rm = TRUE), mean = mean(!! sym(var), na.rm = TRUE))
+
+```
+
+## Health
+
+**Peak Eversion Velocity (ankle stability): Lower is better**
+
+```{r}
+# Research question 1: what is the impact of knee brace vertical position on _______ 
+cmjDat <- subset(agilityDat, agilityDat$Movement == 'CMJ') 
+
+
+#Joining Vert brace pos df with Biomech. df
+jointDat <- merge(x = cmjDat, y = braceDat, by = c('Subject','Config','Trial'), all.x = TRUE) 
+
+
+#Scaling the brace displacement into z-scores 
+jointDat$scalePos <- scale(jointDat$RKneeBrace_VertPos)
+```
+
+## 
+
+**Heel contact area (heel hold): Higher is better**
+
+```{r}
+
+```
+
+**Forefoot contact area (heel hold): Higher is better**
+
+```{r}
+
+```
+
+Radar Plots
+
+```{r}
+#| echo: false
+
+###### For agility run combo
+# For SDHL
+
+Endurance <- 84
+
+Health <- 23
+
+Fit <- 37
+
+Qual <- 91
+
+data <- t(c(Endurance, Health, Fit, Qual))
+
+data <- as.data.frame(data)
+
+improvThresh<- as.data.frame(t(c(70,70,70,94)))
+equalThresh<- as.data.frame(t(c(50,50,50,94)))
+
+min =as.data.frame(t(rep(0, 4)))
+max = as.data.frame(t(rep(100,4)))
+data <- rbind(max, min, improvThresh, equalThresh, data)
+
+colnames(data) <- c("Endurance", "Health", "Fit", "Qual")
+
+colors <- c("#C8C9C7","#53565A", "#00966C")
+
+create_beautiful_radarchart <- function(data, color = "#00966C",
+                                        vlabels = colnames(data), vlcex = 0.9,
+                                        caxislabels = NULL, title = NULL, ...){
+  radarchart(
+    data, axistype = 1,
+    # Customize the polygon
+    pcol = color, pfcol = scales::alpha(color, 0.5), plwd = 2, plty = 1,
+    # Customize the grid
+    cglcol = "grey", cglty = 1, cglwd = 0.8,
+    # Customize the axis
+    axislabcol = "grey",
+    # Variable labels
+    vlcex = vlcex, vlabels = vlabels,
+    caxislabels = caxislabels, title = title, ...
+  )
+}
+
+
+create_beautiful_radarchart(data = data, color = colors)
+
+legend(x = "topright", inset = c(- 0.3, 0.2), legend = c("Threshold for confidence in improvement", "SD", "Heel Lock Config"),
+       bty = "n", pch = 20, col = colors, text.col = "black", cex = .7, pt.cex = 1)
+# 
+# ## This code gives a visual representation of how a shoe performed against a baseline shoe in the form of a radar plot 
+# #This happens by assigning different averaged ratings to different segments 
+# #You are only adding the shoe being tested to the ratings, the baseline shoe is always set to 50 for a clear comparison
+# #The shoe being tested is rated by the average percentile confidence in each segment 
+# ###For example, if a PFS shoe had 75% confidence in CMJ  and 50% in skater for contact time, the average rating for agility would be 62.5 -> 63 
+# 
+# 
+# 
+# #### Config DDHL
+# 
+Endurance <- 81
+
+Health <- 27
+
+Fit <- 75
+
+Qual <- 96
+
+data <- t(c(Endurance, Health, Fit, Qual))
+
+data <- as.data.frame(data)
+
+improvThresh<- as.data.frame(t(c(70,70,70,94)))
+equalThresh<- as.data.frame(t(c(50,50,50,94)))
+
+min =as.data.frame(t(rep(0, 4)))
+max = as.data.frame(t(rep(100,4)))
+data <- rbind(max, min, improvThresh, equalThresh, data)
+
+colnames(data) <- c("Endurance", "Health", "Fit", "Qual")
+
+colors <- c("#C8C9C7","#53565A", "#00966C")
+
+create_beautiful_radarchart <- function(data, color = "#00966C",
+                                        vlabels = colnames(data), vlcex = 0.9,
+                                        caxislabels = NULL, title = NULL, ...){
+  radarchart(
+    data, axistype = 1,
+    # Customize the polygon
+    pcol = color, pfcol = scales::alpha(color, 0.5), plwd = 2, plty = 1,
+    # Customize the grid
+    cglcol = "grey", cglty = 1, cglwd = 0.8,
+    # Customize the axis
+    axislabcol = "grey",
+    # Variable labels
+    vlcex = vlcex, vlabels = vlabels,
+    caxislabels = caxislabels, title = title, ...
+  )
+}
+
+
+create_beautiful_radarchart(data = data, color = colors)
+
+legend(x = "topright", inset = c(- 0.3, 0.2), legend = c("Threshold for confidence in improvement", "SD", "Heel Lock Config"),
+       bty = "n", pch = 20, col = colors, text.col = "black", cex = .7, pt.cex = 1)
+```
