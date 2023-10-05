@@ -6,11 +6,31 @@ library(lme4)
 library(dplyr)
 library(rlang)
 library(reshape2)
-library(posterior)
+library(emmeans)
 
 rm(list=ls())
 
 ####### Functions
+
+testAnova <- function(metric, df) {
+  
+  myformula <- as.formula(paste0(metric," ~ Config", " + (1|Subject)"))
+  myformula2 <- as.formula(paste0(metric, " ~ (1|Subject)"))
+  
+  full.mod = lmer(myformula, data = df, REML = TRUE, na.action = "na.omit" )
+  red.mod = lmer(myformula2, data = df, REML = TRUE, na.action = "na.omit" )
+  
+  conditions.emm <- emmeans(full.mod, "Config", lmer.df = "satterthwaite")
+  #conditions.emm
+  contrast(conditions.emm, "trt.vs.ctrl", ref = "Lace") 
+  
+  
+  newList <- list("randEffectMod" = summary(full.mod), "anovaBetweenMods" = anova(full.mod, red.mod),
+                  "contrasts" = conditions.emm, "Contrasts2" = contrast(conditions.emm, "trt.vs.ctrl", ref = "DD"))
+  return(newList)
+  
+}
+
 
 withinSubPlot <- function(inputDF, colName, dir) {
   
@@ -123,9 +143,7 @@ extractVals <- function(dat, mod, configNames, baseConfig, var, dir) {
 
 ###############################
 
-#dat <- read_csv(file.choose()) # Reading in the CSV
-dat <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/Testing Segments/Material Testing/2022/CarbonTest_Speedland_Performance_Oct2022/Overground/CompiledAgilityDataTestNewer.csv')
-
+dat <- read_csv(file.choose()) # Reading in the CSV
 
 dat <- as_tibble(dat) # creating the data frame
 
@@ -133,7 +151,7 @@ dat <- as_tibble(dat) # creating the data frame
 # Defining the baseline and other configs
 baseline <- 'Lace'
 
-otherConfigs <- c('LaceP','DD','DDP')
+otherConfigs <- c('LaceP','DD', 'DDP')
 
 allConfigs <- c(baseline, otherConfigs)
 
@@ -153,8 +171,11 @@ cmjDat <- cmjDat %>%
   mutate(z_score = scale(CT)) %>% 
   group_by(Config)
 
+cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
+cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
 
-ggplot(data = cmjDat, aes(x = CT, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
+ggplot(data = cmjDat, aes(x = Config, y = CT, color = Config )) +
+  geom_boxplot(aes(color=Config),show.legend = FALSE)  + theme_grey(base_size = 30) + xlab('Configuration') + theme(axis.title.y = element_blank())
 
 
 p <- withinSubPlot(cmjDat, colName = 'CT', dir = 'lower')
@@ -176,9 +197,9 @@ extractVals(cmjDat, runmod, otherConfigs, baseline, 'CT', 'lower')
 
 tmpPost <- posterior_samples(runmod)
 
-ggplot(data = cmjDat, aes(x = Config, y = z_score, color = Config )) + 
-  geom_point(aes(color=Config)) +facet_wrap(~Subject)
-
+testAnova('CT',cmj)
+ggplot(data = cmjDat, aes(x = Config, y = cmjDat$CT, color = Config )) + 
+  geom_boxplot(aes(color=Config)) 
 
 
 ##### CMJ jump peak propulsive (vertical) force 
@@ -189,13 +210,27 @@ cmjDat <- cmjDat %>%
   mutate(z_score = scale(peakGRF_Z)) %>% 
   group_by(Config)
 
-#cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
-#cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
+cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
+cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
 
 ggplot(data = cmjDat, aes(x = peakGRF_Z, color = Config)) + geom_histogram() + facet_wrap(~Subject) 
 
 p <- withinSubPlot(cmjDat, colName = 'peakGRF_Z', dir = 'higher')
 p + ylab('Peak Propulsive Force (N)')
+
+cmjDat %>%
+  group_by(Config,Subject)%>%
+  summarize(
+    meanCT = mean(CT),
+    meannonnorm = meanCT + z_score * sd(CT),
+    meanallCT = mean(meannonnorm)
+  ) %>%
+  ggplot(aes(x = Config, y = meanallCT)) + geom_boxplot()
+
+
+ggplot(data = cmjDat, aes(x = Config, y = z_score, color = Config )) +
+  geom_boxplot(aes(color=Config),show.legend = FALSE)  + theme_grey(base_size = 30) + xlab('Configuration') + theme(axis.title.y = element_blank())
+
 
 runmod <- brm(data = cmjDat, # Bayes model
               family = gaussian,
@@ -212,6 +247,7 @@ runmod <- brm(data = cmjDat, # Bayes model
 extractVals(cmjDat, runmod, otherConfigs, baseline, 'peakGRF_Z', 'higher') 
 
 tmpPost <- posterior_samples(runmod)
+
 ##### CMJ Peak Plantarflexion moment
 
 cmjDat <- cmjDat %>% 
@@ -249,17 +285,21 @@ extractVals(cmjDat, runmod, otherConfigs, baseline, 'peakPFmom', 'higher')
 cmjDat <- cmjDat %>% 
   #filter(peakKneeEXTmom < 1000) %>%
   group_by(Subject) %>%
-  mutate(z_score = scale(peakKneeEXTmom)) %>% 
+  mutate(z_score = scale(peakINVmom)) %>% 
   group_by(Config)
 
 cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
 cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
 
-ggplot(data = cmjDat, aes(x = peakKneeEXTmom, color = Config)) + geom_histogram() + facet_wrap(~Subject) 
+ggplot(data = cmjDat, aes(x = Config, y = z_score, color = Config )) + 
+  geom_boxplot(aes(color=Config)) + ylab('Frontal Plane Ankle Moment Z Score') + theme_grey(base_size = 30)
 
-p <- withinSubPlot(cmjDat, colName = 'peakKneeEXTmom', dir = 'higher')
 
-p + ylab('Peak Knee Extension Moment (Nm)')
+ggplot(data = cmjDat, aes(x = peakINVmom, color = Config)) + geom_histogram() + facet_wrap(~Subject) 
+
+p <- withinSubPlot(cmjDat, colName = 'peakINVmom', dir = 'higher')
+
+p + ylab('Peak Ankle Inversion Moment (Nm)')
 
 runmod <- brm(data = cmjDat, # Bayes model
               family = gaussian,
@@ -273,9 +313,9 @@ runmod <- brm(data = cmjDat, # Bayes model
               seed = 190831)
 
 
-extractVals(cmjDat, runmod, otherConfigs, baseline, 'peakKneeEXTmom', 'higher') 
+extractVals(cmjDat, runmod, otherConfigs, baseline, 'peakINVmom', 'lower') 
 
-
+testAnova('peakINVmom', cmjDat)
 ##### CMJ Frontal plane knee ROM
 
 cmjDat <- cmjDat %>% 
@@ -322,26 +362,26 @@ skaterDat <- skaterDat %>%
   mutate(z_score = scale(CT)) %>% 
   group_by(Config)
 
-#skaterDat<- subset(skaterDat, skaterDat$z_score < 2) #removing outliers  
-#skaterDat<- subset(skaterDat, skaterDat$z_score > -2)
-library(lmerTest)
+skaterDat<- subset(skaterDat, skaterDat$z_score < 2) #removing outliers  
+skaterDat<- subset(skaterDat, skaterDat$z_score > -2)
 
+
+skaterDat %>%
+  group_by(Config,Subject)%>%
+  summarize(
+    meanCT = mean(CT),
+    meannonnorm = meanCT + z_score * sd(CT),
+    meanallCT = mean(meannonnorm)
+  ) %>%
+  ggplot(aes(x = Config, y = meanallCT)) + geom_boxplot()
 ggplot(data = skaterDat, aes(x = CT, color = Config)) + geom_histogram() + facet_wrap(~Subject) ## Check for normalish distribution/outliers
-ggplot(data = skaterDat, aes(x = Config,y = z_score, color = Config)) + geom_boxplot() + facet_wrap(~Subject)
-ggplot(data = skaterDat, aes(x = Config,y = z_score, color = Config)) + geom_boxplot() 
-ggplot(data = skaterDat, aes(x = Config, y = CT, color = Config)) + geom_boxplot()
-
-mod1 <- lmer(CT ~ Config + (1|Subject), data = skaterDat)
-summary(mod1)
-mod2 <- lmer(z_score ~ Config + (1|Subject), data = skaterDat)
-summary(mod2)
 
 p<-withinSubPlot(skaterDat, colName = 'CT', dir = 'lower')
 p + ylab('Contact Time (s)')
 
 runmod <- brm(data = skaterDat, # Bayes model
               family = gaussian,
-              z_score ~ Config + (1|Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
                         prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
                         prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
@@ -351,25 +391,35 @@ runmod <- brm(data = skaterDat, # Bayes model
               seed = 190831)
 
 
-plot(runmod)
-a <- posterior_samples(runmod)
-(length(a$b_ConfigLaceP[a$b_ConfigLaceP > 0])/length(a$b_ConfigLaceP))*100
+extractVals(skaterDat, runmod, otherConfigs, baseline, 'CT', 'lower') 
+ggplot(data = skaterDat, aes(x = Config, y = CT, color = Config )) +
+  geom_boxplot(aes(color=Config),show.legend = FALSE)  + theme_grey(base_size = 30) + xlab('Configuration') + theme(axis.title.y = element_blank())
 
-###### Skater peak propulsive force
+testAnova('z_score', skaterDat)
+
+
++###### Skater peak propulsive force
 
 skaterDat <- skaterDat %>% 
   group_by(Subject) %>%
   mutate(z_score = scale(peakGRF_X)) %>% 
   group_by(Config)
 
-#skaterDat<- subset(skaterDat, dat$z_score < 2) #removing outliers  
-#skaterDat<- subset(skaterDat, dat$z_score > -2)
+skaterDat<- subset(skaterDat, skaterDat$z_score < 2) #removing outliers  
+skaterDat<- subset(skaterDat, skaterDat$z_score > -2)
+
+ggplot(data = skaterDat, aes(x = Config, y = peakGRF_X, color = Config )) +
+  geom_boxplot(aes(color=Config),show.legend = FALSE)  + theme_grey(base_size = 30) + xlab('Configuration') + theme(axis.title.y = element_blank())
+
+testAnova('peakGRF_X', skaterDat)
 
 ggplot(data = skaterDat, aes(x = peakGRF_X, color = Config)) + geom_histogram() + facet_wrap(~Subject) 
 
 p<-withinSubPlot(skaterDat, colName = 'peakGRF_X', dir = 'higher')
 p + ylab('Peak Propulsive Force (N)')
 
+ggplot(data = skaterDat, aes(x = Config, y = z_score, color = Config )) + 
+  geom_boxplot(aes(color=Config)) + ylab('Peak Propulsive Force Z Score') + theme_grey(base_size = 30)
 
 runmod <- brm(data = skaterDat, # Bayes model
               family = gaussian,
