@@ -68,11 +68,9 @@ H3: The heel lock will improve running speed with no change in heart rate. The d
 
 ## Configurations
 
-+-----------------------------+------------------------------+-----------------------------+
 | Baseline: Single Dial (SD)  | Single Dial Heel Lock (SDHL) | Dual Dial Heel Lock (DDHL)  |
-+=============================+==============================+=============================+
+|-----------------------------|------------------------------|-----------------------------|
 | ![](images/config1_LAT.png) | ![](images/config2_LAT.png)  | ![](images/config3_LAT.png) |
-+-----------------------------+------------------------------+-----------------------------+
 
 ## Summary of Findings
 
