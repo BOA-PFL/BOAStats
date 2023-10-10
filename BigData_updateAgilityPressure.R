@@ -12,7 +12,7 @@ rm(list=ls())
 
 ### Import Parent Data
 
-ParentDat <- read.csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/BigData/DB_V2/AgilityPressureDB_V2.csv',nrows=1)
+ParentDat <- read.csv('C:/Users/kate.harrison/Boa Technology Inc/PFL Team - General/BigData/DB_V2/AgilityPressureDB.csv',nrows=1)
 
 name_order = colnames(ParentDat)
 
@@ -21,6 +21,10 @@ name_order = colnames(ParentDat)
 ChildDat <- read.csv(file.choose())
 
 ChildDat <- subset(ChildDat, ChildDat$Movement == ('cmj')|ChildDat$Movement == ('skater'))
+
+ChildDat <- ChildDat %>%
+  group_by(Subject, Config, Movement) %>%
+  summarise_all(mean)
 
 #staticDat$Subject[stati
 ChildDat$Year <- rep(2023, dim(ChildDat)[1])
