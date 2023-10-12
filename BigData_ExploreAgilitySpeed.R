@@ -11,6 +11,7 @@ library(ggstatsplot)
 # against one another
 #-------------------------------------------------------------------------------
 ASDB <- read.csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/BigData/DB_V2/AgilitySpeedDB.csv')
+ASPDB <- read.csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/BigData/DB_V2/AgilityPressureDB.csv')
 RunDB <- read.csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/BigData/DB_V2/WalkRunDB.csv')
 subDB <- read.csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/BigData/DB_V2/MasterSubjectVisits.csv')
 
@@ -29,6 +30,10 @@ ASDB <- ASDB %>%
   rename('Subject' = ï..Subject) %>%
   filter(Year > 2021)
 ASDB$Config <- gsub(" ", "", ASDB$Config) # Remove spaces in config names
+
+ASPDB <- ASPDB %>%
+  filter(Year > 2021)
+ASPDB$Config <- gsub(" ", "", ASPDB$Config) # Remove spaces in config names
 
 CMJdat <- ASDB %>%
   filter(Movement == 'CMJ') %>%
