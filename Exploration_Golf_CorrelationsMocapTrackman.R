@@ -26,7 +26,8 @@ rm(list=ls())# Clears the environment
 DRF <- read.csv('C:/Users/milena.singletary/Boa Technology Inc/PFL Team - Documents/General/Testing Segments/PowerPerformance/2023/PP_Golf_NewVariables_PFLMech_ June23/Overground/DFW/0_CompiledDrive_DFW_final.csv')
 # compiled OG file must display t0 as character of "h:mm:ss.0" ex. "10:10:54.9" formatting can be changed in the CSV by going to number -> category:custom  -> type: mm:ss.0
 # if improper formatting error will be thrown with as.times()
-CompiledOG <- read.csv('C:/Users/milena.singletary/Boa Technology Inc/PFL Team - Documents/General/Testing Segments/PowerPerformance/2023/PP_Golf_NewVariables_PFLMech_ June23/Overground/Drive/0_CompiledOG_Drive_latest.csv')
+#CompiledOG <- read.csv('C:/Users/milena.singletary/Boa Technology Inc/PFL Team - Documents/General/Testing Segments/PowerPerformance/2023/PP_Golf_NewVariables_PFLMech_ June23/Overground/Drive/0_CompiledOG_Drive_latest.csv')
+CompiledOG <- read.csv('C:/Users/milena.singletary/Boa Technology Inc/PFL Team - Documents/General/Testing Segments/PowerPerformance/2023/PP_Golf_NewVariables_PFLMech_ June23/Overground/Drive/0_CompiledOG_Drive_1027.csv')
 CompiledTrk <- read.csv('C:/Users/milena.singletary/Boa Technology Inc/PFL Team - Documents/General/Testing Segments/PowerPerformance/2023/PP_Golf_NewVariables_PFLMech_ June23/0_CompiledTrackmanData.csv')
 
 
@@ -192,6 +193,37 @@ r2(GRF_mod)
 
 
 
+# thorax 
+
+ggplot(data = CompiledOG, aes(x = pkThoraxRotVel_DS, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
+Thorax <- CompiledOG %>%
+  group_by(Subject) %>%
+  mutate(z_score = scale(pkThoraxRotVel_DS)) %>% 
+  group_by(Config)%>%
+  filter(pkThoraxRotVel_DS > 0)
+
+Thorax<- subset(Thorax, Thorax$z_score < 2) #removing outliers
+Thorax<- subset(Thorax, Thorax$z_score > -2)
+
+Thorax %>%
+  filter(ShotTime != 'NA')%>%
+  ggplot(aes(x= pkThoraxRotVel_DS ,y=ClubSpeed)) +
+  geom_point(alpha=0.5) +
+  labs(x= "Peak Thorax Velcity: Downswing (N)", y="ClubSpeed Velocity (mph)")+
+  geom_smooth(method=lm) + 
+  stat_cor(method = "pearson")
+
+ggplot(Thorax, aes(pkThoraxRotVel_DS, ClubSpeed, colour = Subject)) + geom_point()+geom_smooth(se = FALSE, method = lm)
+
+#thor_mod = lmer('ClubSpeed ~ pkThoraxRotVel_DS + (1|Subject)', data = Thorax, REML = TRUE, na.action = "na.omit")
+thor_mod = lmer('ClubSpeed ~ pkThoraxRotVel_DS + (pkThoraxRotVel_DS|Subject)', data = Thorax, REML = TRUE, na.action = "na.omit")
+summary(thor_mod)
+coef(thor_mod)
+r2(thor_mod)
+
+
+
+
 # pelvis 
 
 ggplot(data = DRF, aes(x = pkPelvisVel_DS, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
@@ -248,7 +280,66 @@ coef(hip_mod)
 r2(hip_mod)
 
 
+# hip frontal ROM
+ggplot(data = CompiledOG, aes(x = HipROMFrontal_lead_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
+hipROM <- CompiledOG %>%
+  group_by(Subject) %>%
+  mutate(z_score = scale(HipROMFrontal_lead_Downswing)) %>% 
+  group_by(Config)
 
+hipROM<- subset(hipROM, hipROM$z_score < 2) #removing outliers
+hipROM<- subset(hipROM, hipROM$z_score > -2)
+
+ggplot(data = hipROM, aes(x = HipROMFrontal_lead_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
+
+
+hipROM %>%
+  filter(ShotTime != 'NA' & Subject != 'SteveBerzon')%>%
+  ggplot(aes(x= HipROMFrontal_lead_Downswing ,y=ClubSpeed)) +
+  geom_point(alpha=0.5) +
+  labs(x= "Hip Frontal ROM: Downswing (Deg)", y="ClubSpeed Velocity (mph)")+
+  geom_smooth(method=lm) + 
+  stat_cor(method = "pearson")
+
+ggplot(hipROM, aes(HipROMFrontal_lead_Downswing, ClubSpeed, colour = Subject)) + geom_point()+geom_smooth(se = FALSE, method = lm)
+
+hipROM_mod = lmer('ClubSpeed ~ HipROMFrontal_lead_Downswing + (1|Subject)', data = hipROM, REML = TRUE, na.action = "na.omit")
+hipROM_mod = lmer('ClubSpeed ~ HipROMFrontal_lead_Downswing + (HipROMFrontal_lead_Downswing|Subject)', data = hipROM, REML = TRUE, na.action = "na.omit")
+summary(hipROM_mod)
+coef(hipROM_mod)
+r2(hipROM_mod)
+
+
+
+
+# hip frontal Mom
+ggplot(data = CompiledOG, aes(x = HipMomFrontal_lead_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
+hipMom <- CompiledOG %>%
+  group_by(Subject) %>%
+  mutate(z_score = scale(HipMomFrontal_lead_Downswing)) %>% 
+  group_by(Config)
+
+hipMom<- subset(hipMom, hipMom$z_score < 2) #removing outliers
+hipMom<- subset(hipMom, hipMom$z_score > -2)
+
+ggplot(data = hipMom, aes(x = HipMomFrontal_lead_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
+
+
+hipMom %>%
+  filter(ShotTime != 'NA' & Subject != 'SteveBerzon')%>%
+  ggplot(aes(x= HipMomFrontal_lead_Downswing ,y=ClubSpeed)) +
+  geom_point(alpha=0.5) +
+  labs(x= "Frontal Hip Moment: Downswing (Nm)", y="ClubSpeed Velocity (mph)")+
+  geom_smooth(method=lm) + 
+  stat_cor(method = "pearson")
+
+ggplot(hipMom, aes(HipMomFrontal_lead_Downswing, ClubSpeed, colour = Subject)) + geom_point()+geom_smooth(se = FALSE, method = lm)
+
+hipMom_mod = lmer('ClubSpeed ~ HipMomFrontal_lead_Downswing + (1|Subject)', data = hipMom, REML = TRUE, na.action = "na.omit")
+hipMom_mod = lmer('ClubSpeed ~ HipMomFrontal_lead_Downswing + (HipMomFrontal_lead_Downswing|Subject)', data = hipMom, REML = TRUE, na.action = "na.omit")
+summary(hipMom_mod)
+coef(hipMom_mod)
+r2(hipMom_mod)
 
 
 
@@ -371,6 +462,126 @@ summary(ankROM_mod)
 coef(ankROM_mod)
 r2(ankROM_mod)
 
+# Ank Front Mom DS
+ggplot(data = CompiledOG, aes(x = AnkFrontalMom_lead_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
+
+AnkMom <- CompiledOG%>%
+  group_by(Subject) %>%
+  mutate(z_score = scale(AnkFrontalMom_lead_Downswing)) %>% 
+  group_by(Config)
+
+AnkMom<- subset(AnkMom, AnkMom$z_score < 2) #removing outliers
+AnkMom<- subset(AnkMom, AnkMom$z_score > -2)
+ggplot(data = AnkMom, aes(x = AnkFrontalMom_lead_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
+ggplot(AnkMom, aes(AnkFrontalMom_lead_Downswing, ClubSpeed, colour = Subject)) + geom_point(aes(shape = Config))+geom_smooth(se = FALSE, method = lm)
+
+AnkMom %>%
+  filter(ShotTime != 'NA')%>%
+  filter(AnkFrontalMom_lead_Downswing < 500)%>%
+  ggplot(aes(x= AnkFrontalMom_lead_Downswing ,y=ClubSpeed)) +
+  geom_point(alpha=0.5) +
+  labs(x= "Peak Ankle Frontal Moment: Downswing (Nm)", y="ClubSpeed Velocity (mph)")+
+  geom_smooth(method=lm) + 
+  stat_cor(method = "pearson")
+
+
+AnkMom_mod = lmer('ClubSpeed ~ AnkFrontalMom_lead_Downswing + (1|Subject)', data = AnkMom, REML = TRUE, na.action = "na.omit")
+AnkMom_mod = lmer('ClubSpeed ~ AnkFrontalMom_lead_Downswing + (AnkFrontalMom_lead_Downswing|Subject)', data = AnkMom, REML = TRUE, na.action = "na.omit")
+summary(AnkMom_mod)
+coef(AnkMom_mod)
+r2(AnkMom_mod)
+
+
+# Ank Lead Work
+ggplot(data = CompiledOG, aes(x = AnkWork_lead_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
+
+AnkWorkL <- CompiledOG%>%
+  group_by(Subject) %>%
+  mutate(z_score = scale(AnkWork_lead_Downswing)) %>% 
+  group_by(Config)
+
+AnkWorkL<- subset(AnkWorkL, AnkWorkL$z_score < 2) #removing outliers
+AnkWorkL<- subset(AnkWorkL, AnkWorkL$z_score > -2)
+ggplot(data = AnkWorkL, aes(x = AnkWork_lead_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
+ggplot(AnkWorkL, aes(AnkWork_lead_Downswing, ClubSpeed, colour = Subject)) + geom_point(aes(shape = Config))+geom_smooth(se = FALSE, method = lm)
+
+AnkWorkL %>%
+  filter(ShotTime != 'NA')%>%
+  filter(AnkWork_lead_Downswing < 500)%>%
+  ggplot(aes(x= AnkWork_lead_Downswing ,y=ClubSpeed)) +
+  geom_point(alpha=0.5) +
+  labs(x= "Lead Ankle Work: Downswing ()", y="ClubSpeed Velocity (mph)")+
+  geom_smooth(method=lm) + 
+  stat_cor(method = "pearson")
+
+
+AnkW_mod = lmer('ClubSpeed ~ AnkWork_lead_Downswing + (1|Subject)', data = AnkWorkL, REML = TRUE, na.action = "na.omit")
+AnkW_mod = lmer('ClubSpeed ~ AnkWork_lead_Downswing + (AnkWork_lead_Downswing|Subject)', data = AnkWorkL, REML = TRUE, na.action = "na.omit")
+summary(AnkW_mod)
+coef(AnkW_mod)
+r2(AnkW_mod)
+
+
+# Ank Trail Work
+ggplot(data = CompiledOG, aes(x = AnkWork_trail_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
+
+AnkWorkT <- CompiledOG%>%
+  group_by(Subject) %>%
+  mutate(z_score = scale(AnkWork_trail_Downswing)) %>% 
+  group_by(Config)
+
+AnkWorkT<- subset(AnkWorkT, AnkWorkT$z_score < 2) #removing outliers
+AnkWorkT<- subset(AnkWorkT, AnkWorkT$z_score > -2)
+ggplot(data = AnkWorkT, aes(x = AnkWork_trail_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
+ggplot(AnkWorkT, aes(AnkWork_trail_Downswing, ClubSpeed, colour = Subject)) + geom_point(aes(shape = Config))+geom_smooth(se = FALSE, method = lm)
+
+AnkWorkT %>%
+  filter(ShotTime != 'NA')%>%
+  filter(AnkWork_trail_Downswing < 500)%>%
+  ggplot(aes(x= AnkWork_trail_Downswing ,y=ClubSpeed)) +
+  geom_point(alpha=0.5) +
+  labs(x= "Trail Ankle Work: Downswing ()", y="ClubSpeed Velocity (mph)")+
+  geom_smooth(method=lm) + 
+  stat_cor(method = "pearson")
+
+
+AnkWT_mod = lmer('ClubSpeed ~ AnkWork_trail_Downswing + (1|Subject)', data = AnkWorkT, REML = TRUE, na.action = "na.omit")
+AnkWT_mod = lmer('ClubSpeed ~ AnkWork_trail_Downswing + (AnkWork_trail_Downswing|Subject)', data = AnkWorkT, REML = TRUE, na.action = "na.omit")
+summary(AnkWT_mod)
+coef(AnkT_mod)
+r2(AnkT_mod)
+
+
+
+# lower extremity work 
+ggplot(data = CompiledOG, aes(x = LowerExtremity_Work, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
+
+LE_Work <- CompiledOG%>%
+  group_by(Subject) %>%
+  mutate(z_score = scale(LowerExtremity_Work)) %>% 
+  group_by(Config)
+
+LE_Work<- subset(LE_Work, LE_Work$z_score < 2) #removing outliers
+LE_Work<- subset(LE_Work, LE_Work$z_score > -2)
+ggplot(data = LE_Work, aes(x = LowerExtremity_Work, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
+ggplot(LE_Work, aes(LowerExtremity_Work, ClubSpeed, colour = Subject)) + geom_point(aes(shape = Config))+geom_smooth(se = FALSE, method = lm)
+
+LE_Work %>%
+  filter(ShotTime != 'NA')%>%
+  filter(LowerExtremity_Work > 5 )%>%
+  filter(Subject != 'SteveBerzon')%>%
+  ggplot(aes(x= LowerExtremity_Work ,y=ClubSpeed)) +
+  geom_point(alpha=0.5) +
+  labs(x= "Lower Extremity Work: Downswing ()", y="ClubSpeed Velocity (mph)")+
+  geom_smooth(method=lm) + 
+  stat_cor(method = "pearson")
+
+
+LEwork_mod = lmer('ClubSpeed ~ LowerExtremity_Work + (1|Subject)', data = LE_Work, REML = TRUE, na.action = "na.omit")
+LEwork_mod = lmer('ClubSpeed ~ LowerExtremity_Work + (LowerExtremity_Work|Subject)', data = LE_Work, REML = TRUE, na.action = "na.omit")
+summary(LEwork_mod)
+coef(LEwork_mod)
+r2(LEwork_mod)
 
 
 
