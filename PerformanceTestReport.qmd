@@ -2,7 +2,7 @@
 title: "PFL DATA REPORT"
 format: 
   docx:
-    reference-doc: 'C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/Testing Segments/Report_Template.docx'
+    reference-doc: 'C:/Users/adam.luftglass/OneDrive - Boa Technology Inc/General/Testing Segments/Report_Template.docx'
 editor: visual
 editor_options: 
   chunk_output_type: console
@@ -10,61 +10,63 @@ editor_options:
 
 # CONFIDENTAL CONTENT FOR BOA EMPLOYEES ONLY. PLEASE CONTACT PFL DIRECTLY WITH ANY QUESTIONS.
 
-+--------------------+-------------------------------------+
-| Test Name          | AS_Trail_HeelLockAgility_Perf_Apr23 |
-+====================+=====================================+
-| **Benefit:**       | Agility & Speed                     |
-+--------------------+-------------------------------------+
-| **Date:**          | 4/2023                              |
-+--------------------+-------------------------------------+
-| **Test Type:**     | Performance                         |
-+--------------------+-------------------------------------+
-| **Configurations** | Baseline: SD (Single Dial)          |
-|                    |                                     |
-|                    | Test configurations:                |
-|                    |                                     |
-|                    | -   SDHL (Single Dial Heel-Lock)    |
-|                    |                                     |
-|                    | -   DDHL (Dual Dial Heel-Lock)      |
-+--------------------+-------------------------------------+
++--------------------+-------------------------------------------------+
+| Test Name          | AS_AdvStructure_Materials_Dec23                 |
++====================+=================================================+
+| **Benefit:**       | Agility & Speed                                 |
++--------------------+-------------------------------------------------+
+| **Date:**          | 12/2023                                         |
++--------------------+-------------------------------------------------+
+| **Test Type:**     | Materials                                       |
++--------------------+-------------------------------------------------+
+| **Configurations** | Baseline: LL (Low Upper, Low Midsole Structure) |
+|                    |                                                 |
+|                    | Test configurations:                            |
+|                    |                                                 |
+|                    | -   LH (Low Upper, High Midsole Structure)      |
+|                    |                                                 |
+|                    | -   HL (HighUpper, Low Midsole Structure)       |
+|                    |                                                 |
+|                    | -   HH( High Upper, High Midsole Structure)     |
++--------------------+-------------------------------------------------+
 
 ## Purpose & Background
 
--   Previous cycling performance tests (Cycling_DDRoad_Performance_Feb22) showed improvements due to a heel lock guide providing immediate lace pull toward the heel cut.
+-   Previous agility and speed tests have shown that we need a structured upper in order to see differences in material properties and there is an optimal range of upper structure to improve performance
 
--   The purpose of this test was to evaluate how a heel lock guide affects agility and speed performance in a single dial and dual dial configuration.
+-   The purpose of this test was to understand how much material we can remove from the midsole/outsole and compensate with improved fit
 
 ## Hypothesis
 
-H1: The heel lock will improve heel hold and the dual dial heel lock will provide the best fit. Heel hold will be measured as contact area between the heel and the midsole during running. Forefoot hold will be measured as pressure and contact area between the forefoot and midsole during running.
+H1: Improved fit with reduction in bulk of midsole/outsole will result in better agility, ie. [reduced contact time.]{.underline}
 
-H2: Improved fit will result in better agility, ie. [reduced contact time.]{.underline}
-
-H1.a: Reduced contact time will be achieved through increased propulsive force (i.e. in the direction of movement), and increased ankle force production in the direction of movement
+H1.a: Reduced contact time will be achieved through increased propulsive force (i.e. in the direction of movement)
 
 ## Methods
 
-+------------------+---------------------+-------------------------------+------------------------------+
-| Subjects         | Movements           | Equipment                     | Measurements                 |
-+==================+=====================+===============================+==============================+
-| 11 Male Athletes | Treadmill Running   | Pressure insoles              | Fit:                         |
-|                  |                     |                               |                              |
-|                  |                     |                               | -   Heel contact area        |
-|                  |                     |                               |                              |
-|                  |                     |                               | -   Forefoot contact area    |
-|                  |                     |                               |                              |
-|                  |                     |                               | -   Forefoot pressure        |
-+------------------+---------------------+-------------------------------+------------------------------+
-|                  | Vertical CMJ        | In-ground force plates        | Agility:                     |
-|                  |                     |                               |                              |
-|                  |                     | Motion capture                | -   Time to change direction |
-|                  |                     |                               |                              |
-|                  |                     |                               | -   Peak Power               |
-|                  |                     |                               |                              |
-|                  |                     |                               | -   Peak Ankle Force         |
-+------------------+---------------------+-------------------------------+------------------------------+
-|                  | Lateral Skater Jump | Force plates & Motion Capture |                              |
-+------------------+---------------------+-------------------------------+------------------------------+
++------------------+--------------------------+-------------------------------+------------------------------+
+| Subjects         | Movements                | Equipment                     | Measurements                 |
++==================+==========================+===============================+==============================+
+| 12 Male Athletes | Lateral Skater Jump      | Force plates & Motion Capture | Agility:                     |
+|                  |                          |                               |                              |
+|                  |                          |                               | -   Time to change direction |
+|                  |                          |                               |                              |
+|                  |                          |                               | -   Peak Power               |
+|                  |                          |                               |                              |
+|                  |                          |                               | -   Peak Ankle Force         |
++------------------+--------------------------+-------------------------------+------------------------------+
+|                  | Vertical CMJ             | In-ground force plates        | Agility                      |
+|                  |                          |                               |                              |
+|                  |                          | Motion capture                |                              |
++------------------+--------------------------+-------------------------------+------------------------------+
+|                  | Anterior-Posterior Drill | Pressure Insoles              | Fit:                         |
+|                  |                          |                               |                              |
+|                  |                          |                               | -   Heel contact area        |
+|                  |                          |                               |                              |
+|                  |                          |                               | -   Forefoot contact area    |
+|                  |                          |                               |                              |
+|                  |                          |                               | -   Forefoot pressure        |
++------------------+--------------------------+-------------------------------+------------------------------+
 
 ## Configurations
 
@@ -100,9 +102,9 @@ dat <- read.csv(file.choose())
 qualDat <- read_xlsx(file.choose())
 
 
-baseline <- 'SD' # baseline configuration
+baseline <- 'LL' # baseline configuration
 
-otherConfigs <- c('SDHL', 'DDHL') # other configurations tested against base
+otherConfigs <- c('LH', 'HL', 'HH') # other configurations tested against base
 allConfigs <- c(baseline, otherConfigs)
 qualDat$Config <- factor(qualDat$Config, allConfigs)
 dat <- as_tibble(dat) # creating the data frame
@@ -275,9 +277,6 @@ withinSubQualPlot(qualDat)
 ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) + 
   geom_histogram(position = 'dodge', binwidth = 1) + facet_wrap(~Location) + scale_fill_manual(values=c("#999999", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) +
   ylab('Responses') + theme(text=element_text(size=20)) + geom_vline(xintercept = 5, linewidth = 1)
-```
-
-```         
 ```
 
 **Dial Torque**
