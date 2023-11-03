@@ -20,6 +20,14 @@ library(lubridate)
 # library needed for model 
 library(performance)
 
+library(ggplot2)
+library(emmeans)
+
+
+
+
+
+
 rm(list=ls())# Clears the environment
 
 
@@ -49,6 +57,7 @@ CompiledOG <- CompiledOG %>%
 
 # create new columns
 CompiledOG$SubjectT <- NA
+CompiledOG$Sex <- NA
 CompiledOG$SubjectT <-  NA
 CompiledOG$ConfigT <-  NA
 CompiledOG$ShotTime<-  NA
@@ -81,8 +90,9 @@ for (ii in 1:nrow(CompiledTrk)){
     
     if (subOG == subT & configOG == configT & matchT <= TimeT1 & matchT >= TimeT2){
       CompiledOG$SubjectT[jj] <- subT
+      CompiledOG$Sex[jj] <- CompiledTrk$Sex[ii]
       CompiledOG$ConfigT[jj] <- configT
-      CompiledOG$ShotTime[jj] <- TimeT
+      CompiledOG$ShotTime[jj] <- matchT
       CompiledOG$BallSpeed[jj] <- CompiledTrk$BallSpeed[ii]
       CompiledOG$ClubSpeed[jj] <- CompiledTrk$ClubSpeed[ii]
       CompiledOG$CarryFlatLength[jj] <- CompiledTrk$CarryFlatLength[ii]
@@ -108,6 +118,7 @@ check1 <- check1 %>%
 # create new columns for DRF df
 DRF$SubjectT <- NA
 DRF$SubjectT <-  NA
+DRF$Sex <- NA
 DRF$ConfigT <-  NA
 DRF$ShotTime<-  NA
 DRF$BallSpeed <-   NA
@@ -140,8 +151,9 @@ for (ii in 1:nrow(CompiledTrk)){
     
     if (subDRF == subT & configDRF == configT & matchT <= TimeT1 & matchT >= TimeT2){
       DRF$SubjectT[jj] <- subT
+      DRF$Sex[jj] <- CompiledTrk$Sex[ii]
       DRF$ConfigT[jj] <- configT
-      DRF$ShotTime[jj] <- TimeDRF
+      DRF$ShotTime[jj] <- matchT
       DRF$BallSpeed[jj] <- CompiledTrk$BallSpeed[ii]
       DRF$ClubSpeed[jj] <- CompiledTrk$ClubSpeed[ii]
       DRF$CarryFlatLength[jj] <- CompiledTrk$CarryFlatLength[ii]
@@ -246,6 +258,7 @@ pelv %>%
 ggplot(pelv, aes(pkPelvisVel_DS, ClubSpeed, colour = Subject)) + geom_point()+geom_smooth(se = FALSE, method = lm)
 
 pelv_mod = lmer('ClubSpeed ~ pkPelvisVel_DS + (1|Subject)', data = pelv, REML = TRUE, na.action = "na.omit")
+pelv_mod = lmer('ClubSpeed ~ pkPelvisVel_DS + (pkPelvisVel_DS|Subject)', data = pelv, REML = TRUE, na.action = "na.omit")
 summary(pelv_mod)
 coef(pelv_mod)
 r2(pelv_mod)
@@ -369,6 +382,7 @@ kneeExt %>%
 
 
 kneeX_mod = lmer('ClubSpeed ~ KneeExtensionVelo_lead_Downswing + (1|Subject)', data = kneeExt, REML = TRUE, na.action = "na.omit")
+kneeX_mod = lmer('ClubSpeed ~ KneeExtensionVelo_lead_Downswing + (KneeExtensionVelo_lead_Downswing|Subject)', data = kneeExt, REML = TRUE, na.action = "na.omit")
 summary(kneeX_mod)
 coef(kneeX_mod)
 r2(kneeX_mod)
@@ -430,6 +444,7 @@ AnkEv %>%
 
 
 AnkEv_mod = lmer('ClubSpeed ~ peakAnkEvVelo_lead_Downswing + (1|Subject)', data = AnkEv, REML = TRUE, na.action = "na.omit")
+AnkEv_mod = lmer('ClubSpeed ~ peakAnkEvVelo_lead_Downswing + (peakAnkEvVelo_lead_Downswing|Subject)', data = AnkEv, REML = TRUE, na.action = "na.omit")
 summary(AnkEv_mod)
 coef(AnkEv_mod)
 r2(AnkEv_mod)
@@ -645,5 +660,21 @@ coef(DRFfull)
 r2(DRFfull)
 
 
+
+
+
+GolfANOVA <- function(metric, df) {
+  myformula <- as.formula(paste0(metric," ~ Config + Sex + (Sex*Config|Subject)"))
+  myformula2 <- as.formula(paste0(metric, " ~ Config + (Config|Subject)"))
+  full.mod = lmer(myformula, data = df, REML = TRUE, na.action = "na.omit")
+  red.mod = lmer(myformula2, data = df, REML = TRUE, na.action = "na.omit" )
+  conditions.emm <- emmeans(full.mod, "Sex", lmer.df = "satterthwaite")
+  contrast(conditions.emm, "trt.vs.ctrl", ref = "M") 
+  newList <- list("randEffectMod" = summary(full.mod),"Coefficients" = coef(full.mod), "anovaBetweenMods" = anova(full.mod, red.mod),
+                  "contrasts" = conditions.emm, "Contrasts2" = contrast(conditions.emm, "trt.vs.ctrl", ref = "M"))
+  return(newList)
+}
+
+GolfANOVA(CompiledTrk$BallSpeed, CompiledOG)
 
 
