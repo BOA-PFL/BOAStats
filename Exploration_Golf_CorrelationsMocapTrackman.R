@@ -413,6 +413,7 @@ kneeROM %>%
 
 
 kneeROM_mod = lmer('ClubSpeed ~ KneeROMSag_lead_Downswing + (1|Subject)', data = kneeROM, REML = TRUE, na.action = "na.omit")
+kneeROM_mod = lmer('ClubSpeed ~ KneeROMSag_lead_Downswing + (KneeROMSag_lead_Downswing|Subject)', data = kneeROM, REML = TRUE, na.action = "na.omit")
 summary(kneeROM_mod)
 coef(kneeROM_mod)
 r2(kneeROM_mod)
@@ -473,6 +474,7 @@ ankROM %>%
 
 
 ankROM_mod = lmer('ClubSpeed ~ AnkROMFrontal_lead_Downswing + (1|Subject)', data = ankROM, REML = TRUE, na.action = "na.omit")
+ankROM_mod = lmer('ClubSpeed ~ AnkROMFrontal_lead_Downswing + (AnkROMFrontal_lead_Downswing|Subject)', data = ankROM, REML = TRUE, na.action = "na.omit")
 summary(ankROM_mod)
 coef(ankROM_mod)
 r2(ankROM_mod)
@@ -563,8 +565,129 @@ AnkWorkT %>%
 AnkWT_mod = lmer('ClubSpeed ~ AnkWork_trail_Downswing + (1|Subject)', data = AnkWorkT, REML = TRUE, na.action = "na.omit")
 AnkWT_mod = lmer('ClubSpeed ~ AnkWork_trail_Downswing + (AnkWork_trail_Downswing|Subject)', data = AnkWorkT, REML = TRUE, na.action = "na.omit")
 summary(AnkWT_mod)
-coef(AnkT_mod)
-r2(AnkT_mod)
+coef(AnkWT_mod)
+r2(AnkWT_mod)
+
+# Knee Lead Work
+ggplot(data = CompiledOG, aes(x = KneeWork_lead_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
+
+KneeWorkL <- CompiledOG%>%
+  group_by(Subject) %>%
+  mutate(z_score = scale(KneeWork_lead_Downswing)) %>% 
+  group_by(Config)
+
+KneeWorkL<- subset(KneeWorkL, KneeWorkL$z_score < 2) #removing outliers
+KneeWorkL<- subset(KneeWorkL, KneeWorkL$z_score > -2)
+ggplot(data = KneeWorkL, aes(x = KneeWork_lead_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
+ggplot(KneeWorkL, aes(KneeWork_lead_Downswing, ClubSpeed, colour = Subject)) + geom_point(aes(shape = Config))+geom_smooth(se = FALSE, method = lm)
+
+KneeWorkL %>%
+  filter(ShotTime != 'NA')%>%
+  #filter(KneeWork_lead_Downswing < 500)%>%
+  ggplot(aes(x= KneeWork_lead_Downswing ,y=ClubSpeed)) +
+  geom_point(alpha=0.5) +
+  labs(x= "Lead Knee Work: Downswing ()", y="ClubSpeed Velocity (mph)")+
+  geom_smooth(method=lm) + 
+  stat_cor(method = "pearson")
+
+
+KneeW_mod = lmer('ClubSpeed ~ KneeWork_lead_Downswing + (1|Subject)', data = KneeWorkL, REML = TRUE, na.action = "na.omit")
+KneeW_mod = lmer('ClubSpeed ~ KneeWork_lead_Downswing + (KneeWork_lead_Downswing|Subject)', data = KneeWorkL, REML = TRUE, na.action = "na.omit")
+summary(KneeW_mod)
+coef(KneeW_mod)
+r2(KneeW_mod)
+
+
+# Knee Trail Work
+ggplot(data = CompiledOG, aes(x = KneeWork_trail_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
+
+KneeWorkT <- CompiledOG%>%
+  group_by(Subject) %>%
+  mutate(z_score = scale(KneeWork_trail_Downswing)) %>% 
+  group_by(Config)
+
+KneeWorkT<- subset(KneeWorkT, KneeWorkT$z_score < 2) #removing outliers
+KneeWorkT<- subset(KneeWorkT, KneeWorkT$z_score > -2)
+ggplot(data = KneeWorkT, aes(x = KneeWork_trail_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
+ggplot(KneeWorkT, aes(KneeWork_trail_Downswing, ClubSpeed, colour = Subject)) + geom_point(aes(shape = Config))+geom_smooth(se = FALSE, method = lm)
+
+KneeWorkT %>%
+  filter(ShotTime != 'NA')%>%
+  filter(KneeWork_trail_Downswing < 500)%>%
+  ggplot(aes(x= KneeWork_trail_Downswing ,y=ClubSpeed)) +
+  geom_point(alpha=0.5) +
+  labs(x= "Trail Knee Work: Downswing ()", y="ClubSpeed Velocity (mph)")+
+  geom_smooth(method=lm) + 
+  stat_cor(method = "pearson")
+
+
+KneeWT_mod = lmer('ClubSpeed ~ KneeWork_trail_Downswing + (1|Subject)', data = KneeWorkT, REML = TRUE, na.action = "na.omit")
+KneeWT_mod = lmer('ClubSpeed ~ KneeWork_trail_Downswing + (KneeWork_trail_Downswing|Subject)', data = KneeWorkT, REML = TRUE, na.action = "na.omit")
+summary(KneeWT_mod)
+coef(KneeWT_mod)
+r2(KneeWT_mod)
+
+
+
+# Hip Lead Work
+ggplot(data = CompiledOG, aes(x = HipWork_lead_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
+
+HipWorkL <- CompiledOG%>%
+  group_by(Subject) %>%
+  mutate(z_score = scale(HipWork_lead_Downswing)) %>% 
+  group_by(Config)%>%
+  filter(Subject != 'SteveBerzon')
+
+HipWorkL<- subset(HipWorkL, HipWorkL$z_score < 2) #removing outliers
+HipWorkL<- subset(HipWorkL, HipWorkL$z_score > -2)
+ggplot(data = HipWorkL, aes(x = HipWork_lead_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
+ggplot(HipWorkL, aes(HipWork_lead_Downswing, ClubSpeed, colour = Subject)) + geom_point(aes(shape = Config))+geom_smooth(se = FALSE, method = lm)
+
+HipWorkL %>%
+  filter(ShotTime != 'NA')%>%
+  filter(Subject != 'SteveBerzon')%>%
+  ggplot(aes(x= HipWork_lead_Downswing ,y=ClubSpeed)) +
+  geom_point(alpha=0.5) +
+  labs(x= "Lead Hip Work: Downswing ()", y="ClubSpeed Velocity (mph)")+
+  geom_smooth(method=lm) + 
+  stat_cor(method = "pearson")
+
+
+HipW_mod = lmer('ClubSpeed ~ HipWork_lead_Downswing + (1|Subject)', data = HipWorkL, REML = TRUE, na.action = "na.omit")
+HipW_mod = lmer('ClubSpeed ~ HipWork_lead_Downswing + (HipWork_lead_Downswing|Subject)', data = HipWorkL, REML = TRUE, na.action = "na.omit")
+summary(HipW_mod)
+coef(HipW_mod)
+r2(HipW_mod)
+
+
+# Hip Trail Work
+ggplot(data = CompiledOG, aes(x = HipWork_trail_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
+
+HipWorkT <- CompiledOG%>%
+  group_by(Subject) %>%
+  mutate(z_score = scale(HipWork_trail_Downswing)) %>% 
+  group_by(Config)
+
+HipWorkT<- subset(HipWorkT, HipWorkT$z_score < 2) #removing outliers
+HipWorkT<- subset(HipWorkT, HipWorkT$z_score > -2)
+ggplot(data = HipWorkT, aes(x = HipWork_trail_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
+ggplot(HipWorkT, aes(HipWork_trail_Downswing, ClubSpeed, colour = Subject)) + geom_point(aes(shape = Config))+geom_smooth(se = FALSE, method = lm)
+
+HipWorkT %>%
+  filter(ShotTime != 'NA')%>%
+  filter(HipWork_trail_Downswing > 0)%>%
+  ggplot(aes(x= HipWork_trail_Downswing ,y=ClubSpeed)) +
+  geom_point(alpha=0.5) +
+  labs(x= "Trail Hip Work: Downswing ()", y="ClubSpeed Velocity (mph)")+
+  geom_smooth(method=lm) + 
+  stat_cor(method = "pearson")
+
+
+HipWT_mod = lmer('ClubSpeed ~ HipWork_trail_Downswing + (1|Subject)', data = HipWorkT, REML = TRUE, na.action = "na.omit")
+HipWT_mod = lmer('ClubSpeed ~ HipWork_trail_Downswing + (HipWork_trail_Downswing|Subject)', data = HipWorkT, REML = TRUE, na.action = "na.omit")
+summary(HipWT_mod)
+coef(HipWT_mod)
+r2(HipWT_mod)
 
 
 
@@ -664,7 +787,7 @@ r2(DRFfull)
 
 
 GolfANOVA <- function(metric, df) {
-  myformula <- as.formula(paste0(metric," ~ Config + Sex + (Sex*Config|Subject)"))
+  myformula <- as.formula(paste0(metric," ~ Config * Sex + (Config*Sex|Subject)"))
   myformula2 <- as.formula(paste0(metric, " ~ Config + (Config|Subject)"))
   full.mod = lmer(myformula, data = df, REML = TRUE, na.action = "na.omit")
   red.mod = lmer(myformula2, data = df, REML = TRUE, na.action = "na.omit" )
@@ -675,6 +798,6 @@ GolfANOVA <- function(metric, df) {
   return(newList)
 }
 
-GolfANOVA(CompiledTrk$BallSpeed, CompiledOG)
-
+GolfANOVA('ClubSpeed', CompiledOG)
+GolfANOVA('BallSpeed', CompiledOG)
 
