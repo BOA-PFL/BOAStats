@@ -70,7 +70,7 @@ H1.a: Reduced contact time will be achieved through increased propulsive force (
 
 ## Configurations
 
-![](configs.PNG)
+![](images/PFL_ShoeStructure_Court_Group_1.jpg)
 
 ```{r}
 #| echo: false
@@ -96,11 +96,14 @@ rm(list=ls())
 #| include: false
 
 # Load in overground agility data
-dat <- read.csv(file.choose())
+dat <- read.csv('Z:\\Testing Segments\\Material Testing\\StructureMaterialsA&S\\Overground\\CompiledAgilityDataTest.csv')
 
 #Load in Compiled Qualitative Sheet
-qualDat <- read_xlsx(file.choose())
+qualDat <- read_xlsx('C:\\Users\\adam.luftglass\\OneDrive - Boa Technology Inc\\General\\Testing Segments\\Material Testing\\StructureMaterialsA&S\\StructureMaterialsAS.xlsx')
 
+
+# Load in the insole data
+Pressdat <- read.csv('Z:\\Testing Segments\\Material Testing\\StructureMaterialsA&S\\XSensor\\Cropped\\0_CompiledResults_4.csv')
 
 baseline <- 'LL' # baseline configuration
 
@@ -109,6 +112,8 @@ allConfigs <- c(baseline, otherConfigs)
 qualDat$Config <- factor(qualDat$Config, allConfigs)
 dat <- as_tibble(dat) # creating the data frame
 dat$Config <- factor(dat$Config, allConfigs)
+Pressdat <- as_tibble(Pressdat) # creating the data frame
+Pressdat$Config <- factor(Pressdat$Config, allConfigs)
 
 withinSubPlot <- function(inputDF, colName, dir) {
   
@@ -233,7 +238,7 @@ withinSubQualPlot <- function(inputDF) {
   
   whichConfig <- merge(inputDF, whichConfig)
   
-  ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = OverallFit, col = BestConfig, group = Subject)) + geom_point(size = 4) + 
+  ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = OverallFit, col = BestConfig, group = Subject)) + geom_point(size = 4)  +
     geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + ylab('Rating') + theme(text = element_text(size = 16))
   
 }
@@ -287,14 +292,14 @@ ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) +
 qualDat %>%
   group_by(Config)%>%
   summarize(
-    R_Torque_Prox = mean(R_DialTorque1, na.rm = TRUE),
-    R_Torque_Dist = mean(R_DialTorque2, na.rm = TRUE),
-    L_Torque_Prox = mean(L_DialTorque1, na.rm = TRUE),
-    L_Torque_Dist = mean(L_DialTorque2, na.rm = TRUE)
+    R_Torque_Prox = mean(RDialTorque_1, na.rm = TRUE),
+    #R_Torque_Dist = mean(R_DialTorque2, na.rm = TRUE),
+    L_Torque_Prox = mean(LDialTorque_1, na.rm = TRUE)
+   # L_Torque_Dist = mean(L_DialTorque2, na.rm = TRUE)
   )%>%
   gt()
 
-ggplot(qualDat, aes(x=Config, y = L_DialTorque1, color = Config, group= Subject)) + 
+ggplot(qualDat, aes(x=Config, y = LDialTorque_1, color = Config, group= Subject)) + 
   geom_point(size = 4)+ 
   geom_line(aes(color=Config))+
   # facet_wrap(~Subject)+
@@ -328,9 +333,9 @@ cmjDatCT <- cmjDat %>%
   group_by(Config)
 
 
-
 p <- withinSubPlot(cmjDatCT, colName = 'CT', dir = 'lower')
 p + ylab('Contact Time (s)')
+
 
 cmjCTMod <- brm(data = cmjDatCT, # Bayes model
               family = gaussian,
@@ -361,12 +366,12 @@ cmjDatPF <- cmjDat %>%
   mutate(z_score = scale(peakGRF_Z)) %>% 
   group_by(Config)
 
-#cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
-#cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
+cmjDatPF<- subset(cmjDatPF, cmjDatPF$z_score < 2) #removing outliers  
+cmjDatPF<- subset(cmjDatPF, cmjDatPF$z_score > -2)
 
 ggplot(data = cmjDatPF, aes(x = peakGRF_Z, color = Config)) + geom_histogram() + facet_wrap(~Subject) 
 
-p <- withinSubPlot(cmjDat, colName = 'peakGRF_Z', dir = 'higher')
+p <- withinSubPlot(cmjDatPF, colName = 'peakGRF_Z', dir = 'higher')
 p + ylab('Peak Propulsive Force (N)')
 
 cmjPFMod <- brm(data = cmjDatPF, # Bayes model
@@ -396,8 +401,8 @@ cmjDatPP <- cmjDat %>%
   mutate(z_score = scale(peakPFmom)) %>% 
   group_by(Config)
 
-#cmjDat<- subset(cmjDat, cmjDat$z_score < 2) #removing outliers  
-#cmjDat<- subset(cmjDat, cmjDat$z_score > -2)
+cmjDatPP<- subset(cmjDatPP, cmjDatPP$z_score < 2) #removing outliers  
+cmjDatPP<- subset(cmjDatPP, cmjDatPP$z_score > -2)
 
 ggplot(data = cmjDatPP, aes(x = peakPFmom, color = Config)) + geom_histogram() + facet_wrap(~Subject) 
 
@@ -437,10 +442,11 @@ skaterDatCT <- skaterDat %>%
   #filter(CT < 1) %>%
   group_by(Subject) %>%
   mutate(z_score = scale(CT)) %>% 
+    
   group_by(Config)
 
-#skaterDat<- subset(skaterDat, skaterDat$z_score < 2) #removing outliers  
-#skaterDat<- subset(skaterDat, skaterDat$z_score > -2)
+skaterDatCT<- subset(skaterDatCT, skaterDatCT$z_score < 2) #removing outliers  
+skaterDatCT<- subset(skaterDatCT, skaterDatCT$z_score > -2)
 
 ggplot(data = skaterDatCT, aes(x = CT, color = Config)) + geom_histogram() + facet_wrap(~Subject) ## Check for normalish distribution/outliers
 
@@ -475,8 +481,8 @@ skaterDatPF <- skaterDat %>%
   mutate(z_score = scale(peakGRF_X)) %>% 
   group_by(Config)
 
-#skaterDat<- subset(skaterDat, dat$z_score < 2) #removing outliers  
-#skaterDat<- subset(skaterDat, dat$z_score > -2)
+skaterDatPF<- subset(skaterDatPF, skaterDatPF$z_score < 2) #removing outliers  
+skaterDatPF<- subset(skaterDatPF, skaterDatPF$z_score > -2)
 
 suppressWarnings(ggplot(data = skaterDatPF, aes(x = peakGRF_X, color = Config)) + geom_histogram() + facet_wrap(~Subject)) 
 
@@ -532,6 +538,55 @@ skatePowMod <- brm(data = skaterDatPow, # Bayes model
 
 extractVals(skaterDatPow, skatePowMod, otherConfigs, baseline, 'peakPower', 'higher') 
 
+```
+
+**Heel contact area (heel hold): Higher is better**
+
+```{r}
+###### Heel Contact
+
+HeelCondat1 <- Pressdat %>% 
+  group_by(Subject) %>%
+  mutate(z_score = scale(heelAreaP)) %>% 
+  group_by(Config)
+
+HeelCondat1Mod <- brm(data = HeelCondat1, # Bayes model
+              family = gaussian,
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+extractVals(HeelCondat1, HeelCondat1Mod, otherConfigs, baseline, 'heelAreaP', 'higher')
+
+p <- withinSubPlot(HeelCondat1, colName = 'heelAreaP', dir = 'higher')
+p + ylab('Heel Contact (%)')
+
+
+DorsalPress1 <- Pressdat %>% 
+  group_by(Subject)  %>%
+  mutate(z_score = scale(maxDorsalP)) %>% 
+  group_by(Config)
+
+DorsalPressDat1Mod <- brm(data = DorsalPress1, # Bayes model
+              family = gaussian,
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+extractVals(DorsalPress1, DorsalPressDat1Mod, otherConfigs, baseline, 'maxDorsalP', 'lower')
+
+p <- withinSubPlot(DorsalPress1, colName = 'maxDorsalP', dir = 'lower')
+p + ylab('Max Dorsal Pressure (kpa)')
 ```
 
 Radar Plots
