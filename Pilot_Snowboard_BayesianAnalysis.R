@@ -1,404 +1,202 @@
 
-rm(list=ls())
+### This script comparies snowboard metrics from loadsol insoles between configs using standard PFL bayesian models. 
 
 library(tidyverse)
-library(lme4)
-library(patchwork)
-
-dat <- read.csv('C:/Users/Daniel.Feeney/Dropbox (Boa)/Snow Protocol/SnowboardProtocol/Results/snowboardResults.csv')
-#dat <- read.csv(file.choose())
-
-dat <- dat %>% 
-  mutate(Subject = replace(Subject, Subject == 'Broc', 'S01'))
-
-dat <- dat %>% 
-  mutate(Subject = replace(Subject, Subject == 'Karl', 'S02'))
-
-dat <- dat %>% 
-  mutate(Subject = replace(Subject, Subject == 'Kate', 'S03'))
-# exploration of data -----------------------------------------------------
-
-dat %>%
-  group_by(Subject, Config, Side, TurnType) %>%
-  summarize(
-    avgPkForce = mean(MaxForceToes),
-    avgMaxRFDUp = mean(MaxRFDUp),
-    avgMaxRFDdn = mean(MaxRFDdn),
-    avgTimeToPeak = mean(timeToPeak),
-    avgSDPeak = mean(stdPeak)
-  )
-
-#dat <- subset(dat, dat$MaxRFDUp < 300) #based on initial look, removing unrealistic RFD values
-#dat <- subset(dat, dat$Side == 'R')
-dat <- subset(dat, dat$timeToPeak > 0)
-
-ggplot(data = dat, mapping = aes(x = Subject, y = timeToPeak, fill = Config)) + geom_boxplot() +
-  facet_wrap(~Side + TurnType) + ylab('Time to peak (ms)')
-
-ggplot(data = dat, mapping = aes(x = Subject, y =  MaxForceToes, fill = Config)) + geom_boxplot() +
-  facet_wrap(~Side + TurnType) + ylab('Peak Normal Force (N)')
-
-ggplot(data = dat, mapping = aes(x = Subject, y =  MaxRFDdn, fill = Config)) + geom_boxplot() +
-  facet_wrap(~Side + TurnType) + ylab('Max Rate of Force Development (N/s)')
-
-p1 <- ggplot(data = dat, mapping = aes(x = Subject, y = MaxForceToes, fill = Config)) + geom_boxplot() +
-  facet_wrap(~Side + TurnType)
-
-
-p2 <- ggplot(data = dat, mapping = aes(x = Subject, y = MaxRFDUp, fill = Config)) + geom_boxplot() +
-  facet_wrap(~Side + TurnType)+ ylab('RFD Up (N/ms)')
-
-p3 <- ggplot(data = dat, mapping = aes(x = Subject, y = abs(MaxRFDdn), fill = Config)) + geom_boxplot() +
-  facet_wrap(~Side + TurnType) + ylab('RFD Down (N/ms)')
-
-(p1 | p2 ) / p3
-p2 | p3
-
-
-
-
-toeDat <- subset(dat, dat$TurnType == 'Toes')
-pkForce.mod <- lmer(MaxForceToes ~ Config + (1 | Subject), data = toeDat)
-summary(pkForce.mod)
-
-RFDdn.mod <- lmer(abs(MaxRFDdn) ~ Config + (1 | Subject), data = toeDat)
-summary(RFDdn.mod)
-
-timeToPeak.mod <- lmer(timeToPeak ~ Config + (1 | Subject), data = toeDat)
-summary(timeToPeak.mod)
-
-
-# Probabilistic Models ----------------------------------------------------------
 library(brms)
-
-pkForceModel <- brm(data = toeDat,
-                  family = gaussian,
-                  MaxForceToes ~ Config + (1 | Subject), #fixed efect of configuration with a different intercept and slope for each subject
-                  prior = c(prior(normal(500, 100), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpceted as the average loading rate (but average is again modified by the subject-specific betas)
-                            prior(normal(0, 40), class = b), #beta for the intercept for the change in loadinr rate for each configuration
-                            prior(cauchy(0, 50), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
-                            prior(cauchy(0, 10), class = sigma)), #overall variabiltiy that is left unexplained 
-                  iter = 2000, warmup = 1000, chains = 4, cores = 4,
-                  control = list(adapt_delta = .975, max_treedepth = 20),
-                  seed = 190831)
-
-print(pkForceModel)
-plot(pkForceModel)
-
-posterior <- posterior_samples(pkForceModel) #This extracts the posterior (grabs samples in a proportion to the probability they would be observed)
-sum(posterior$b_ConfigLace < 0) / length(posterior$b_ConfigLace) #There is a 81.4% chance lace results in a greater VLR (count the number of samples where the lace configuration intercept is greater than 0 (e.g. it is higher than DD))
-mean(posterior$b_ConfigLace) #The maximal a posteriori estimate 
-
-# peak force estimate to be 6 N higher in BOA witha  confidence of 64%
-
-
-RFDdnModel <- brm(data = dat,
-              family = gaussian,
-              abs(MaxRFDdn) ~ Config + (1 | Subject), #fixed efect of configuration with a different intercept and slope for each subject
-              prior = c(prior(normal(80, 30), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpceted as the average loading rate (but average is again modified by the subject-specific betas)
-                        prior(normal(0, 20), class = b), #beta for the intercept for the change in loading rate for each configuration
-                        prior(cauchy(0, 5), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
-                        prior(cauchy(0, 1), class = sigma)), #overall variabiltiy that is left unexplained 
-              iter = 2000, warmup = 1000, chains = 4, cores = 4,
-              control = list(adapt_delta = .975, max_treedepth = 20),
-              seed = 190831)
-
-print(RFDdnModel)
-plot(RFDdnModel)
-
-posterior <- posterior_samples(RFDdnModel) #This extracts the posterior (grabs samples in a proportion to the probability they would be observed)
-sum(posterior$b_ConfigLace < 0) / length(posterior$b_ConfigLace) #There is a 81.4% chance lace results in a greater VLR (count the number of samples where the lace configuration intercept is greater than 0 (e.g. it is higher than DD))
-mean(posterior$b_ConfigLace) #The maximal a posteriori estimate 
-
-# less of a difference in Bayesian model than Prob model
-
-timeToPeakMod <- brm(data = dat,
-                  family = gaussian,
-                  timeToPeak ~ Config + (1 | Subject), #fixed efect of configuration with a different intercept and slope for each subject
-                  prior = c(prior(normal(45, 25), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpceted as the average loading rate (but average is again modified by the subject-specific betas)
-                            prior(normal(0, 10), class = b), #beta for the intercept for the change in loadinr rate for each configuration
-                            prior(cauchy(0, 5), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
-                            prior(cauchy(0, 1), class = sigma)), #overall variabiltiy that is left unexplained 
-                  iter = 2000, warmup = 1000, chains = 4, cores = 4,
-                  control = list(adapt_delta = .975, max_treedepth = 20),
-                  seed = 190831)
-
-print(timeToPeakMod)
-plot(timeToPeakMod)
-
-posterior <- posterior_samples(timeToPeakMod) #This extracts the posterior (grabs samples in a proportion to the probability they would be observed)
-sum(posterior$b_ConfigLace > 0) / length(posterior$b_ConfigLace) #There is a 81.4% chance lace results in a greater VLR (count the number of samples where the lace configuration intercept is greater than 0 (e.g. it is higher than DD))
-mean(posterior$b_ConfigLace) #The maximal a posteriori estimate 
-
-# estimated 0.5 seconds longer to get to peak to peak force (9%) with 90% confidence
-
-
-### L/R differences
-boaDat <- subset(dat, dat$Config == 'BOA')
-ggplot(data = boaDat, mapping = aes(x = Subject, y = MaxForceToes, fill = Side)) + geom_boxplot() +
-  facet_wrap(~as.factor(TurnType))
-
-ggplot(data = boaDat, mapping = aes(x = Subject, y = timeToPeak, fill = Side)) + geom_boxplot() +
-  facet_wrap(~as.factor(TurnType))
-
-ggplot(data = boaDat, mapping = aes(x = Subject, y = MaxRFDUp, fill = Side)) + geom_boxplot() +
-  facet_wrap(~as.factor(TurnType))
-
-ggplot(data = boaDat, mapping = aes(x = Subject, y = abs(MaxRFDdn), fill = Side)) + geom_boxplot() +
-  facet_wrap(~as.factor(TurnType))
+library(tidybayes)
+library(lme4)
+library(dplyr)
+library(rlang)
+library(reshape2)
 
 rm(list=ls())
 
-library(tidyverse)
-library(lme4)
+####### Functions
+
+withinSubPlot <- function(inputDF, colName, dir) {
+  
+  # direction can be 'lower' or higher'. It is the direction of change that is better. 
+  # For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher. 
+  meanDat <- inputDF %>%
+    group_by(Subject, Config) %>%
+    summarize(mean = mean(!! sym(colName)))
+  
+  if (dir == 'lower'){
+    whichConfig <- meanDat %>%
+      group_by(Subject) %>%
+      summarize(
+        BestConfig = Config[which.min(mean)]
+      )
+    
+  } else if (dir == 'higher') {
+    whichConfig <- meanDat %>%
+      group_by(Subject) %>%
+      summarize(
+        BestConfig = Config[which.max(mean)]
+      )
+    
+  }
+  
+  whichConfig <- merge(meanDat, whichConfig)
+  
+  ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = mean, col = BestConfig, group = Subject)) + geom_point(size = 4) + 
+    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 16)) + ylab(paste0({{colName}})) 
+  
+}
+
+
+extractVals <- function(dat, mod, configNames, baseConfig, var, dir) {
+  
+  #dat <- skaterDat
+  #mod <- runmod
+  #configNames <- otherConfigs
+  #baseConfig <- baseline
+  #var <- 'peakPFmom'
+  #dir <- 'higher'
+  
+  
+  Config = rep(NA, length(configNames))
+  ProbImp = matrix(0, length(configNames))
+  lowCI = matrix(0, length(configNames))
+  highCI = matrix(0, length(configNames))
+  
+  for (i in 1:length(configNames)) {
+    # This function takes the original dataframe (dat, same one entered into runmod), the Bayesian model from brms (runmod), 
+    # the configuration Name, and the variable you are testing. It returns:
+    # [1] the probabality the variable was better in the test config vs. the baseline config
+    # [3] the lower bound of the bayesian 95% posterior interval (as percent change from baseline) 
+    # [4] the upper bound of the bayesian 95% posterior interval (as percent change from baseline)
+    #i = 1
+    
+    configName = configNames[i]
+    configColName <- paste('b_Config', configName, sep = "")
+    posterior <- as_draws_matrix(mod)
+    
+    if (dir == 'lower'){
+      prob <- sum(posterior[,configColName] < 0) / length(posterior[,configColName])
+      
+    } else if (dir == 'higher') {
+      
+      prob <- sum(posterior[,configColName] > 0) / length(posterior[,configColName])
+    }
+    
+    ci <- posterior_interval(mod, prob = 0.80)
+    ciLow <- ci[configColName,1] 
+    ciHigh <- ci[configColName,2]
+    
+    SDdat <- dat %>%
+      group_by(Subject) %>%
+      summarize(sd = sd(!! sym(var), na.rm = TRUE), mean = mean(!! sym(var), na.rm = TRUE))
+    
+    meanSD = mean(SDdat$sd)
+    mean = mean(SDdat$mean)
+    ci_LowPct <- meanSD*ciLow/mean*100
+    ci_HighPct <- meanSD*ciHigh/mean*100
+    
+    output = list('Config:', configName, 'Probability of Improvement:', prob, 'Worse end of CI:', ci_LowPct, 'Best end of CI:', ci_HighPct)
+    Config[i] = configName
+    ProbImp[i] = prob
+    lowCI[i] = ci_LowPct
+    highCI[i] = ci_HighPct
+  }
+  ProbImp = round(ProbImp*100)
+  lowCI = round(lowCI, 1)
+  highCI = round(highCI,1)
+  output = cbind(Config, ProbImp, lowCI, highCI)
+  
+  colnames(output) = c('Config', 'Probability of Improvement', 'Low end of CI', 'High end of CI')
+  
+  sentences = rep(NA, nrow(output))
+  
+  for (i in 1:nrow(output)){
+    if (as.numeric(output[i,2]) >= 90){
+      sentences[i] <- paste0('We have meaningful confidence that ',output[i,1], ' outperformed ', baseConfig, ' (',output[i,2], '%)', '\n', '\t', '- Estimated difference: ',output[i,3],' to ',output[i,4],'%' )
+    } else if (as.numeric(output[i,2]) >= 80) {      
+      sentences[i] <- paste('We have moderate confidence that',output[i,1], 'outperformed', baseConfig, '(',output[i,2], '%)','\n', '\t', '- Estimated difference:',output[i,3],'to',output[i,4],'%')
+    } else if (as.numeric(output[i,2]) >= 70){
+      sentences[i] <- paste('We have minimal confidence that',output[i,1], 'outperformed', baseConfig, '(',output[i,2], '%)','\n', '\t', 'Estimated difference:',output[i,3],'to',output[i,4],'%')
+    } else if (as.numeric(output[i,2]) >= 30){
+      sentences[i] <- paste('There were inconsistent differences between',output[i,1],'and',baseConfig,'(',output[i,2],'%)','\n', '\t', 'Estimated difference:',output[i,3],'to',output[i,4],'%')
+    } else if (as.numeric(output[i,2]) >= 20){
+      sentences[i] <- paste('We have minimal confidence that',output[i,1],'performed worse than',baseConfig,'(',(100 - as.numeric(output[i,2])),'%)','\n', '\t', 'Estimated difference:',output[i,3],'to',output[i,4],'%')
+    } else if (as.numeric(output[i,2]) >= 10){
+      sentences[i] <- paste('We have moderate confidence that',output[i,1],'performed worse than',baseConfig,'(',(100 - as.numeric(output[i,2])),'%)','\n', '\t', 'Estimated difference:',output[i,3],'to',output[i,4],'%')
+    } else {
+      sentences[i] <- paste('We have meaningful confidence that',output[i,1],'performed worse than',baseConfig,'(',(100 - as.numeric(output[i,2])),'%)','\n', '\t', 'Estimated difference:',output[i,3],'to',output[i,4],'%')
+    }
+  }
+  
+  writeLines(sentences)
+  return()
+}
+###############################
 
 dat <- read.csv(file.choose())
 
+dat <- as_tibble(dat)
 
-# exploration of data -----------------------------------------------------
+
+baseline <- 'Flex'
+
+otherConfigs <- c('Stiff')
+
+allConfigs <- c(baseline, otherConfigs)
+
+dat$Config <- factor(dat$Config, allConfigs) 
+
+
+###### Heel Hold
 
 dat %>%
-  group_by(Subject, Config, Side, TurnType) %>%
+  group_by(Config)%>%
   summarize(
-    avgPkForce = mean(MaxForceToes),
-    avgMaxRFDUp = mean(MaxRFDUp),
-    avgMaxRFDdn = mean(MaxRFDdn),
-    avgTimeToPeak = mean(timeToPeak),
-    avgSDPeak = mean(stdPeak)
+    meanF = mean(MaxTotalF_BothToes),
+    meanProp = mean(MaxToeF_BothToes),
+    meanRFD = mean(maxToeRFDup_BothToes),
+    meanTTP = mean(timeToTotalPeak_BothToes),
+    meanToeP = mean(timeToTotalPeak_BothToes),
+    heelCT = mean(meanHeelContact_BothToes),
+    heelF = mean(absHeelContact_BothToes),
+    heelSD = mean(absHeelContactSD_BothToes)
   )
 
-dat <- subset(dat, dat$MaxRFDUp < 300) #based on initial look, removing unrealistic RFD values
+dat %>%
+  group_by(Config)%>%
+  summarize(
+    meanF = sd(MaxTotalF_BothToes),
+    meanProp = sd(MaxToeF_BothToes),
+    meanRFD = sd(maxToeRFDup_BothToes),
+    meanTTP = sd(timeToTotalPeak_BothToes),
+    meanToeP = sd(timeToTotalPeak_BothToes),
+    heelCT = sd(meanHeelContact_BothToes),
+    heelF = sd(absHeelContact_BothToes),
+    heelSD = sd(absHeelContactSD_BothToes)
+  )
 
-ggplot(data = dat, mapping = aes(x = Subject, y = MaxForceToes, fill = Config)) + geom_boxplot() +
-  facet_wrap(~Side + TurnType)
-
-
-ggplot(data = dat, mapping = aes(x = Subject, y = MaxRFDUp, fill = Config)) + geom_boxplot() +
-  facet_wrap(~Side + TurnType)
-
-ggplot(data = dat, mapping = aes(x = Subject, y = abs(MaxRFDdn), fill = Config)) + geom_boxplot() +
-  facet_wrap(~Side + TurnType)
-
-ggplot(data = dat, mapping = aes(x = Subject, y = timeToPeak, fill = Config)) + geom_boxplot() +
-  facet_wrap(~Side + TurnType)
-
-ggplot(data = dat, mapping = aes(x = Subject, y = stdPeak / MaxForceToes, fill = Config)) + geom_boxplot() +
-  facet_wrap(~Side + TurnType)
-
-toeDat <- subset(dat, dat$TurnType == 'Toes')
-pkForce.mod <- lmer(MaxForceToes ~ Config + (1 | Subject), data = toeDat)
-summary(pkForce.mod)
-
-RFDdn.mod <- lmer(abs(MaxRFDdn) ~ Config + (1 | Subject), data = toeDat)
-summary(RFDdn.mod)
-
-timeToPeak.mod <- lmer(timeToPeak ~ Config + (1 | Subject), data = toeDat)
-summary(timeToPeak.mod)
+dat <- dat %>% 
+  group_by(Subject) %>%
+  mutate(z_score = scale(timeToToePeak_BothtToes)) %>% 
+  group_by(Config)
 
 
-# Probabilistic Models ----------------------------------------------------------
-library(brms)
+dat<- subset(dat, dat$z_score < 2) #removing outliers  
+dat<- subset(dat, dat$z_score > -2)
 
-pkForceModel <- brm(data = toeDat,
-                  family = gaussian,
-                  MaxForceToes ~ Config + (1 | Subject), #fixed efect of configuration with a different intercept and slope for each subject
-                  prior = c(prior(normal(50, 15), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpceted as the average loading rate (but average is again modified by the subject-specific betas)
-                            prior(normal(0, 20), class = b), #beta for the intercept for the change in loadinr rate for each configuration
-                            prior(cauchy(0, 5), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
-                            prior(cauchy(0, 1), class = sigma)), #overall variabiltiy that is left unexplained 
-                  iter = 2000, warmup = 1000, chains = 4, cores = 4,
-                  control = list(adapt_delta = .975, max_treedepth = 20),
-                  seed = 190831)
+ggplot(data = dat, aes(x = timeToToePeak_BothtToes)) + geom_histogram() + facet_wrap(~Subject) 
 
-print(pkForceModel)
-plot(pkForceModel)
-
-posterior <- posterior_samples(pkForceModel) #This extracts the posterior (grabs samples in a proportion to the probability they would be observed)
-sum(posterior$b_ConfigLace < 0) / length(posterior$b_ConfigLace) #There is a 81.4% chance lace results in a greater VLR (count the number of samples where the lace configuration intercept is greater than 0 (e.g. it is higher than DD))
-mean(posterior$b_ConfigLace) #The maximal a posteriori estimate 
-
-# peak force estimate to be 6 N higher in BOA witha  confidence of 64%
+withinSubPlot(dat, colName = 'timeToToePeak_BothtToes', dir = 'lower')
 
 
-RFDdnModel <- brm(data = dat,
+runmod <- brm(data = dat, # Bayes model
               family = gaussian,
-              abs(MaxRFDdn) ~ Config + (1 | Subject), #fixed efect of configuration with a different intercept and slope for each subject
-              prior = c(prior(normal(50, 20), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpceted as the average loading rate (but average is again modified by the subject-specific betas)
-                        prior(normal(0, 10), class = b), #beta for the intercept for the change in loadinr rate for each configuration
-                        prior(cauchy(0, 5), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
-                        prior(cauchy(0, 1), class = sigma)), #overall variabiltiy that is left unexplained 
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
               iter = 2000, warmup = 1000, chains = 4, cores = 4,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-print(RFDdnModel)
-plot(RFDdnModel)
-
-posterior <- posterior_samples(RFDdnModel) #This extracts the posterior (grabs samples in a proportion to the probability they would be observed)
-sum(posterior$b_ConfigLace < 0) / length(posterior$b_ConfigLace) #There is a 81.4% chance lace results in a greater VLR (count the number of samples where the lace configuration intercept is greater than 0 (e.g. it is higher than DD))
-mean(posterior$b_ConfigLace) #The maximal a posteriori estimate 
-
-# less of a difference in Bayesian model than Prob model
-
-timeToPeakMod <- brm(data = dat,
-                  family = gaussian,
-                  timeToPeak ~ Config + (1 | Subject), #fixed efect of configuration with a different intercept and slope for each subject
-                  prior = c(prior(normal(50, 20), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpceted as the average loading rate (but average is again modified by the subject-specific betas)
-                            prior(normal(0, 10), class = b), #beta for the intercept for the change in loadinr rate for each configuration
-                            prior(cauchy(0, 5), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
-                            prior(cauchy(0, 1), class = sigma)), #overall variabiltiy that is left unexplained 
-                  iter = 2000, warmup = 1000, chains = 4, cores = 4,
-                  control = list(adapt_delta = .975, max_treedepth = 20),
-                  seed = 190831)
-
-print(timeToPeakMod)
-plot(timeToPeakMod)
-
-posterior <- posterior_samples(timeToPeakMod) #This extracts the posterior (grabs samples in a proportion to the probability they would be observed)
-sum(posterior$b_ConfigLace > 0) / length(posterior$b_ConfigLace) #There is a 81.4% chance lace results in a greater VLR (count the number of samples where the lace configuration intercept is greater than 0 (e.g. it is higher than DD))
-mean(posterior$b_ConfigLace) #The maximal a posteriori estimate 
-
-# estimated 0.5 seconds longer to get to peak to peak force (9%) with 90% confidence
-
-
-### L/R differences
-boaDat <- subset(dat, dat$Config == 'BOA')
-ggplot(data = boaDat, mapping = aes(x = Subject, y = MaxForceToes, fill = Side)) + geom_boxplot() +
-  facet_wrap(~as.factor(TurnType))
-
-ggplot(data = boaDat, mapping = aes(x = Subject, y = timeToPeak, fill = Side)) + geom_boxplot() +
-  facet_wrap(~as.factor(TurnType))
-
-ggplot(data = boaDat, mapping = aes(x = Subject, y = MaxRFDUp, fill = Side)) + geom_boxplot() +
-  facet_wrap(~as.factor(TurnType))
-
-ggplot(data = boaDat, mapping = aes(x = Subject, y = abs(MaxRFDdn), fill = Side)) + geom_boxplot() +
-  facet_wrap(~as.factor(TurnType))
-
-rm(list=ls())
-
-library(tidyverse)
-library(lme4)
-
-dat <- read.csv(file.choose())
-
-
-# exploration of data -----------------------------------------------------
-
-dat %>%
-  group_by(Subject, Config, Side, TurnType) %>%
-  summarize(
-    avgPkForce = mean(MaxForceToes),
-    avgMaxRFDUp = mean(MaxRFDUp),
-    avgMaxRFDdn = mean(MaxRFDdn),
-    avgTimeToPeak = mean(timeToPeak),
-    avgSDPeak = mean(stdPeak)
-  )
-
-dat <- subset(dat, dat$MaxRFDUp < 300) #based on initial look, removing unrealistic RFD values
-
-ggplot(data = dat, mapping = aes(x = Subject, y = MaxForceToes, fill = Config)) + geom_boxplot() +
-  facet_wrap(~Side + TurnType)
-
-
-ggplot(data = dat, mapping = aes(x = Subject, y = MaxRFDUp, fill = Config)) + geom_boxplot() +
-  facet_wrap(~Side + TurnType)
-
-ggplot(data = dat, mapping = aes(x = Subject, y = abs(MaxRFDdn), fill = Config)) + geom_boxplot() +
-  facet_wrap(~Side + TurnType)
-
-ggplot(data = dat, mapping = aes(x = Subject, y = timeToPeak, fill = Config)) + geom_boxplot() +
-  facet_wrap(~Side + TurnType)
-
-ggplot(data = dat, mapping = aes(x = Subject, y = stdPeak / MaxForceToes, fill = Config)) + geom_boxplot() +
-  facet_wrap(~Side + TurnType)
-
-toeDat <- subset(dat, dat$TurnType == 'Toes')
-pkForce.mod <- lmer(MaxForceToes ~ Config + (1 | Subject), data = toeDat)
-summary(pkForce.mod)
-
-RFDdn.mod <- lmer(abs(MaxRFDdn) ~ Config + (1 | Subject), data = toeDat)
-summary(RFDdn.mod)
-
-timeToPeak.mod <- lmer(timeToPeak ~ Config + (1 | Subject), data = toeDat)
-summary(timeToPeak.mod)
-
-
-# Probabilistic Models ----------------------------------------------------------
-library(brms)
-
-pkForceModel <- brm(data = toeDat,
-                  family = gaussian,
-                  MaxForceToes ~ Config + (1 | Subject), #fixed efect of configuration with a different intercept and slope for each subject
-                  prior = c(prior(normal(50, 15), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpceted as the average loading rate (but average is again modified by the subject-specific betas)
-                            prior(normal(0, 20), class = b), #beta for the intercept for the change in loadinr rate for each configuration
-                            prior(cauchy(0, 5), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
-                            prior(cauchy(0, 1), class = sigma)), #overall variabiltiy that is left unexplained 
-                  iter = 2000, warmup = 1000, chains = 4, cores = 4,
-                  control = list(adapt_delta = .975, max_treedepth = 20),
-                  seed = 190831)
-
-print(pkForceModel)
-plot(pkForceModel)
-
-posterior <- posterior_samples(pkForceModel) #This extracts the posterior (grabs samples in a proportion to the probability they would be observed)
-sum(posterior$b_ConfigLace < 0) / length(posterior$b_ConfigLace) #There is a 81.4% chance lace results in a greater VLR (count the number of samples where the lace configuration intercept is greater than 0 (e.g. it is higher than DD))
-mean(posterior$b_ConfigLace) #The maximal a posteriori estimate 
-
-# peak force estimate to be 6 N higher in BOA witha  confidence of 64%
-
-
-RFDdnModel <- brm(data = dat,
-              family = gaussian,
-              abs(MaxRFDdn) ~ Config + (1 | Subject), #fixed efect of configuration with a different intercept and slope for each subject
-              prior = c(prior(normal(50, 20), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpceted as the average loading rate (but average is again modified by the subject-specific betas)
-                        prior(normal(0, 10), class = b), #beta for the intercept for the change in loadinr rate for each configuration
-                        prior(cauchy(0, 5), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
-                        prior(cauchy(0, 1), class = sigma)), #overall variabiltiy that is left unexplained 
-              iter = 2000, warmup = 1000, chains = 4, cores = 4,
-              control = list(adapt_delta = .975, max_treedepth = 20),
-              seed = 190831)
-
-print(RFDdnModel)
-plot(RFDdnModel)
-
-posterior <- posterior_samples(RFDdnModel) #This extracts the posterior (grabs samples in a proportion to the probability they would be observed)
-sum(posterior$b_ConfigLace < 0) / length(posterior$b_ConfigLace) #There is a 81.4% chance lace results in a greater VLR (count the number of samples where the lace configuration intercept is greater than 0 (e.g. it is higher than DD))
-mean(posterior$b_ConfigLace) #The maximal a posteriori estimate 
-
-# less of a difference in Bayesian model than Prob model
-
-timeToPeakMod <- brm(data = dat,
-                  family = gaussian,
-                  timeToPeak ~ Config + (1 | Subject), #fixed efect of configuration with a different intercept and slope for each subject
-                  prior = c(prior(normal(50, 20), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpceted as the average loading rate (but average is again modified by the subject-specific betas)
-                            prior(normal(0, 10), class = b), #beta for the intercept for the change in loadinr rate for each configuration
-                            prior(cauchy(0, 5), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
-                            prior(cauchy(0, 1), class = sigma)), #overall variabiltiy that is left unexplained 
-                  iter = 2000, warmup = 1000, chains = 4, cores = 4,
-                  control = list(adapt_delta = .975, max_treedepth = 20),
-                  seed = 190831)
-
-print(timeToPeakMod)
-plot(timeToPeakMod)
-
-posterior <- posterior_samples(timeToPeakMod) #This extracts the posterior (grabs samples in a proportion to the probability they would be observed)
-sum(posterior$b_ConfigLace > 0) / length(posterior$b_ConfigLace) #There is a 81.4% chance lace results in a greater VLR (count the number of samples where the lace configuration intercept is greater than 0 (e.g. it is higher than DD))
-mean(posterior$b_ConfigLace) #The maximal a posteriori estimate 
-
-# estimated 0.5 seconds longer to get to peak to peak force (9%) with 90% confidence
-
-
-### L/R differences
-boaDat <- subset(dat, dat$Config == 'BOA')
-ggplot(data = boaDat, mapping = aes(x = Subject, y = MaxForceToes, fill = Side)) + geom_boxplot() +
-  facet_wrap(~as.factor(TurnType))
-
-ggplot(data = boaDat, mapping = aes(x = Subject, y = timeToPeak, fill = Side)) + geom_boxplot() +
-  facet_wrap(~as.factor(TurnType))
-
-ggplot(data = boaDat, mapping = aes(x = Subject, y = MaxRFDUp, fill = Side)) + geom_boxplot() +
-  facet_wrap(~as.factor(TurnType))
-
-ggplot(data = boaDat, mapping = aes(x = Subject, y = abs(MaxRFDdn), fill = Side)) + geom_boxplot() +
+extractVals(dat, runmod, otherConfigs, 'maxToeRFD_BothToes', 'higher') 
 
