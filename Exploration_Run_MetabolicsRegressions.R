@@ -1,3 +1,7 @@
+### This script joins biomechanical data and metabolic data, and then creates models to explore the relationships between biomechanics and 
+### running economy. 
+
+
 rm(list=ls())
 library(tidyverse)
 library(readxl)
@@ -10,7 +14,7 @@ library(ggpubr)
 # functions
 
 makeHist <- function(col, dfName){
-  
+  # This function makes a histogram of the data in a column of a dataframe, to investigate the data distribution and identify possible data errors.
   genPlot <- ggplot(data = dfName, mapping = aes(x = .data[[col]], color = Config)) +
     geom_density() + facet_wrap(~Subject) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
     scale_color_manual(values=c("#000000", "#ECE81A", "#CAF0E4"))
@@ -20,7 +24,7 @@ makeHist <- function(col, dfName){
 
 
 testRandSlopes <- function(metric, df) {
-  
+  # This function compares a proposed model to the null model, to test its significance 
   myformula <- as.formula(paste0(metric," ~ Config", " + (1|Subject)"))
   myformula2 <- as.formula(paste0(metric, " ~ (Config|Subject)"))
   
