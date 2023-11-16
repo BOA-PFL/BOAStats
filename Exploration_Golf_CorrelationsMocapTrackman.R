@@ -31,16 +31,17 @@ library(emmeans)
 rm(list=ls())# Clears the environment
 
 
-DRF <- read.csv('C:/Users/milena.singletary/Boa Technology Inc/PFL Team - Documents/General/Testing Segments/PowerPerformance/2023/PP_Golf_NewVariables_PFLMech_ June23/Overground/DFW/0_CompiledDrive_DFW_final.csv')
+DRF <- read.csv('Z:/Testing Segments/PowerPerformance/2023/PP_Golf_NewVariables_PFLMech_ June23/Overground/DFW/0_CompiledDrive_DFW_final.csv')
 # compiled OG file must display t0 as character of "h:mm:ss.0" ex. "10:10:54.9" formatting can be changed in the CSV by going to number -> category:custom  -> type: mm:ss.0
 # if improper formatting error will be thrown with as.times()
 #CompiledOG <- read.csv('C:/Users/milena.singletary/Boa Technology Inc/PFL Team - Documents/General/Testing Segments/PowerPerformance/2023/PP_Golf_NewVariables_PFLMech_ June23/Overground/Drive/0_CompiledOG_Drive_latest.csv')
-CompiledOG <- read.csv('C:/Users/milena.singletary/Boa Technology Inc/PFL Team - Documents/General/Testing Segments/PowerPerformance/2023/PP_Golf_NewVariables_PFLMech_ June23/Overground/Drive/0_CompiledOG_Drive_1027.csv')
-CompiledTrk <- read.csv('C:/Users/milena.singletary/Boa Technology Inc/PFL Team - Documents/General/Testing Segments/PowerPerformance/2023/PP_Golf_NewVariables_PFLMech_ June23/0_CompiledTrackmanData.csv')
+CompiledOG <- read.csv('Z:/Testing Segments/PowerPerformance/2023/PP_Golf_NewVariables_PFLMech_ June23/Overground/Drive/0_CompiledOG_Drive_1027.csv')
+CompiledTrk <- read.csv('Z:/Testing Segments/PowerPerformance/2023/PP_Golf_NewVariables_PFLMech_ June23/0_CompiledTrackmanData.csv')
 
 
-MoCapEntries <- list.files('C:/Users/milena.singletary/Boa Technology Inc/PFL Team - Documents/General/Testing Segments/PowerPerformance/2023/PP_Golf_NewVariables_PFLMech_ June23/Overground/Drive/Drive_old', pattern = '\\.txt$')
-TManEntries <- list.files('C:/Users/milena.singletary/Boa Technology Inc/PFL Team - Documents/General/Testing Segments/PowerPerformance/2023/PP_Golf_NewVariables_PFLMech_ June23/Trackman/', '.csv')
+MoCapEntries <- list.files('Z:/Testing Segments/PowerPerformance/2023/PP_Golf_NewVariables_PFLMech_ June23/Overground/Drive/Drive_old', pattern = '\\.txt$')
+#MoCapEntries <- list.files('Z:/Testing Segments/PowerPerformance/2023/PP_Golf_NewVariables_PFLMech_ June23/Overground/Drive', pattern = '\\.txt$')
+TManEntries <- list.files('Z:/Testing Segments/PowerPerformance/2023/PP_Golf_NewVariables_PFLMech_ June23/Trackman/', '.csv')
 
 DRF <- DRF%>%
   filter(Subject !=  'TaraMoen')
@@ -184,14 +185,14 @@ check2 <- check2 %>%
 
 
 # Look at correlations between velo and biomech
-# VGRF DS
+# VGRF DS lead
 ggplot(data = CompiledOG, aes(x = peakGRFZ_lead_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
 CompiledOG %>%
   filter(ShotTime != 'NA')%>%
   ggplot(aes(x= peakGRFZ_lead_Downswing ,y=ClubSpeed)) +
   geom_point(alpha=0.5) +
   labs(x= "Peak Vertical GRF: Downswing (N)", y="ClubSpeed Velocity (mph)")+
-  geom_smooth(method=lm) + 
+  geom_smooth(method = lm) + 
   stat_cor(method = "pearson")
 
 ggplot(CompiledOG, aes(peakGRFZ_lead_Downswing, ClubSpeed, colour = Subject)) + geom_point()+geom_smooth(se = FALSE, method = lm)
@@ -202,6 +203,108 @@ GRF_mod = lmer('ClubSpeed ~ peakGRFZ_lead_Downswing + (peakGRFZ_lead_Downswing|S
 summary(GRF_mod)
 coef(GRF_mod)
 r2(GRF_mod)
+
+
+# vGRF DS trail
+ggplot(data = CompiledOG, aes(x = peakGRFZ_trail_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
+CompiledOG %>%
+  filter(ShotTime != 'NA')%>%
+  ggplot(aes(x= peakGRFZ_trail_Downswing ,y=ClubSpeed)) +
+  geom_point(alpha=0.5) +
+  labs(x= "Peak Vertical GRF: Downswing (N)", y="ClubSpeed Velocity (mph)")+
+  geom_smooth(method = lm) + 
+  stat_cor(method = "pearson")
+
+ggplot(CompiledOG, aes(peakGRFZ_trail_Downswing, ClubSpeed, colour = Subject)) + geom_point()+geom_smooth(se = FALSE, method = lm)
+
+
+#GRF_mod = lmer('ClubSpeed ~ peakGRFZ_trail_Downswing + (1|Subject)', data = CompiledOG, REML = TRUE, na.action = "na.omit") #with random intercept per sub
+GRF_mod = lmer('ClubSpeed ~ peakGRFZ_trail_Downswing + (peakGRFZ_trail_Downswing|Subject)', data = CompiledOG, REML = TRUE, na.action = "na.omit") #with ran slope& intercept per sub
+summary(GRF_mod)
+coef(GRF_mod)
+r2(GRF_mod)
+
+
+# VGRF BS lead
+ggplot(data = CompiledOG, aes(x = peakGRFZ_lead_Backswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
+CompiledOG %>%
+  filter(ShotTime != 'NA')%>%
+  ggplot(aes(x= peakGRFZ_lead_Backswing ,y=ClubSpeed)) +
+  geom_point(alpha=0.5) +
+  labs(x= "Peak Vertical GRF: Backswing (N)", y="ClubSpeed Velocity (mph)")+
+  geom_smooth(method = lm) + 
+  stat_cor(method = "pearson")
+
+ggplot(CompiledOG, aes(peakGRFZ_lead_Backswing, ClubSpeed, colour = Subject)) + geom_point()+geom_smooth(se = FALSE, method = lm)
+
+
+#GRF_mod = lmer('ClubSpeed ~ peakGRFZ_lead_Backswing + (1|Subject)', data = CompiledOG, REML = TRUE, na.action = "na.omit") #with random intercept per sub
+GRF_mod = lmer('ClubSpeed ~ peakGRFZ_lead_Backswing + (peakGRFZ_lead_Backswing|Subject)', data = CompiledOG, REML = TRUE, na.action = "na.omit") #with ran slope& intercept per sub
+summary(GRF_mod)
+coef(GRF_mod)
+r2(GRF_mod)
+
+
+# vGRF BS trail
+ggplot(data = CompiledOG, aes(x = peakGRFZ_trail_Backswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
+CompiledOG %>%
+  filter(ShotTime != 'NA')%>%
+  ggplot(aes(x= peakGRFZ_trail_Backswing ,y=ClubSpeed)) +
+  geom_point(alpha=0.5) +
+  labs(x= "Peak Vertical GRF: Backswing (N)", y="ClubSpeed Velocity (mph)")+
+  geom_smooth(method = lm) + 
+  stat_cor(method = "pearson")
+
+ggplot(CompiledOG, aes(peakGRFZ_trail_Backswing, ClubSpeed, colour = Subject)) + geom_point()+geom_smooth(se = FALSE, method = lm)
+
+
+#GRF_mod = lmer('ClubSpeed ~ peakGRFZ_trail_Backswing + (1|Subject)', data = CompiledOG, REML = TRUE, na.action = "na.omit") #with random intercept per sub
+GRF_mod = lmer('ClubSpeed ~ peakGRFZ_trail_Backswing + (peakGRFZ_trail_Backswing|Subject)', data = CompiledOG, REML = TRUE, na.action = "na.omit") #with ran slope& intercept per sub
+summary(GRF_mod)
+coef(GRF_mod)
+r2(GRF_mod)
+
+
+# VGRF Fullswing lead
+ggplot(data = CompiledOG, aes(x = peakGRFZ_lead, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
+CompiledOG %>%
+  filter(ShotTime != 'NA')%>%
+  ggplot(aes(x= peakGRFZ_lead ,y=ClubSpeed)) +
+  geom_point(alpha=0.5) +
+  labs(x= "Peak Vertical GRF: Fullswing (N)", y="ClubSpeed Velocity (mph)")+
+  geom_smooth(method = lm) + 
+  stat_cor(method = "pearson")
+
+ggplot(CompiledOG, aes(peakGRFZ_lead, ClubSpeed, colour = Subject)) + geom_point()+geom_smooth(se = FALSE, method = lm)
+
+
+#GRF_mod = lmer('ClubSpeed ~ peakGRFZ_lead + (1|Subject)', data = CompiledOG, REML = TRUE, na.action = "na.omit") #with random intercept per sub
+GRF_mod = lmer('ClubSpeed ~ peakGRFZ_lead + (peakGRFZ_lead|Subject)', data = CompiledOG, REML = TRUE, na.action = "na.omit") #with ran slope& intercept per sub
+summary(GRF_mod)
+coef(GRF_mod)
+r2(GRF_mod)
+
+
+# vGRF Fullswing trail 
+ggplot(data = CompiledOG, aes(x = peakGRFZ_trail, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
+CompiledOG %>%
+  filter(ShotTime != 'NA')%>%
+  ggplot(aes(x= peakGRFZ_trail ,y=ClubSpeed)) +
+  geom_point(alpha=0.5) +
+  labs(x= "Peak Vertical GRF: Fullswing (N)", y="ClubSpeed Velocity (mph)")+
+  geom_smooth(method = lm) + 
+  stat_cor(method = "pearson")
+
+ggplot(CompiledOG, aes(peakGRFZ_trail, ClubSpeed, colour = Subject)) + geom_point()+geom_smooth(se = FALSE, method = lm)
+
+
+#GRF_mod = lmer('ClubSpeed ~ peakGRFZ_trail + (1|Subject)', data = CompiledOG, REML = TRUE, na.action = "na.omit") #with random intercept per sub
+GRF_mod = lmer('ClubSpeed ~ peakGRFZ_trail + (peakGRFZ_trail|Subject)', data = CompiledOG, REML = TRUE, na.action = "na.omit") #with ran slope& intercept per sub
+summary(GRF_mod)
+coef(GRF_mod)
+r2(GRF_mod)
+
+
 
 
 
@@ -749,6 +852,7 @@ DRFp %>%
 
 
 DRFds_mod = lmer('ClubSpeed ~ peakNegLeadDistalRFpower_DS + (1|Subject)', data = DRFp, REML = TRUE, na.action = "na.omit")
+DRFds_mod = lmer('ClubSpeed ~ peakNegLeadDistalRFpower_DS + (peakNegLeadDistalRFpower_DS|Subject)', data = DRFp, REML = TRUE, na.action = "na.omit")
 summary(DRFds_mod)
 coef(DRFds_mod)
 r2(DRFds_mod)
@@ -778,6 +882,7 @@ DRFf %>%
 
 
 DRFfull = lmer('ClubSpeed ~ peakNegLeadDistalRFpower_full + (1|Subject)', data = DRFf, REML = TRUE, na.action = "na.omit")
+DRFfull = lmer('ClubSpeed ~ peakNegLeadDistalRFpower_full + (peakNegLeadDistalRFpower_full|Subject)', data = DRFf, REML = TRUE, na.action = "na.omit")
 summary(DRFfull)
 coef(DRFfull)
 r2(DRFfull)
