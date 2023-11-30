@@ -1,5 +1,6 @@
 rm(list=ls())
 ############# Cycling pressure analysis 9/2021 ##############
+### This script compares pressure and power metrics between configs in cycling using lmer models
 library(tidyverse)
 library(lme4)
 library(emmeans)
@@ -9,7 +10,7 @@ dat <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL - General/Cycling
 
 
 testRandSlopes <- function(metric, df) {
-  
+  # This function creates a test model and a null model, and outputs an anova comparing the two, as well as contrasts comparing test configs to baseline.
   myformula <- as.formula(paste0(metric," ~ config", " + (1|Subject)"))
   myformula2 <- as.formula(paste0(metric, " ~ (config|Subject)"))
   
@@ -28,7 +29,7 @@ testRandSlopes <- function(metric, df) {
 }
 
 testRandSlopesDH <- function(metric, df) {
-  
+  # This function creates a test model and a null model, and outputs an anova comparing the two, as well as contrasts comparing test configs to baseline.
   myformula <- as.formula(paste0(metric," ~ config", " + (1|Subject)"))
   myformula2 <- as.formula(paste0(metric, " ~ (config|Subject)"))
   
@@ -108,7 +109,7 @@ replaceConfig <- function(DF, toReplace, newName){
     mutate(config = replace(config, config == toReplace, newName))
   return(DF)
 }
-## names should be 
+## Correcting config names: names should be 
 # 1) Lace 2) SD LR 3) DD LR
 # 4) SD Quad 5) SD OP 6) DD OP
 
@@ -146,7 +147,7 @@ ggplot(data = pwrDat, mapping = aes(x = Subject, y = sprintPower, fill = Config)
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
 testRandSlopesPwr <- function(metric, df) {
-  
+  # This function creates a test model and a null model, and outputs an anova comparing the two, as well as contrasts comparing test configs to baseline.
   myformula <- as.formula(paste0(metric," ~ Config", " + (Config|Subject)"))
   myformula2 <- as.formula(paste0(metric, " ~ (Config|Subject)"))
   

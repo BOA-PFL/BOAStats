@@ -1,3 +1,6 @@
+### This code joins data from the baseball radar system and motion capture systems. It then uses lmer to understand which biomechanical variables 
+### impact batting performance
+
 library(tidyverse)
 library(brms)
 library(tidybayes)
@@ -20,7 +23,7 @@ radarDat <- read.csv(file.choose())
 
 radarTime <- times(c())
 
-
+### convert time to appropriate format to be able to match and join with other data frames
 for (i in 1:nrow(radarDat)){
   
   tmpDateTime <- radarDat$timeStamp[i]  
@@ -60,7 +63,7 @@ for (i in 1:nrow(mocapDat)){
 
 mocapDat['radarSearchStart'] <- mocapDat$t0 + radarStart
 
-mocapDat['radarSearchEnd'] <- mocapDat$t0 + radarStart + times('00:00:07')
+mocapDat['radarSearchEnd'] <- mocapDat$t0 + radarStart + times('00:00:07') ### Matching timestamps within a 7 second window
 
 # Join mocap and radar data by subject, Config, and radarDat$radarTime between mocapDat$radarSearchStart and mocapDat$radarSearchEnd
 
