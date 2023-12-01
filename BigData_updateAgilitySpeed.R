@@ -49,13 +49,13 @@ cmp_strings <- function(instr1,instr2,strtype){
 ### Qual Dat
 
 
-qual_ParentDat <- read.csv('C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/BigData/DB_V2/QualitativeBigData_v2.csv',nrows=1)
+qual_ParentDat <- read.csv('Z:\\BigData\\DB_V2\\QualitativeBigData_v2.csv',nrows=1)
 # ParentDat <- ParentDat %>%
 #   rename('Subject' = ?..Subject)
 name_order = colnames(qual_ParentDat)
 
 # Read the qualitative data to be added to master data
-ChildDat <- read_xlsx('C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/Testing Segments/Cycling Performance Tests/PP_Cycling_PFS-SD_DD_DD-HeelLock_Mech_Sept23/PP_Cycling_PFS-SD_DD_DD-HeelLock_Mech_Sept23_Qual.xlsx')
+ChildDat <- read_xlsx('Z:\\Testing Segments\\AgilityPerformanceData\\AS_Trail_MidfootPanelStiffness_Perf_Oct23\\Qual_AS_Trail_MidfootPanelStiffness_Perf_Oct23.xlsx')
 ChildDat <- ChildDat %>%
   rename('Overall' = OverallFit)
 noSub <- length(ChildDat$Subject)
@@ -97,7 +97,7 @@ ChildDat <- ChildDat[,name_order]
 # write output. add a 1 to the end if you are at all unsure of output!!!
 a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?')
 if (a == 'YES'){
-  write.table(ChildDat, "C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/BigData/DB_V2/QualitativeBigData_v2.csv", sep=',', 
+  write.table(ChildDat, "Z:\\BigData\\DB_V2\\QualitativeBigData_v2.csv", sep=',', 
               append = TRUE,col.names = FALSE, row.names = FALSE)
   
 }
@@ -108,7 +108,7 @@ rm(ParentDat,noSub,name_order,a)
 ### Updating Config Big Data ###
 
 
-ParentDat <- read.csv('C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/BigData/DB_V2/ConfigDB.csv',nrows=1)
+ParentDat <- read.csv('Z:\\BigData\\DB_V2\\ConfigDB.csv',nrows=1)
 # ParentDat <- ParentDat %>%
 #   rename('Name.of.Test' = ?..Name.of.Test)
 name_order = colnames(ParentDat)
@@ -129,7 +129,7 @@ ChildDat <- ChildDat[,name_order]
 # write output. add a 1 to the end if you are at all unsure of output!!!
 a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?')
 if (a == 'YES'){
-  write.table(ChildDat, "C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/BigData/DB_V2/ConfigDB.csv", sep=',', 
+  write.table(ChildDat, "Z:\\BigData\\DB_V2\\ConfigDB.csv", sep=',', 
               append = TRUE,col.names = FALSE, row.names = FALSE)
   
 }
@@ -139,12 +139,12 @@ rm(ParentDat,ChildDat,noSub,name_order,a)
 ######### Sub Visits BD ############
 
 # Read the existing database: Only to get column name order
-ParentDat <- read.csv('C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/BigData/DB_V2/MasterSubjectVisits.csv',nrows=1)
+ParentDat <- read.csv('Z:/BigData/DB_V2/MasterSubjectVisits.csv',nrows=1)
 # ParentDat <- ParentDat %>%
 #   rename('Subject' = ?..Subject)
 name_order = colnames(ParentDat)
 # Read in qual sheet to reference names
-ChildDat <- read_xlsx('C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/Testing Segments/AgilityPerformanceData/AS_Trail_DorsalPressureVariationIII_PFLMech_July2023/Qual_AS_Trail_DorsalPressureVariationIII_PFLMech_July2023.xlsx',sheet = 'Sheet3')
+ChildDat <- read_xlsx('Z:\\Testing Segments\\AgilityPerformanceData\\AS_Trail_MidfootPanelStiffness_Perf_Oct23\\Qual_AS_Trail_MidfootPanelStiffness_Perf_Oct23.xlsx',sheet = 'Sheet3')
 ChildDat <- subset(ChildDat,select = -c(FootScan,Compensation,Height))
 ChildDat <- ChildDat %>% rename(Speed.run. = RunSpeed)
 noSub <- length(ChildDat$Subject)
@@ -164,7 +164,7 @@ ChildDat <- ChildDat[,name_order]
 # write output. add a 1 to the end if you are at all unsure of output!!!
 a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?')
 if (a == 'YES'){
-  write.table(ChildDat, "C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/BigData/DB_V2/MasterSubjectVisits.csv", sep=',', 
+  write.table(ChildDat, "Z:/BigData/DB_V2/MasterSubjectVisits.csv", sep=',', 
               append = TRUE,col.names = FALSE, row.names = FALSE)
   
 }
@@ -177,13 +177,13 @@ rm(ParentDat,ChildDat,noSub,name_order,a)
 ## Agility Data
 
 # Read the existing database: Only to get column name order
-ParentDat <- read.csv('C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/BigData/DB_V2/AgilitySpeedDB.csv',nrows=1)
+ParentDat <- read.csv('Z:/BigData/DB_V2/AgilitySpeedDB.csv',nrows=1)
 # ParentDat <- ParentDat %>%
 #   rename('Subject' = ?..Subject)
 name_order = colnames(ParentDat)
 
 # Read and summarize the overground data:
-AgilityDat <- read.csv('C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/Testing Segments/AgilityPerformanceData/AS_Trail_DorsalPressureVariationIII_PFLMech_July2023/Overground/CompiledAgilityDataTest.csv') 
+AgilityDat <- read.csv('Z:\\Testing Segments\\AgilityPerformanceData\\AS_Trail_MidfootPanelStiffness_Perf_Oct23\\Overground\\CompiledAgilityDataTest.csv') 
 AgilityDat$Subject <- tolower(gsub(" ", "", AgilityDat$Subject))
 Subject <- unique(AgilityDat$Subject)
 Config <- unique(AgilityDat$Config)
@@ -240,7 +240,7 @@ ChildDat <- ChildDat[,name_order]
 
 a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?')
 if (a == 'YES'){
-  write.table(ChildDat, "C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/BigData/DB_V2/AgilitySpeedDB.csv", sep=',', 
+  write.table(ChildDat, "Z:/BigData/DB_V2/AgilitySpeedDB.csv", sep=',', 
               append = TRUE,col.names = FALSE, row.names = FALSE)
 }
 
@@ -249,13 +249,13 @@ rm(ParentDat,ChildDat,name_order,a)
 ##################################################################################
 ######### Static pressure BD ############ 
 
-ParentDat <- read.csv('C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/BigData/DB_V2/StaticPressureDB.csv',nrows=1)
+ParentDat <- read.csv('Z:/BigData/DB_V2/StaticPressureDB.csv',nrows=1)
 
 name_order = colnames(ParentDat)
 
 ### Import Static Pressure data
 
-staticDat <- read.csv('C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/Testing Segments/AgilityPerformanceData/AS_Trail_DorsalPressureVariationIII_PFLMech_July2023/Xsensor/Static/CompiledResults_Static.csv') 
+staticDat <- read.csv('Z:\\Testing Segments\\AgilityPerformanceData\\AS_Trail_MidfootPanelStiffness_Perf_Oct23\\Xsensor\\Static\\CompiledResults_Static.csv') 
 staticDat$Subject <- tolower(gsub(" ", "", staticDat$Subject))
 
 #Check Names and Configs
@@ -279,7 +279,7 @@ ChildDat <- staticDat[,name_order]
 a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?')
 if (a == 'YES'){
   # Check the Child Data before!!
-  write.table(ChildDat, file = 'C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/BigData/DB_V2/StaticPressureDB.csv', sep = ',',
+  write.table(ChildDat, file = 'Z:/BigData/DB_V2/StaticPressureDB.csv', sep = ',',
               append = TRUE,col.names = FALSE, row.names = FALSE)
 }
 
@@ -287,7 +287,45 @@ if (a == 'YES'){
 
 rm(ParentDat,ChildDat,name_order,a)
 
-#####################################################################
+#####################################################################  
+
+## Agility Pressure 
+
+ParentDat <- read.csv('Z:/BigData/DB_V2/AgilityPressureDB.csv',nrows=1)
+
+name_order = colnames(ParentDat)
+
+### Import Dynamic Pressure data
+
+ChildDat <- read.csv('Z:\\Testing Segments\\AgilityPerformanceData\\AS_Trail_MidfootPanelStiffness_Perf_Oct23\\Xsensor\\0_CompiledResults1.csv')
+
+ChildDat <- subset(ChildDat, ChildDat$Movement == ('cmj')|ChildDat$Movement == ('skater'))
+
+ChildDat <- ChildDat %>%
+  group_by(Subject, Config, Movement) %>%
+  summarise_all(mean)
+
+#staticDat$Subject[stati
+ChildDat$Year <- rep(2023, dim(ChildDat)[1])
+ChildDat$Month <- rep('January', dim(ChildDat)[1])
+ChildDat$Brand <- rep('NoBull', dim(ChildDat)[1])
+ChildDat$Model <- rep('Trainer', dim(ChildDat)[1]) 
+#childDat$Subject == 'WesWebber'] <- 'WesWeber'
+
+ChildDat <- ChildDat[,name_order]
+
+
+a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?')
+if (a == 'YES'){
+  # Check the Child Data before!!
+  write.table(ChildDat, file = 'Z:/BigData/DB_V2/AgilityPressureDB.csv', sep = ',',
+              append = TRUE,col.names = FALSE, row.names = FALSE)
+}
+
+
+
+##################################################################### 
+
 ## Walk / Run BD 
 
 # Read the existing database: Only to get column name order
