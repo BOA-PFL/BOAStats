@@ -13,13 +13,13 @@ replaceName <- function(DF, toReplace, newName){
 
 
 # Read the existing database: Only to get column name order
-ParentDat <- read.csv('C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/BigData/DB_V2/KneeBraceDB.csv',nrows=1)
+ParentDat <- read.csv('Z:/BigData/DB_V2/KneeBraceDB.csv',nrows=1)
 # ParentDat <- ParentDat %>%
 #   rename('Subject' = ?..Subject)
 name_order = colnames(ParentDat)
 
 # Read and summarize the overground data:
-AgilityDat <- read.csv('C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/Testing Segments/EndurancePerformance/EH_KneeBracePilotII_Aug23/Overground/CompiledAgilityData_3.csv') 
+AgilityDat <- read.csv('Z:/Testing Segments/EndurancePerformance/EH_KneeBrace_ThighCalfImportance_Oct23/Overground/CompiledAgilityData.csv') 
 
 
 CMJDat <- AgilityDat %>%
@@ -42,21 +42,21 @@ ChildDat <- list(CMJDat,SKTDat) %>%
 ChildDat <- merge(x=CMJDat,y=SKTDat,all=TRUE)
 
 #Static Brace data
-braceDat <- read.csv('C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/Testing Segments/EndurancePerformance/EH_KneeBracePilotII_Aug23/Overground/Static/AllStaticBraceDat.csv')
+braceDat <- read.csv('Z:/Testing Segments/EndurancePerformance/EH_KneeBrace_ThighCalfImportance_Oct23/Overground/Static/AllStaticBraceDat.csv')
 
 # Renaming the delta trials 
-braceDat <- braceDat %>% 
-  rename(deltaOne = One)%>% 
-  rename(deltaTwo = Two)%>%
-  rename(deltaThree = Three)%>%
-  rename(deltaFour = Four)
-  
+# braceDat <- braceDat %>% 
+#   rename(deltaOne = One)%>% 
+#   rename(deltaTwo = Two)%>%
+#   rename(deltaThree = Three)%>%
+#   rename(deltaFour = Four)
+#   
 
 ChildDat <- merge(x=ChildDat,y=braceDat,all=TRUE)
 
 
 ChildDat$Year <- rep(2023, dim(ChildDat)[1])
-ChildDat$Month <- rep('August', dim(ChildDat)[1])
+ChildDat$Month <- rep('October', dim(ChildDat)[1])
 ChildDat$Brand <- rep('Breg', dim(ChildDat)[1])
 ChildDat$Model <- rep('Fusion', dim(ChildDat)[1])
 
@@ -76,6 +76,6 @@ ChildDat <- ChildDat[,name_order]
 
 a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?')
 if (a == 'YES'){
-  write.table(ChildDat, "C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/BigData/DB_V2/KneeBraceDB_Current.csv", sep=',', 
+  write.table(ChildDat, "Z:/BigData/DB_V2/KneeBraceDB.csv", sep=',', 
               append = TRUE,col.names = FALSE, row.names = FALSE)
 }
