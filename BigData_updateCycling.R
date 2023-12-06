@@ -19,7 +19,7 @@ rm(list=ls())
 ##############################
 
 Year <- '2023'  
-Month <- 'September'
+Month <- 'November'
 Brand <- 'Giro'
 Model <- 'Regime' 
 Benefit <- 'P/P' 
@@ -30,7 +30,7 @@ Type <- 'Performance'# Performance, mechanistic, materials
 
 ######### Cycling power and Pressure DB ##########################
 # Read the existing database: Only to get column name order
-pwerParentDat <- read.csv('C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/BigData/DB_V2/CyclingPowerDB_V2.csv',nrows=1)
+pwerParentDat <- read.csv('Z:/BigData/DB_V2/CyclingPowerDB_V2.csv',nrows=1)
 # ParentDat <- ParentDat %>%
 #   rename('Subject' = ?..Subject)
 name_order = colnames(pwerParentDat)
@@ -47,7 +47,7 @@ PressDat <- read.csv(file.choose())
 PressSteadyDat <- PressDat %>%
   filter(Movement == 'Steady') %>%
   group_by(Subject, Config) %>%
-  summarize(HeelContact_steady = mean(heelAreaP, na.rm = TRUE), PeakToePress_steady = mean(maxmaxToes, na.rm = TRUE))
+  summarize(HeelContact_steady = mean(heelArea, na.rm = TRUE), PeakToePress_steady = mean(maxmaxToes, na.rm = TRUE))
 
 
 
@@ -72,13 +72,13 @@ pwer_ChildDat <- pwer_ChildDat[,name_order]
 a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?')
 if (a == 'YES'){
   # Check the Child Data before!!
-  write.table(pwer_ChildDat, file = 'C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/BigData/DB_V2/CyclingPowerDB_V2.csv', sep = ',',
+  write.table(pwer_ChildDat, file = 'Z:/BigData/DB_V2/CyclingPowerDB_V2.csv', sep = ',',
               append = TRUE,col.names = FALSE, row.names = FALSE)
 } 
 
 ######### Static pressure BD ############ 
 
-statParentDat <- read.csv('C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/BigData/DB_V2/StaticPressureDB.csv',nrows=1)
+statParentDat <- read.csv('Z:/DB_V2/StaticPressureDB.csv',nrows=1)
 
 name_order = colnames(statParentDat)
 
@@ -100,7 +100,7 @@ statChildDat <- statChildDat[,name_order]
 a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?')
 if (a == 'YES'){
   # Check the Child Data before!!
-  write.table(statChildDat, file = 'C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/BigData/DB_V2/StaticPressureDB.csv', sep = ',',
+  write.table(statChildDat, file = 'Z:/DB_V2/StaticPressureDB.csv', sep = ',',
               append = TRUE,col.names = FALSE, row.names = FALSE)
 }
 
@@ -110,13 +110,13 @@ if (a == 'YES'){
 
 ######### Qual BD ############
 
-qual_ParentDat <- read.csv('C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/BigData/DB_V2/QualitativeBigData_v2.csv',nrows=1)
+qual_ParentDat <- read.csv('Z:/BigData/DB_V2/QualitativeBigData_v2.csv',nrows=1)
 # ParentDat <- ParentDat %>%
 #   rename('Subject' = ?..Subject)
 name_order = colnames(qual_ParentDat)
 
 # Read the qualitative data to be added to master data
-qual_ChildDat <- read_xlsx('C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/Testing Segments/Cycling Performance Tests/PP_Cycling_PFS-SD_DD_DD-HeelLock_Mech_Sept23/PP_Cycling_PFS-SD_DD_DD-HeelLock_Mech_Sept23_Qual.xlsx')
+qual_ChildDat <- read_xlsx('C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/Testing Segments/Cycling Performance Tests/PP_Cycling_Perf_CyclingGuidePairs_Nov23/PP_Cycling_CyclingGuidePairs_Perf_Nov2023_Qual.xlsx')
 qual_ChildDat <- qual_ChildDat %>%
   rename('Overall' = OverallFit)
 noSub <- length(qual_ChildDat$Subject)
@@ -152,7 +152,7 @@ qual_ChildDat <- qual_ChildDat[,name_order]
 # write output. add a 1 to the end if you are at all unsure of output!!!
 a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?')
 if (a == 'YES'){
-  write.table(qual_ChildDat, "C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/BigData/DB_V2/QualitativeBigData_v2.csv", sep=',', 
+  write.table(qual_ChildDat, "Z:/BigData/DB_V2/QualitativeBigData_v2.csv", sep=',', 
               append = TRUE,col.names = FALSE, row.names = FALSE)
   
 }

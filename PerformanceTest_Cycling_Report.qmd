@@ -66,7 +66,7 @@ H1.
 
 ![](configs.PNG)
 
-## Summary 
+## Summary
 
 ## Next Steps
 
@@ -207,11 +207,11 @@ rm(list=ls())
 #| include: false
 
 # Watt bike power data
-dat <- read.csv(file.choose()) 
+powerDat <- read.csv(file.choose()) 
 
 #Pressure Dat during Cycling 
 pressDat <- read.csv(file.choose()) 
-pressDat <- subset(pressDat, pressDat$Movement == 'Sprint')
+pressDat <- subset(pressDat, pressDat$Movement == 'Steady')
 
 staticDat <- read.csv(file.choose()) 
 
@@ -220,32 +220,15 @@ staticDat <- read.csv(file.choose())
 qualDat <- read_xlsx(file.choose())
 
 
-dat <- dat %>% 
-  mutate(Config = replace(Config, Config == 'DD-HL', 'DDHL'))%>%
-  mutate(Config = replace(Config, Config =='PFS-SD', 'PFSSD'))
 
-pressDat <-pressDat %>% 
-  mutate(Config = replace(Config, Config == 'DD-HL', 'DDHL'))%>%
-  mutate(Config = replace(Config, Config =='PFS-SD', 'PFSSD'))
+baseline <- 'SD' # baseline configuration
 
-staticDat <-staticDat %>% 
-  mutate(Config = replace(Config, Config == 'DD-HL', 'DDHL'))%>%
-  mutate(Config = replace(Config, Config =='PFS-SD', 'PFSSD'))
-
-qualDat <-qualDat %>% 
-  mutate(Config = replace(Config, Config == 'DD-HL', 'DDHL'))%>%
-  mutate(Config = replace(Config, Config =='PFS-SD', 'PFSSD'))
-
-
-
-baseline <- 'PFSSD' # baseline configuration
-
-otherConfigs <- c('DDHL', 'DD') # other configurations tested against base
+otherConfigs <- c('DD', 'IP') # other configurations tested against base
 allConfigs <- c(baseline, otherConfigs) 
 
 
-dat <- as_tibble(dat) # creating the data frame
-dat$Config <- factor(dat$Config, allConfigs)
+powerDat <- as_tibble(powerDat) # creating the data frame
+powerDat$Config <- factor(powerDat$Config, allConfigs)
 
 
 pressDat <- as_tibble(pressDat)
@@ -293,10 +276,6 @@ withinSubPlot <- function(inputDF, colName, dir) {
 
 extractVals <- function(dat, mod, configNames, baseConfig, var, dir) {
   
-# extractVals <- function(dat = dat, mod = datMod, configNames = , baseConfig, var, dir) {  
-  
-  
-  
   Config = rep(NA, length(configNames))
   ProbImp = matrix(0, length(configNames))
   lowCI = matrix(0, length(configNames))
@@ -330,8 +309,8 @@ extractVals <- function(dat, mod, configNames, baseConfig, var, dir) {
       group_by(Subject) %>%
       summarize(sd = sd(!! sym(var), na.rm = TRUE), mean = mean(!! sym(var), na.rm = TRUE))
     
-    meanSD = mean(SDdat$sd)
-    mean = mean(SDdat$mean)
+    meanSD = mean(SDdat$sd , na.rm = TRUE)
+    mean = mean(SDdat$mean, na.rm = TRUE)
     ci_LowPct <- meanSD*ciLow/mean*100
     ci_HighPct <- meanSD*ciHigh/mean*100
     
@@ -490,7 +469,7 @@ ggplot(qualDat, aes(x=Config, y = L_DialTorque1, color = Config, group= Subject)
 
 ###### CMJ Contact Time
 
-sprintDat <- dat %>%
+sprintDat <- powerDat %>%
   group_by(Subject) %>%
   mutate(z_score = scale(Power_sprint)) %>%
   group_by(Config)
@@ -516,7 +495,13 @@ sprintDatMod <- brm(data = sprintDat, # Bayes model
 #| layout-ncol: 2 
 
 p <- withinSubPlot(sprintDat, colName = 'Power_sprint', dir = 'higher')
-p + ylab('Sprint Power (Watts)') 
+p + ylab('Sprint Power (Watts)')  
+# 
+# p+ geom_text( 
+#   aes(label = Subject),   
+#   color = "black", 
+#   check_overlap = TRUE)  
+
 
 extractVals(sprintDat, sprintDatMod, otherConfigs, baseline, 'Power_sprint', 'higher') 
 ```
@@ -531,6 +516,7 @@ extractVals(sprintDat, sprintDatMod, otherConfigs, baseline, 'Power_sprint', 'hi
 #| include: false 
 ################
 ###############################################
+# Dorsal Instep pressure
 
 staticDat_instPres <- staticDat %>% 
   group_by(Subject) %>%
@@ -568,8 +554,10 @@ extractVals(staticDat_instPres, instDorsalMod, otherConfigs, baseline, 'instepDo
 #| warning: false
 #| include: false 
 
+# Plantar Max Toe Pressure
+
 toemaxDat<- pressDat %>% 
-  group_by(Config) %>%
+  group_by(Subject) %>%
   mutate(z_score = scale(maxmaxToes)) %>% 
   group_by(Config)
 
@@ -610,10 +598,10 @@ extractVals(toemaxDat, toemaxMod, otherConfigs, baseline, 'maxmaxToes', 'lower')
 ################
 ###############################################
 
-# Forefoot ave pressure in Late "stance"
-ffPDat<- pressDat %>% 
-  group_by(Config) %>%
-  mutate(z_score = scale(ffP_late)) %>% 
+# Dorsal Forefoot ave pressure 
+ffPDat<- staticDat %>% 
+  group_by(Subject) %>%
+  mutate(z_score = scale(ffDorsalPressure)) %>% 
   group_by(Config)
 
 
@@ -636,10 +624,10 @@ ffPMod <- brm(data = ffPDat, # Bayes model
 #| layout-ncol: 2 
 
 
-p <- withinSubPlot(ffPDat, colName = 'ffP_late', dir = 'higher')
+p <- withinSubPlot(ffPDat, colName = 'ffDorsalPressure', dir = 'higher')
 p + ylab('Ave Forefoot Pressure (kPa)')
 
-extractVals(ffPDat, ffPMod, otherConfigs, baseline, 'ffP_late', 'higher') 
+extractVals(ffPDat, ffPMod, otherConfigs, baseline, 'ffDorsalPressure', 'higher') 
 ```
 
 ### **Ave. Midfoot Pressure**
@@ -650,10 +638,10 @@ extractVals(ffPDat, ffPMod, otherConfigs, baseline, 'ffP_late', 'higher')
 #| include: false 
 ################
 ###############################################
-# Midfoot ave pressure in Late "stance"
-mfPDat<- pressDat %>% 
-  group_by(Config) %>%
-  mutate(z_score = scale(mfP_late)) %>% 
+# Dorsal Midfoot ave pressure 
+mfPDat<- staticDat %>% 
+  group_by(Subject) %>%
+  mutate(z_score = scale(mfDorsalPressure) %>% 
   group_by(Config)
 
 
@@ -680,7 +668,7 @@ mfPMod <- brm(data = mfPDat, # Bayes model
 p <- withinSubPlot(mfPDat, colName = 'mfP_late', dir = 'higher')
 p + ylab('Ave Midfoot Pressure (kPa)') 
 
-extractVals(mfPDat, mfPMod, otherConfigs, baseline, 'mfP_late', 'higher') 
+extractVals(mfPDat, mfPMod, otherConfigs, baseline, 'mfDorsalPressure', 'higher') 
 
 ```
 
