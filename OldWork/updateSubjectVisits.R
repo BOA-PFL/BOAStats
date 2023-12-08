@@ -5,7 +5,7 @@ rm(list=ls())
 # Set path to your directory
 subVisits <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/DB_V2/MasterSubjectVisits.csv')
 subVisits <- subVisits %>%
-  rename('Subject' = ï..Subject)
+  rename('Subject' = Ã¯..Subject)
 
 subVisits %>%
     group_by(Year) %>%

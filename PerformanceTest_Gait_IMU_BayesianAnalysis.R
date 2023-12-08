@@ -139,45 +139,43 @@ extractVals <- function(dat, mod, configNames, baseConfig, var, dir) {
 
 #################### Set up data
 
-# Angle Data
-# dat <- read_csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/Testing Segments/WorkWear_Performance/Jalas_July2022/Kinematics.csv') # Reading in the CSV
-# Force Data
-dat <- read_csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/Testing Segments/WorkWear_Performance/Jalas_July2022/Forces.csv') # Reading in the CSV
+dat <- read_csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/Testing Segments/WorkWear_Performance/EH_Workwear_DualDialZonal_Performance_Feb2023/IMU/CompIMUmetrics.csv') # Reading in the CSV
 
 
 dat <- as_tibble(dat) # creating the data frame
 
 
 # Defining the baseline and other configs
-baseline <- 'TP'
+baseline <- 'SDOP'
 
-otherConfigs <- c('OP')
+otherConfigs <- c('DDP','DDZ')
 
 allConfigs <- c(baseline, otherConfigs)
 
 dat$Config <- factor(dat$Config, allConfigs)
 
-################### Ankle Eversion
+# First Examine the walking speed for all subjects
+ggplot(data = dat, aes(x = imuSpeed, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
+
+# Filter the data based on the walking speed: 0.4 m/s to 2.0 m/s
+dat <- dat %>%
+  filter(imuSpeed > 0.4, imuSpeed < 2.0)
+
+################### Foot Eversion
 
 #organizing data - grouping by subject and config by the variable being observed
 subdat <- dat %>% 
-  filter(Cond == 'Level', pAnkEvVel != 'nan') %>%
+  filter(pIEgyro != 'nan') %>%
   group_by(Subject) %>%
-  mutate(z_score = scale(pAnkEvVel)) %>% 
+  mutate(z_score = scale(pIEgyro)) %>% 
   group_by(Config)
 
 #Normalization histograms, Check for normalish distribution/outliers
-ggplot(data = dat, aes(x = pAnkEvVel, fill = Cond)) + geom_histogram() + facet_wrap(~Subject) 
-
-# Subset the data for level vs downhill walking
-ggplot(data = subdat, aes(x = pAnkEvVel, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
-
+ggplot(data = dat, aes(x = pIEgyro, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
 
 # "best of" Line graph 
 # This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally 
-withinSubPlot(subdat, colName = 'pAnkEvVel', dir = 'lower','Peak Eversion Velocity [deg/s]') 
-
-
+withinSubPlot(subdat, colName = 'pIEgyro', dir = 'lower','Peak Eversion Velocity [deg/s]') 
 
 ## Bayes model 
 # This model takes a while to run and may  crash your session 
@@ -194,28 +192,24 @@ runmod <- brm(data = subdat,
               seed = 190831)
 
 # # Output of the Confidence Interval
-extractVals(subdat, runmod, otherConfigs, 'pAnkEvVel', 'lower')  
+extractVals(subdat, runmod, otherConfigs,baseline, 'pIEgyro', 'lower')  
 
-# Downhill
+
+################### Walking Speed
+
 #organizing data - grouping by subject and config by the variable being observed
 subdat <- dat %>% 
-  filter(Cond == 'Downhill', pAnkEvVel != 'nan') %>%
+  filter(imuSpeed != 'nan') %>%
   group_by(Subject) %>%
-  mutate(z_score = scale(pAnkEvVel)) %>% 
+  mutate(z_score = scale(imuSpeed)) %>% 
   group_by(Config)
 
 #Normalization histograms, Check for normalish distribution/outliers
-ggplot(data = dat, aes(x = pAnkEvVel, fill = Cond)) + geom_histogram() + facet_wrap(~Subject) 
-
-# Subset the data for level vs downhill walking
-ggplot(data = subdat, aes(x = pAnkEvVel, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
-
+ggplot(data = dat, aes(x = imuSpeed, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
 
 # "best of" Line graph 
 # This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally 
-withinSubPlot(subdat, colName = 'pAnkEvVel', dir = 'lower','Peak Eversion Velocity [deg/s]') 
-
-
+withinSubPlot(subdat, colName = 'imuSpeed', dir = 'higher','Walking Speed [m/s]') 
 
 ## Bayes model 
 # This model takes a while to run and may  crash your session 
@@ -232,266 +226,8 @@ runmod <- brm(data = subdat,
               seed = 190831)
 
 # # Output of the Confidence Interval
-extractVals(subdat, runmod, otherConfigs, 'pAnkEvVel', 'lower') 
-
-################### Breaking Impulse
-# Level
-#organizing data - grouping by subject and config by the variable being observed
-subdat <- dat %>% 
-  filter(Cond == 'Level') %>%
-  group_by(Subject) %>%
-  mutate(z_score = scale(brakeImpulse)) %>% 
-  group_by(Config)
-
-#Normalization histograms, Check for normalish distribution/outliers
-ggplot(data = dat, aes(x = brakeImpulse, fill = Cond)) + geom_histogram() + facet_wrap(~Subject) 
-
-
-# "best of" Line graph 
-# This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally 
-withinSubPlot(subdat, colName = 'brakeImpulse', dir = 'higher','Breaking Impulse [N*s]') 
+extractVals(subdat, runmod, otherConfigs,baseline, 'imuSpeed', 'higher')
 
 
 
-## Bayes model 
-# This model takes a while to run and may  crash your session 
-#Wait until you receive a warning about rtools to run anything else
-runmod <- brm(data = subdat, 
-              family = gaussian,
-              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
-              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
-                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
-                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
-                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
-              iter = 2000, warmup = 1000, chains = 4, cores = 4,
-              control = list(adapt_delta = .975, max_treedepth = 20),
-              seed = 190831)
 
-# # Output of the Confidence Interval
-extractVals(subdat, runmod, otherConfigs, 'brakeImpulse', 'higher')
-
-# Downhill
-#organizing data - grouping by subject and config by the variable being observed
-subdat <- dat %>% 
-  filter(Cond == 'Downhill') %>%
-  group_by(Subject) %>%
-  mutate(z_score = scale(brakeImpulse)) %>% 
-  group_by(Config)
-
-# "best of" Line graph 
-# This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally 
-withinSubPlot(subdat, colName = 'brakeImpulse', dir = 'higher','Breaking Impulse [N*s]') 
-
-## Bayes model 
-# This model takes a while to run and may  crash your session 
-#Wait until you receive a warning about rtools to run anything else
-runmod <- brm(data = subdat, 
-              family = gaussian,
-              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
-              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
-                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
-                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
-                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
-              iter = 2000, warmup = 1000, chains = 4, cores = 4,
-              control = list(adapt_delta = .975, max_treedepth = 20),
-              seed = 190831)
-
-# # Output of the Confidence Interval
-extractVals(subdat, runmod, otherConfigs, 'brakeImpulse', 'higher')
-
-################### Peak Breaking Force
-# Level
-#organizing data - grouping by subject and config by the variable being observed
-subdat <- dat %>% 
-  filter(Cond == 'Level') %>%
-  group_by(Subject) %>%
-  mutate(z_score = scale(pBF)) %>% 
-  group_by(Config)
-
-#Normalization histograms, Check for normalish distribution/outliers
-ggplot(data = dat, aes(x = pBF, fill = Cond)) + geom_histogram() + facet_wrap(~Subject) 
-
-
-# "best of" Line graph 
-# This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally 
-withinSubPlot(subdat, colName = 'pBF', dir = 'higher','Breaking Force [N]') 
-
-
-
-## Bayes model 
-# This model takes a while to run and may  crash your session 
-#Wait until you receive a warning about rtools to run anything else
-runmod <- brm(data = subdat, 
-              family = gaussian,
-              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
-              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
-                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
-                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
-                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
-              iter = 2000, warmup = 1000, chains = 4, cores = 4,
-              control = list(adapt_delta = .975, max_treedepth = 20),
-              seed = 190831)
-
-# # Output of the Confidence Interval
-extractVals(subdat, runmod, otherConfigs, 'pBF', 'higher')
-
-# Downhill
-#organizing data - grouping by subject and config by the variable being observed
-subdat <- dat %>% 
-  filter(Cond == 'Downhill') %>%
-  group_by(Subject) %>%
-  mutate(z_score = scale(pBF)) %>% 
-  group_by(Config)
-
-# "best of" Line graph 
-# This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally 
-withinSubPlot(subdat, colName = 'pBF', dir = 'higher','Breaking Force [N]') 
-
-## Bayes model 
-# This model takes a while to run and may  crash your session 
-#Wait until you receive a warning about rtools to run anything else
-runmod <- brm(data = subdat, 
-              family = gaussian,
-              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
-              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
-                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
-                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
-                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
-              iter = 2000, warmup = 1000, chains = 4, cores = 4,
-              control = list(adapt_delta = .975, max_treedepth = 20),
-              seed = 190831)
-
-# # Output of the Confidence Interval
-extractVals(subdat, runmod, otherConfigs, 'pBF', 'higher')
-
-################### Peak Medial Force
-# Level
-#organizing data - grouping by subject and config by the variable being observed
-subdat <- dat %>% 
-  filter(Cond == 'Level') %>%
-  group_by(Subject) %>%
-  mutate(z_score = scale(pMF)) %>% 
-  group_by(Config)
-
-#Normalization histograms, Check for normalish distribution/outliers
-ggplot(data = dat, aes(x = pMF, fill = Cond)) + geom_histogram() + facet_wrap(~Subject) 
-
-
-# "best of" Line graph 
-# This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally 
-withinSubPlot(subdat, colName = 'pMF', dir = 'lower','Peak Medial Force [N]') 
-
-
-
-## Bayes model 
-# This model takes a while to run and may  crash your session 
-#Wait until you receive a warning about rtools to run anything else
-runmod <- brm(data = subdat, 
-              family = gaussian,
-              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
-              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
-                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
-                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
-                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
-              iter = 2000, warmup = 1000, chains = 4, cores = 4,
-              control = list(adapt_delta = .975, max_treedepth = 20),
-              seed = 190831)
-
-# # Output of the Confidence Interval
-extractVals(subdat, runmod, otherConfigs, 'pMF', 'lower')
-
-# Downhill
-#organizing data - grouping by subject and config by the variable being observed
-subdat <- dat %>% 
-  filter(Cond == 'Downhill') %>%
-  group_by(Subject) %>%
-  mutate(z_score = scale(pMF)) %>% 
-  group_by(Config)
-
-# "best of" Line graph 
-# This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally 
-withinSubPlot(subdat, colName = 'pMF', dir = 'higher','Peak Medial Force [N]') 
-
-## Bayes model 
-# This model takes a while to run and may  crash your session 
-#Wait until you receive a warning about rtools to run anything else
-runmod <- brm(data = subdat, 
-              family = gaussian,
-              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
-              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
-                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
-                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
-                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
-              iter = 2000, warmup = 1000, chains = 4, cores = 4,
-              control = list(adapt_delta = .975, max_treedepth = 20),
-              seed = 190831)
-
-# # Output of the Confidence Interval
-extractVals(subdat, runmod, otherConfigs, 'pMF', 'lower')
-
-
-
-################### Peak Lateral Force
-# Level
-#organizing data - grouping by subject and config by the variable being observed
-subdat <- dat %>% 
-  filter(Cond == 'Level') %>%
-  group_by(Subject) %>%
-  mutate(z_score = scale(pLF)) %>% 
-  group_by(Config)
-
-#Normalization histograms, Check for normalish distribution/outliers
-ggplot(data = dat, aes(x = pLF, fill = Cond)) + geom_histogram() + facet_wrap(~Subject) 
-
-
-# "best of" Line graph 
-# This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally 
-withinSubPlot(subdat, colName = 'pLF', dir = 'higher','Peak Force Lateral [N]') 
-
-
-
-## Bayes model 
-# This model takes a while to run and may  crash your session 
-#Wait until you receive a warning about rtools to run anything else
-runmod <- brm(data = subdat, 
-              family = gaussian,
-              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
-              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
-                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
-                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
-                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
-              iter = 2000, warmup = 1000, chains = 4, cores = 4,
-              control = list(adapt_delta = .975, max_treedepth = 20),
-              seed = 190831)
-
-# # Output of the Confidence Interval
-extractVals(subdat, runmod, otherConfigs, 'pLF', 'higher')
-
-# Downhill
-#organizing data - grouping by subject and config by the variable being observed
-subdat <- dat %>% 
-  filter(Cond == 'Downhill') %>%
-  group_by(Subject) %>%
-  mutate(z_score = scale(pLF)) %>% 
-  group_by(Config)
-
-# "best of" Line graph 
-# This graph shoes a "Snap shot" of subject's best trial in each shoe. This is for demonstration purposes only, try to not take this graph too literally 
-withinSubPlot(subdat, colName = 'pLF', dir = 'higher','Peak Lateral Force [N]') 
-
-## Bayes model 
-# This model takes a while to run and may  crash your session 
-#Wait until you receive a warning about rtools to run anything else
-runmod <- brm(data = subdat, 
-              family = gaussian,
-              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
-              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
-                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
-                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
-                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
-              iter = 2000, warmup = 1000, chains = 4, cores = 4,
-              control = list(adapt_delta = .975, max_treedepth = 20),
-              seed = 190831)
-
-# # Output of the Confidence Interval
-extractVals(subdat, runmod, otherConfigs, 'pLF', 'higher')

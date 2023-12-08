@@ -1,4 +1,7 @@
 
+### THis script is set up to examine the effect of footwear on kinematic metrics derived from a multisegment foot model, 
+### using PFL standard bayesian analyses
+
 library(tidyverse)
 library(brms)
 library(tidybayes)
@@ -12,6 +15,9 @@ rm(list=ls())
 ####### Functions
 
 withinSubPlot <- function(inputDF, colName, dir) {
+  
+  # This function plots the mean performance of each subject within each shoes conditions. The dots and lines for each subject are colour coded
+  # according to which configuration they performed best in.
   
   # direction can be 'lower' or 'higher'. It is the direction of change that is better. 
   # For example, for contact time lower is better. for jump height, higher is better. 
@@ -45,7 +51,8 @@ withinSubPlot <- function(inputDF, colName, dir) {
 #############
 
 extractVals <- function(dat, mod, configNames, var, dir) {
-  
+  # This function extracts the % of the posterior above or below 0 (i.e. our percent confidence in improvement or decrement).
+  # It also calculates the 95% confidence interval for the estimated magnigtude of improvement/decrement, expressed as a %.
   #configNames = otherConfigs
   #mod = runmod
   #dir = 'higher'

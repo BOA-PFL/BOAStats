@@ -5,7 +5,7 @@ library(emmeans)
 
 rm(list=ls())
 
-dat <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/Testing Segments/Snow Performance/SkiValidation_Dec2022/Loadsol/CompiledResultsTestBothSides.csv')
+dat <- read.csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/Testing Segments/Snow Performance/SkiValidation_Dec2022/Loadsol/CompiledResultsTestBothSides.csv')
 dat$Config <- as.factor(dat$Config)
 
 remove_outliers <- function(x, na.rm = TRUE, ...) {
@@ -176,12 +176,18 @@ length(post$b_ConfigBuckle[post$b_ConfigBuckle < 0])/length(post$b_ConfigBuckle)
 
 # in lab pressures --------------------------------------------------------
 
-pDat <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/Testing Segments/Snow Performance/SkiValidation_Dec2022/InLabPressure/CompiledResults2.csv')
+pDat <- read.csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/Testing Segments/Snow Performance/SkiValidation_Dec2022/InLabPressure/CompiledResults2.csv')
 pDat$CVDorsal <- pDat$sdDorsalpressure / pDat$meanDorsalPressure
 
-pDat$Config <- str_replace(pDat$Config, "BuckP", "BuckleP")
 pDat <- pDat %>%
-  filter(Config != 'FootCal')
+  filter(Config != 'FootCal', Subject != 'S03')
+
+pDat$Config <- str_replace(pDat$Config, "BuckP", "BuckleP")
+pDat$Config <- str_replace(pDat$Config, "BuckleP", "Buckle")
+pDat$Config <- str_replace(pDat$Config, "BOAP", "BOA")
+pDat$Config <- str_replace(pDat$Config, "BOAB", "BOA")
+
+pDat$DorsalContact <- pDat$DorsalContact/180*100
 
 expPlot2 <- function(inputDF, colName) {
   # Specify ylabel in function or default to the original name
@@ -191,8 +197,8 @@ expPlot2 <- function(inputDF, colName) {
 
 pAnova <- function(metric, df) {
   
-  myformula <- as.formula(paste0(metric," ~ Config", " + (1|Subject)"))
-  myformula2 <- as.formula(paste0(metric, " ~ (1|Subject)"))
+  myformula <- as.formula(paste0(metric," ~ Config + Overlap + (1|Subject)"))
+  myformula2 <- as.formula(paste0(metric, " ~  Overlap + (1|Subject)"))
   
   full.mod = lmer(myformula, data = df, REML = TRUE, na.action = "na.omit" )
   red.mod = lmer(myformula2, data = df, REML = TRUE, na.action = "na.omit" )
@@ -200,26 +206,32 @@ pAnova <- function(metric, df) {
   conditions.emm <- emmeans(full.mod, "Config", lmer.df = "asymptotic")
   
   newList <- list("randEffectMod" = summary(full.mod), "anovaBetweenMods" = anova(full.mod, red.mod), "Coefs" = coef(full.mod),
-                  "contrasts" = conditions.emm, "Contrasts2" = contrast(conditions.emm, "trt.vs.ctrl", ref = "BuckleP"))
+                  "contrasts" = conditions.emm, "Contrasts2" = contrast(conditions.emm, "trt.vs.ctrl", ref = "Buckle"))
   return(newList)
   
 }
 
+# removing S03 as they were dropped from on snow test too
+pDat <- pDat %>%
+  filter(Subject != 'S03')
+
 ### Dorsal Pressures ###
-expPlot2(pDat, 'meanDorsalPressure') #3/4 lower in BOA. People leave BOA a little less tight
+expPlot2(pDat, 'meanDorsalPressure') 
 pAnova('meanDorsalPressure',pDat)
 
-expPlot2(pDat, 'maxDorsalPressure') #Similar story
+expPlot2(pDat, 'maxDorsalPressure') 
 pAnova('maxDorsalPressure',pDat)
 
 expPlot2(pDat, 'sdDorsalpressure') #Lower deviation in BOA
 pAnova('sdDorsalpressure',pDat)
 
-expPlot2(pDat, 'totalDorsalPressure') #greatest in Buckles in 3/4 and the 1/4 did not tighten buckles as much
+expPlot2(pDat, 'totalDorsalPressure') 
 pAnova('totalDorsalPressure',pDat)
 
-expPlot2(pDat, 'DorsalContact') #greatest in Buckles in 3/4 and the 1/4 did not tighten buckles as much
+expPlot2(pDat, 'DorsalContact') 
 pAnova('DorsalContact',pDat)
+
+pAnova('Overlap',pDat)
 
 ## Heel ##
 expPlot2(pDat, 'avgMHeel')
@@ -229,6 +241,11 @@ expPlot2(pDat, 'avgLHeel')
 expPlot2(pDat, 'pkLHeel')
 expPlot2(pDat, 'conLHeel')
 
+pAnova('pkMHeel',pDat)
+pAnova('conMHeel',pDat)
+pAnova('pkLHeel',pDat)
+pAnova('conLHeel',pDat)
+
 ## Midfoot ##
 expPlot2(pDat, 'avgMMid')
 expPlot2(pDat, 'pkMMid')
@@ -236,6 +253,11 @@ expPlot2(pDat, 'conMmid')
 expPlot2(pDat, 'avgLMid')
 expPlot2(pDat, 'pkLMid')
 expPlot2(pDat, 'conLMid')
+
+pAnova('pkMMid',pDat)
+pAnova('conMmid',pDat)
+pAnova('pkLMid',pDat)
+pAnova('conLMid',pDat)
 
 ## Mets ##
 expPlot2(pDat, 'avgMMets')
@@ -245,6 +267,11 @@ expPlot2(pDat, 'avgLMets')
 expPlot2(pDat, 'pkLMets')
 expPlot2(pDat, 'conLMets')
 
+pAnova('pkMMets',pDat)
+pAnova('conMMets',pDat)
+pAnova('pkLMets',pDat)
+pAnova('conLMets',pDat)
+
 ## Toes ##
 expPlot2(pDat, 'avgMToes')
 expPlot2(pDat, 'pkMToes')
@@ -253,5 +280,33 @@ expPlot2(pDat, 'avgLToes')
 expPlot2(pDat, 'pkLToes')
 expPlot2(pDat, 'conLToes')
 
+pAnova('pkMToes',pDat)
+pAnova('conMToes',pDat)
+pAnova('pkLToes',pDat)
+pAnova('conLToes',pDat)
 
+# Plotting
+ggplot(data = pDat, mapping = aes(x = Config, y = meanDorsalPressure, fill = Config)) + 
+  geom_dotplot(binaxis='y', stackdir='center',dotsize=.75) + scale_fill_manual(values=c("#00966C", "#999999")) + 
+  stat_summary(fun = 'mean',fun.args = list(mult=1), geom = 'point', color = 'black') + 
+  stat_summary(geom = 'errorbar', color = 'black', fun.min = function(x) mean(x) - sd(x), fun.max=function(x) mean(x) + sd(x), width = 0.5) +
+  theme_minimal() + theme(text = element_text(size = 24)) + theme(legend.position="none") + ylab('mean press') + xlab('Configuration')# + theme(axis.text.y=element_blank())
+
+ggplot(data = pDat, mapping = aes(x = Config, y = sdDorsalpressure, fill = Config)) + 
+  geom_dotplot(binaxis='y', stackdir='center',dotsize=.75) + scale_fill_manual(values=c("#00966C", "#999999")) + 
+  stat_summary(fun = 'mean',fun.args = list(mult=1), geom = 'point', color = 'black') + 
+  stat_summary(geom = 'errorbar', color = 'black', fun.min = function(x) mean(x) - sd(x), fun.max=function(x) mean(x) + sd(x), width = 0.5) +
+  theme_minimal() + theme(text = element_text(size = 24)) + theme(legend.position="none") + ylab('sd press') + xlab('Configuration') + theme(axis.text.y=element_blank())
+
+ggplot(data = pDat, mapping = aes(x = Config, y = totalDorsalPressure, fill = Config)) + 
+  geom_dotplot(binaxis='y', stackdir='center',dotsize=.75) + scale_fill_manual(values=c("#00966C", "#999999")) + 
+  stat_summary(fun = 'mean',fun.args = list(mult=1), geom = 'point', color = 'black') + 
+  stat_summary(geom = 'errorbar', color = 'black', fun.min = function(x) mean(x) - sd(x), fun.max=function(x) mean(x) + sd(x), width = 0.5) +
+  theme_minimal() + theme(text = element_text(size = 24)) + theme(legend.position="none") + ylab('total press') + xlab('Configuration') + theme(axis.text.y=element_blank())
+
+ggplot(data = pDat, mapping = aes(x = Config, y = DorsalContact, fill = Config)) + 
+  geom_dotplot(binaxis='y', stackdir='center',dotsize=.75) + scale_fill_manual(values=c("#00966C", "#999999")) + 
+  stat_summary(fun = 'mean',fun.args = list(mult=1), geom = 'point', color = 'black') + 
+  stat_summary(geom = 'errorbar', color = 'black', fun.min = function(x) mean(x) - sd(x), fun.max=function(x) mean(x) + sd(x), width = 0.5) +
+  theme_minimal() + theme(text = element_text(size = 24)) + theme(legend.position="none") + ylab('Contact') + xlab('Configuration') + theme(axis.text.y=element_blank())
 

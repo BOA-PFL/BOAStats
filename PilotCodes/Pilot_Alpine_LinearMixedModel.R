@@ -1,3 +1,7 @@
+### This code analyzes data collected from the Carv insoles for alpine skiing. It compares performance metrics between configurations using 
+### lmer and bayesian models
+
+
 rm(list=ls())
 library(tidyverse)
 library(readxl)

@@ -1,0 +1,328 @@
+---
+title: "Material Test Results"
+format: html
+editor: visual
+---
+
+## Load in libraries and data
+
+```{r}
+
+library(tidyverse)
+library(brms)
+library(tidybayes)
+library(lme4)
+library(lmerTest)
+library(dplyr)
+library(rlang)
+library(reshape2)
+library(posterior)
+
+rm(list=ls())
+
+dat <- read.csv('C:/Users/adam.luftglass/OneDrive - Boa Technology Inc/General/Testing Segments/Material Testing/2022/CarbonTest_Speedland_Performance_Oct2022/Overground/CompiledAgilityDataTestNewer.csv')
+
+
+dat <- as_tibble(dat) # creating the data frame
+
+
+
+
+
+## Data analysis for each variable as a separate chunk
+### Skater Contact Time
+
+skaterDat <- subset(dat, dat$Movement == 'Skater')
+
+
+###### Skater Contact Time
+
+skaterDat <- skaterDat %>% 
+  group_by(Subject) %>%
+  mutate(z_score = scale(CT)) %>% 
+  group_by(Config)
+
+skaterDat<- subset(skaterDat, skaterDat$z_score < 2) #removing outliers  
+skaterDat<- subset(skaterDat, skaterDat$z_score > -2)
+
+#skaterDat$Config <- relevel(factor(skaterDat$Config), ref = 'Lace')
+skaterDat$Config <- factor(skaterDat$Config, levels=c('Lace', 'LaceP', 'DD', 'DDP'))
+
+ggplot(data = skaterDat, aes(x = CT, color = Config)) + geom_histogram() + facet_wrap(~Subject) 
+ggplot(data = skaterDat, aes(x = Config,y = z_score, color = Config)) + geom_boxplot() + facet_wrap(~Subject)
+ggplot(data = skaterDat, aes(x = Config,y = z_score, color = Config)) + geom_boxplot() 
+ggplot(data = skaterDat, aes(x = Config, y = CT, color = Config)) + geom_boxplot(aes(color=Config),show.legend = FALSE)+theme_grey(base_size = 30) + xlab('Configuration') + theme(axis.title.y = element_blank())
+
+
+# make an lmer with both non normalized and z-score converted data. Ensure these provide directionally similar results
+
+
+mod1 <- lmer(CT ~ Config + (1|Subject), data = skaterDat)
+summary(mod1)
+mod2 <- lmer(z_score ~ Config + (1|Subject), data = skaterDat)
+summary(mod2)
+
+#p<-withinSubPlot(skaterDat, colName = 'CT', dir = 'lower')
+#p + ylab('Contact Time (s)')
+
+runmod <- brm(data = skaterDat, # Bayes model
+              family = gaussian,
+              z_score ~ Config + (1|Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+
+plot(runmod)
+a <- posterior_samples(runmod)
+(length(a$b_ConfigLaceP[a$b_ConfigLaceP > 0])/length(a$b_ConfigLaceP))*100 #93.5% posterior slower in laceP
+(length(a$b_ConfigDD[a$b_ConfigDD > 0])/length(a$b_ConfigDD))*100 #16% posterior is slower in dd
+(length(a$b_ConfigDDP[a$b_ConfigDDP > 0])/length(a$b_ConfigDDP))*100 #9.8% posterior is slower in DDP
+
+```
+
+### Skater peak propulsive force
+
+```{r}
+
+skaterDat <- skaterDat %>% 
+  group_by(Subject) %>%
+  mutate(z_score_GRFX = scale(peakGRF_X)) %>% 
+  group_by(Config)
+
+skaterDat<- subset(skaterDat, skaterDat$z_score_GRFX < 2) #removing outliers  
+skaterDat<- subset(skaterDat, skaterDat$z_score_GRFX > -2)
+
+skaterDat$Config <- factor(skaterDat$Config, levels=c('Lace', 'LaceP', 'DD', 'DDP'))
+
+ggplot(data = skaterDat, aes(x = peakGRF_X, color = Config)) + geom_histogram() + facet_wrap(~Subject) 
+ggplot(data = skaterDat, aes(x = Config, y = z_score_GRFX, color = Config)) + geom_boxplot() + facet_wrap(~Subject)
+ggplot(data = skaterDat, aes(x = Config, y = z_score_GRFX, color = Config)) + geom_boxplot() 
+ggplot(data = skaterDat, aes(x = Config, y = peakGRF_X, color = Config)) + geom_boxplot(aes(color=Config),show.legend = FALSE)+theme_grey(base_size = 30) + xlab('Configuration') + theme(axis.title.y = element_blank())
+# make an lmer with both non normalized and z-score converted data. Ensure these provide directionally similar results
+mod1 <- lmer(peakGRF_X ~ Config + (1|Subject), data = skaterDat)
+summary(mod1)
+mod2 <- lmer(z_score_GRFX ~ Config + (1|Subject), data = skaterDat)
+summary(mod2)
+
+
+runmod <- brm(data = skaterDat, # Bayes model
+              family = gaussian,
+              z_score_GRFX ~ Config + (1|Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+
+plot(runmod)
+a <- posterior_samples(runmod)
+(length(a$b_ConfigLaceP[a$b_ConfigLaceP > 0])/length(a$b_ConfigLaceP))*100 #97 % posterior of lace was lower than DD
+(length(a$b_ConfigDD[a$b_ConfigDD > 0])/length(a$b_ConfigDD))*100 #92.6% posterior of laceP lower than DD
+(length(a$b_ConfigDDP[a$b_ConfigDDP > 0])/length(a$b_ConfigDDP))*100 #no difference DD and DDP or moderate
+
+```
+
+### CMJ Contact Time
+
+```{r}
+cmjDat <- subset(dat, dat$Movement == 'CMJ')
+
+cmjDat <- cmjDat %>% 
+  group_by(Subject) %>%
+  mutate(
+    z_score_CT = scale(CT),
+    z_score_INV = scale(peakINVmom),
+    z_score_GRFZ = scale(peakGRF_Z)) %>% 
+  group_by(Config)
+
+cmjDat<- subset(cmjDat, cmjDat$z_score_CT < 2) #removing outliers  
+cmjDat<- subset(cmjDat, cmjDat$z_score_CT > -2)
+
+cmjDat<- subset(cmjDat, cmjDat$z_score_INV < 2) #removing outliers  
+cmjDat<- subset(cmjDat, cmjDat$z_score_INV > -2)
+
+cmjDat<- subset(cmjDat, cmjDat$z_score_GRFZ < 2) #removing outliers  
+cmjDat<- subset(cmjDat, cmjDat$z_score_GRFZ > -2)
+
+cmjDat$Config <- factor(cmjDat$Config, levels=c('Lace', 'LaceP', 'DD', 'DDP'))
+
+ggplot(data = cmjDat, aes(x = CT, color = Config)) + geom_histogram() + facet_wrap(~Subject) 
+ggplot(data = cmjDat, aes(x = Config, y = z_score_GRFZ, color = Config)) + geom_boxplot() + facet_wrap(~Subject)
+ggplot(data = cmjDat, aes(x = Config, y = z_score_GRFZ, color = Config)) + geom_boxplot() 
+ggplot(data = cmjDat, aes(x = Config, y = CT, color = Config)) + geom_boxplot(aes(color=Config),show.legend = FALSE)+theme_grey(base_size = 30) + xlab('Configuration') + theme(axis.title.y = element_blank())
+# make an lmer with both non normalized and z-score converted data. Ensure these provide directionally similar results
+mod1 <- lmer(CT ~ Config + (1|Subject), data = cmjDat)
+summary(mod1)
+mod2 <- lmer(z_score_CT ~ Config + (1|Subject), data = cmjDat)
+summary(mod2)
+
+
+runmod <- brm(data = cmjDat, # Bayes model
+              family = gaussian,
+              z_score_CT ~ Config + (1|Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+
+plot(runmod)
+a <- posterior_samples(runmod)
+(length(a$b_ConfigLaceP[a$b_ConfigLaceP > 0])/length(a$b_ConfigLaceP))*100 # no real difference
+(length(a$b_ConfigDD[a$b_ConfigDD > 0])/length(a$b_ConfigDD))*100 # no real difference
+(length(a$b_ConfigDDP[a$b_ConfigDDP > 0])/length(a$b_ConfigDDP))*100 # trend toward DDP increasing force with 85% postior >0
+
+
+```
+
+# CMJ peak propulsive force
+
+```{r}
+
+ggplot(data = cmjDat, aes(x = peakGRF_Z, color = Config)) + geom_histogram() + facet_wrap(~Subject) 
+ggplot(data = cmjDat, aes(x = Config, y = z_score_GRFZ, color = Config)) + geom_boxplot() + facet_wrap(~Subject)
+ggplot(data = cmjDat, aes(x = Config, y = z_score_GRFZ, color = Config)) + geom_boxplot() 
+ggplot(data = cmjDat, aes(x = Config, y = peakGRF_Z, color = Config)) + geom_boxplot(aes(color=Config),show.legend = FALSE)+theme_grey(base_size = 30) + xlab('Configuration') + theme(axis.title.y = element_blank())
+# make an lmer with both non normalized and z-score converted data. Ensure these provide directionally similar results
+mod1 <- lmer(peakGRF_Z ~ Config + (1|Subject), data = cmjDat)
+summary(mod1)
+mod2 <- lmer(z_score_GRFZ ~ Config + (1|Subject), data = cmjDat)
+summary(mod2)
+
+
+runmod <- brm(data = cmjDat, # Bayes model
+              family = gaussian,
+              z_score_GRFZ ~ Config + (1|Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+
+plot(runmod)
+a <- posterior_samples(runmod)
+(length(a$b_ConfigLaceP[a$b_ConfigLaceP > 0])/length(a$b_ConfigLaceP))*100 #
+(length(a$b_ConfigLace[a$b_ConfigDD > 0])/length(a$b_ConfigDD))*100 #
+(length(a$b_ConfigDDP[a$b_ConfigDDP > 0])/length(a$b_ConfigDDP))*100 #n
+
+```
+
+```{r}
+
+
+
+
+ggplot(data = cmjDat, aes(x = peakINVmom, color = Config)) + geom_histogram() + facet_wrap(~Subject) 
+ggplot(data = cmjDat, aes(x = Config, y = z_score_INV, color = Config)) + geom_boxplot() + facet_wrap(~Subject)
+ggplot(data = cmjDat, aes(x = Config, y = z_score_INV, color = Config)) + geom_boxplot() 
+ggplot(data = cmjDat, aes(x = Config, y = peakINVmom, color = Config)) + geom_boxplot(aes(color=Config),show.legend = FALSE)+theme_grey(base_size = 30) + xlab('Configuration') + theme(axis.title.y = element_blank())
+# make an lmer with both non normalized and z-score converted data. Ensure these provide directionally similar results
+mod1 <- lmer(peakINVmom ~ Config + (1|Subject), data = cmjDat)
+summary(mod1)
+mod2 <- lmer(z_score_INV ~ Config + (1|Subject), data = cmjDat)
+summary(mod2)
+
+
+runmod <- brm(data = cmjDat, # Bayes model
+              family = gaussian,
+              z_score_INV ~ Config + (1|Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+
+plot(runmod)
+a <- posterior_samples(runmod)
+(length(a$b_ConfigLaceP[a$b_ConfigLaceP > 0])/length(a$b_ConfigLaceP))*100 # no real difference
+(length(a$b_ConfigDD[a$b_ConfigDD > 0])/length(a$b_ConfigDD))*100 # no real difference
+(length(a$b_ConfigDDP[a$b_ConfigDDP > 0])/length(a$b_ConfigDDP))*100 # trend toward DDP increasing force with 85% postior >0
+
+```
+
+```{r}
+
+metdat <- read.csv('C:/Users/adam.luftglass/OneDrive - Boa Technology Inc/General/Testing Segments/Material Testing/2022/CarbonTest_Speedland_Performance_Oct2022/Metabolics/MetResults.csv')
+
+
+metdat <- as_tibble(metdat) # creating the data frame
+
+
+`
+
+
+## Data analysis for each variable as a separate chunk
+### Skater Contact Time
+
+
+whichConfig <- metdat %>%
+  group_by(Subject) %>%
+  summarize(
+    mm = min(EE),
+    BestConfig = Config[which.min(EE)]
+  )
+metOut <- merge(metdat, whichConfig)
+metdat <- metdat %>% 
+  group_by(Subject) %>%
+  mutate(z_score_EE = scale(EE)) %>% 
+  group_by(Config)
+metdat<- subset(metdat, metdat$z_score_EE < 2) #removing outliers  
+metdat<- subset(metdat, metdat$z_score_EE > -2)
+
+
+
+#skaterDat$Config <- relevel(factor(skaterDat$Config), ref = 'Lace'
+metdat$Config <- factor(metdat$Config, levels=c('Lace', 'LaceP', 'DD', 'DDP'))
+
+ggplot(data = metdat, aes(x = Config, y = EE, color = Config)) + geom_boxplot() + facet_wrap(~Subject) 
+
+ggplot(data = metdat, aes(x = Config, y = EE, color = Config)) + geom_boxplot(aes(color=Config),show.legend = FALSE)+theme_grey(base_size = 30) + xlab('Configuration') + theme(axis.title.y = element_blank())
+
+
+# make an lmer with both non normalized and z-score converted data. Ensure these provide directionally similar results
+
+
+mod1 <- lmer(EE ~ Config + (1|Subject), data = metdat)
+summary(mod1)
+mod2 <- lmer(z_score_EE ~ Config + (1|Subject), data = metdat)
+summary(mod2)
+
+#p<-withinSubPlot(skaterDat, colName = 'CT', dir = 'lower')
+#p + ylab('Contact Time (s)')
+
+runmod <- brm(data = metdat, # Bayes model
+              family = gaussian,
+              z_score_EE ~ Config + (1+Config|Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+
+plot(runmod)
+a <- posterior_samples(runmod)
+(length(a$b_ConfigLaceP[a$b_ConfigLaceP > 0])/length(a$b_ConfigLaceP))*100 
+(length(a$b_ConfigDD[a$b_ConfigDD > 0])/length(a$b_ConfigDD))*100 
+(length(a$b_ConfigDDP[a$b_ConfigDDP > 0])/length(a$b_ConfigDDP))*100 `
+
+```

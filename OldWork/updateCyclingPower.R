@@ -16,7 +16,7 @@ replaceName <- function(DF, toReplace, newName){
 # read in the existing cycling power DB
 dat <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/DB_V2/CyclingPowerDB_V2.csv')
 dat <- dat %>%
-  rename('Subject' = ï..Subject)
+  rename('Subject' = Ã¯..Subject)
 
 ## Load in new cycling data
 newDat <- read.csv('C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/Testing Segments/Cycling Performance Tests/CyclingHL_May2022/WattBike/CompiledPowerData.csv')

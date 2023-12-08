@@ -137,14 +137,15 @@ dat <- as_tibble(dat)
 
 #dat <- subset(dat, dat$Movement == 'Trail')
 
-baseConfig <- 'Lace' # baseline config
+baseConfig <- 'LLTH' # baseline config
 
-otherConfigs <- c('WM', 'WL') # list configs being tested against baseline
+otherConfigs <- c('LSYN', 'MLTH','MSYN') # list configs being tested against baseline
 
 allConfigs <- c(baseConfig, otherConfigs)
 
 dat$Config <- factor(dat$Config, allConfigs)
 
+lmer(maxDorsalPressure ~ Config + (1|Subject), data = dat)
 
 ############ Checking data 
 
