@@ -25,7 +25,7 @@ editor_options:
 |                    |                                                 |
 |                    | -   LH (Low Upper, High Midsole Structure)      |
 |                    |                                                 |
-|                    | -   HL (HighUpper, Low Midsole Structure)       |
+|                    | -   HL (High Upper, Low Midsole Structure)       |
 |                    |                                                 |
 |                    | -   HH( High Upper, High Midsole Structure)     |
 +--------------------+-------------------------------------------------+
@@ -105,7 +105,7 @@ qualDat <- read_xlsx('C:\\Users\\adam.luftglass\\OneDrive - Boa Technology Inc\\
 # Load in the insole data
 Pressdat <- read.csv('Z:\\Testing Segments\\Material Testing\\StructureMaterialsA&S\\XSensor\\Cropped\\0_CompiledResults_4.csv')
 
-baseline <- 'LL' # baseline configuration
+baseline <- 'HL' # baseline configuration
 
 otherConfigs <- c('LH', 'HL', 'HH') # other configurations tested against base
 allConfigs <- c(baseline, otherConfigs)
@@ -395,34 +395,34 @@ extractVals(cmjDatPF, cmjPFMod, otherConfigs, baseline, 'peakGRF_Z', 'higher')
 #| echo: false
 #| warning: false
 ################
-cmjDatPP <- cmjDat %>% 
-  filter(peakPFmom < 500) %>%
-  group_by(Subject) %>%
-  mutate(z_score = scale(peakPFmom)) %>% 
-  group_by(Config)
-
-cmjDatPP<- subset(cmjDatPP, cmjDatPP$z_score < 2) #removing outliers  
-cmjDatPP<- subset(cmjDatPP, cmjDatPP$z_score > -2)
-
-ggplot(data = cmjDatPP, aes(x = peakPFmom, color = Config)) + geom_histogram() + facet_wrap(~Subject) 
-
-p <- withinSubPlot(cmjDatPP, colName = 'peakPFmom', dir = 'higher')
-
-p + ylab('Peak Plantarflexion Moment (Nm)')
-
-cmjPPMod <- brm(data = cmjDatPP, # Bayes model
-              family = gaussian,
-              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
-              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
-                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
-                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
-                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
-              iter = 2000, warmup = 1000, chains = 4, cores = 4,
-              control = list(adapt_delta = .975, max_treedepth = 20),
-              seed = 190831)
-
-
-extractVals(cmjDatPP, cmjPPMod, otherConfigs, baseline, 'peakPFmom', 'higher') 
+# cmjDatPP <- cmjDat %>% 
+#   filter(peakPFmom < 500) %>%
+#   group_by(Subject) %>%
+#   mutate(z_score = scale(peakPFmom)) %>% 
+#   group_by(Config)
+# 
+# cmjDatPP<- subset(cmjDatPP, cmjDatPP$z_score < 2) #removing outliers  
+# cmjDatPP<- subset(cmjDatPP, cmjDatPP$z_score > -2)
+# 
+# ggplot(data = cmjDatPP, aes(x = peakPFmom, color = Config)) + geom_histogram() + facet_wrap(~Subject) 
+# 
+# p <- withinSubPlot(cmjDatPP, colName = 'peakPFmom', dir = 'higher')
+# 
+# p + ylab('Peak Plantarflexion Moment (Nm)')
+# 
+# cmjPPMod <- brm(data = cmjDatPP, # Bayes model
+#               family = gaussian,
+#               z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+#               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+#                         prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+#                         prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+#                         prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+#               iter = 2000, warmup = 1000, chains = 4, cores = 4,
+#               control = list(adapt_delta = .975, max_treedepth = 20),
+#               seed = 190831)
+# 
+# 
+# extractVals(cmjDatPP, cmjPPMod, otherConfigs, baseline, 'peakPFmom', 'higher') 
 
 
 ```
