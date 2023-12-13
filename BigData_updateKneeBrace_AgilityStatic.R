@@ -12,6 +12,18 @@ replaceName <- function(DF, toReplace, newName){
 } 
 
 
+
+
+Year <- '2023'
+Month <- 'October'
+Brand <- 'Breg'
+Model <- 'Fusion'
+TestName <- 'EH_KneeBrace_ThighCalfImportance_Oct23'
+Benefit <- 'E/H'
+Type <- 'Mechanistic' 
+
+
+
 # Read the existing database: Only to get column name order
 ParentDat <- read.csv('Z:/BigData/DB_V2/KneeBraceDB.csv',nrows=1)
 # ParentDat <- ParentDat %>%
@@ -78,4 +90,43 @@ a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?'
 if (a == 'YES'){
   write.table(ChildDat, "Z:/BigData/DB_V2/KneeBraceDB.csv", sep=',', 
               append = TRUE,col.names = FALSE, row.names = FALSE)
+} 
+
+
+######### Sub Visits BD ############
+
+# Read the existing database: Only to get column name order
+ParentDat <- read.csv('Z:/BigData/DB_V2/MasterSubjectVisits.csv',nrows=1)
+# ParentDat <- ParentDat %>%
+#   rename('Subject' = ?..Subject)
+name_order = colnames(ParentDat)
+# Read in qual sheet to reference names
+ChildDat <- read_xlsx('C:\\Users\\bethany.kilpatrick\\Boa Technology Inc\\PFL - General\\Testing Segments\\EndurancePerformance\\EH_KneeBrace_ThighCalfImportance_Oct23\\CompiledQualData_KneeBrace_Oct23.xlsx',sheet = 'Sheet4')
+ChildDat <- subset(ChildDat,select = -c(FootScan,Ht,Age,THICirc,ShankCirc,Swag,BraceSize))
+# ChildDat <- ChildDat %>% rename(Speed.run. = RunSpeed)
+noSub <- length(ChildDat$Subject)
+ChildDat$Year <- rep(Year, each = noSub)
+ChildDat$Month <- rep(Month, each = noSub)
+ChildDat$Brand <- rep(Brand, each = noSub)
+ChildDat$Model <- rep(Model, each = noSub)
+ChildDat$Name.of.Test <- rep(TestName, each = noSub)
+ChildDat$Benefit <- rep(Benefit, each = noSub)
+ChildDat$Type <- rep(Type, each = noSub)
+ChildDat$Resistance <- rep('NA', each = noSub)
+ChildDat$Speed.run. <- rep('1', each = noSub)
+
+# Sort the data into the correct order
+ChildDat <- ChildDat[,name_order]
+
+# write output. add a 1 to the end if you are at all unsure of output!!!
+a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?')
+if (a == 'YES'){
+  write.table(ChildDat, "Z:/BigData/DB_V2/MasterSubjectVisits.csv", sep=',', 
+              append = TRUE,col.names = FALSE, row.names = FALSE)
+  
 }
+rm(ParentDat,ChildDat,noSub,name_order,a)
+
+
+
+
