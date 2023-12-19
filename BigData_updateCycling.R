@@ -25,7 +25,7 @@ Model <- 'Regime'
 Benefit <- 'P/P' 
 Type <- 'Performance'# Performance, mechanistic, materials
 
-
+TestName<-'PP_Cycling_Perf_CyclingGuidePairs_Nov23/PP_Cycling_CyclingGuidePairs_Perf_Nov2023'
 
 
 ######### Cycling power and Pressure DB ##########################
@@ -47,14 +47,14 @@ PressDat <- read.csv(file.choose())
 PressSteadyDat <- PressDat %>%
   filter(Movement == 'Steady') %>%
   group_by(Subject, Config) %>%
-  summarize(HeelContact_steady = mean(heelArea, na.rm = TRUE), PeakToePress_steady = mean(maxmaxToes, na.rm = TRUE))
+  summarize(HeelContact_steady = mean(heelArea_Up, na.rm = TRUE), PeakToePress_steady = mean(maxmaxToes, na.rm = TRUE))
 
 
 
 PressSprintDat <- PressDat %>%
   filter(Movement == 'Sprint') %>%
   group_by(Subject, Config) %>%
-  summarize(HeelContact_sprint = mean(heelAreaP, na.rm = TRUE), PeakToePress_sprint = mean(maxmaxToes, na.rm = TRUE))
+  summarize(HeelContact_sprint = mean(heelArea_Up, na.rm = TRUE), PeakToePress_sprint = mean(maxmaxToes, na.rm = TRUE))
 
 # Combine IMU and pressure data
 pwer_ChildDat <- list(CycleDat,PressSteadyDat,PressSprintDat) %>%
@@ -159,34 +159,34 @@ if (a == 'YES'){
 
 ######### Sub Visits BD ############
 
-# Set path to your directory
-subVisits <- read.csv('C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/BigData/DB_V2/MasterSubjectVisits.csv')
-# subVisits <- subVisits %>%
+
+ParentDat <- read.csv('Z:/BigData/DB_V2/MasterSubjectVisits.csv',nrows=1)
+# ParentDat <- ParentDat %>%
 #   rename('Subject' = ?..Subject)
+name_order = colnames(ParentDat)
+# Read in qual sheet to reference names
+ChildDat <- read_xlsx('C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/Testing Segments/Cycling Performance Tests/PP_Cycling_Perf_CyclingGuidePairs_Nov23/PP_Cycling_CyclingGuidePairs_Perf_Nov2023_Qual.xlsx',sheet = 'Sheet3')
+ChildDat <- subset(ChildDat,select = -c(FootScan,Compensation))
+# ChildDat <- ChildDat %>% rename(Speed.run. = RunSpeed)
+noSub <- length(ChildDat$Subject)
+ChildDat$Year <- rep(Year, each = noSub)
+ChildDat$Month <- rep(Month, each = noSub)
+ChildDat$Brand <- rep(Brand, each = noSub)
+ChildDat$Model <- rep(Model, each = noSub)
+ChildDat$Name.of.Test <- rep(TestName, each = noSub)
+ChildDat$Benefit <- rep(Benefit, each = noSub)
+ChildDat$Type <- rep(Type, each = noSub) 
+ChildDat$Speed.run. <- rep('NA', each = noSub)
 
-subVisits %>%
-  group_by(Year) %>%
-  summarize(count <- n_distinct(Subject))
+# Sort the data into the correct order
+ChildDat <- ChildDat[,name_order]
 
-# Add Subject name, test name, Mass, resistence and sex
-
-Subject <- 'TestSub'
-Name.of.Test <- 'Cycling_HL_test'
-Speed.run. <- NA
-Mass <- 68
-Resistance <- 4.5
-Sex <- 'M'
-
-
-dat_to_append <- data.frame(Subject, Year, Month, Benefit, Brand, Model,
-                            Name.of.Test, Type, Speed.run., Mass, Resistance, Sex)
-
-subVisits <- rbind(subVisits, dat_to_append)
-
-# write output. add a 1 to the end if you are at all unsure of ourput!!!
-a <- winDialog(type = 'yesno', message = 'about to overwrite DB')
+# write output. add a 1 to the end if you are at all unsure of output!!!
+a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?')
 if (a == 'YES'){
-  write.table(subVisits, "C:/Users/daniel.feeney/Boa Technology Inc/PFL Team - General/BigData/DB_V2/MasterSubjectVisits.csv", sep=',', row.names = FALSE)
+  write.table(ChildDat, "Z:/BigData/DB_V2/MasterSubjectVisits.csv", sep=',', 
+              append = TRUE,col.names = FALSE, row.names = FALSE)
   
 }
+rm(ParentDat,ChildDat,noSub,name_order,a)
 
