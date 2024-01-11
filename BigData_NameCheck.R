@@ -19,12 +19,15 @@ testName <- read.csv('Z:/BigData/DB_V2/MasterSubjectVisits.csv')%>%
 
 master_testName <- tolower(testName$Name.of.Test)
 
+configs <- read.csv('Z:/BigData/DB_V2/ConfigDB.csv')%>%
+  select('Name.of.Test', 'Year', 'Config')
+  
 ## agility pressure DB
 ASPress <- read.csv('Z:/BigData/DB_V2/AgilityPressureDB.csv') %>%
           select('Subject') %>%
           group_by(Subject) %>%
           count()
-        
+
 
 ## agility speed DB
 A_S <- read.csv('Z:/BigData/DB_V2/AgilitySpeedDB.csv')%>%
@@ -82,5 +85,5 @@ subVisits <- read.csv('Z:/BigData/DB_V2/MasterSubjectVisits.csv')%>%
   filter( Year == '2023')%>%
   count()
 
-
-write.csv(subVisits, "C:/Users/milena.singletary/Boa Technology Inc/Documents/Subvisits23.csv", row.names = FALSE)
+# use to write csv locally
+#write.csv(subVisits, "C:/Users/milena.singletary/Boa Technology Inc/Documents/Subvisits23.csv", row.names = FALSE)
