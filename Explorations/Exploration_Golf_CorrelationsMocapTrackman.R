@@ -178,14 +178,25 @@ check2 <- check2 %>%
   filter(ShotTime != 'NA')
 
 
+# define the anova
+GolfANOVA <- function(outcome, bioMechVar, df) {
+  myformula <- as.formula(paste0(outcome, ' ~ ', bioMechVar , '+(' , bioMechVar, "|Subject)"))
+  myformula2 <- as.formula(paste0(outcome, " ~ " , bioMechVar , ' +(1|Subject)'))
+  full.mod = lmer(myformula, data = df, REML = TRUE, na.action = "na.omit")
+  red.mod = lmer(myformula2, data = df, REML = TRUE, na.action = "na.omit" )
+  conditions.emm <- emmeans(full.mod, paste0(bioMechVar), lmer.df = "satterthwaite")
+  #contrast(conditions.emm, "trt.vs.ctrl", ref = "M") 
+  newList <- list("randEffectMod" = summary(full.mod),"Coefficients" = coef(full.mod), "anovaBetweenMods" = anova(full.mod, red.mod),
+                  "contrasts" = conditions.emm, "Contrasts2" = pairs(conditions.emm))
+  return(newList)
+}
 
 
 
 
 
-
-# Look at correlations between velo and biomech
-# VGRF DS lead
+# Look at correlations between velo and biomech###########################################################
+# VGRF DS lead #########################
 ggplot(data = CompiledOG, aes(x = peakGRFZ_lead_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
 CompiledOG %>%
   filter(ShotTime != 'NA')%>%
@@ -204,8 +215,10 @@ summary(GRF_mod)
 coef(GRF_mod)
 r2(GRF_mod)
 
+GolfANOVA('ClubSpeed' , 'peakGRFZ_lead_Downswing', CompiledOG)
+GolfANOVA('CarryFlatLength' , 'peakGRFZ_lead_Downswing', CompiledOG)
 
-# vGRF DS trail
+# vGRF DS trail ###########################
 ggplot(data = CompiledOG, aes(x = peakGRFZ_trail_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
 CompiledOG %>%
   filter(ShotTime != 'NA')%>%
@@ -225,7 +238,7 @@ coef(GRF_mod)
 r2(GRF_mod)
 
 
-# VGRF BS lead
+# VGRF BS lead ################################
 ggplot(data = CompiledOG, aes(x = peakGRFZ_lead_Backswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
 CompiledOG %>%
   filter(ShotTime != 'NA')%>%
@@ -245,7 +258,7 @@ coef(GRF_mod)
 r2(GRF_mod)
 
 
-# vGRF BS trail
+# vGRF BS trail #######################################################################
 ggplot(data = CompiledOG, aes(x = peakGRFZ_trail_Backswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
 CompiledOG %>%
   filter(ShotTime != 'NA')%>%
@@ -265,7 +278,7 @@ coef(GRF_mod)
 r2(GRF_mod)
 
 
-# VGRF Fullswing lead
+# VGRF Fullswing lead #######################################################################
 ggplot(data = CompiledOG, aes(x = peakGRFZ_lead, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
 CompiledOG %>%
   filter(ShotTime != 'NA')%>%
@@ -285,7 +298,7 @@ coef(GRF_mod)
 r2(GRF_mod)
 
 
-# vGRF Fullswing trail 
+# vGRF Fullswing trail #######################################################################
 ggplot(data = CompiledOG, aes(x = peakGRFZ_trail, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
 CompiledOG %>%
   filter(ShotTime != 'NA')%>%
@@ -308,7 +321,7 @@ r2(GRF_mod)
 
 
 
-# thorax 
+# thorax #######################################################################
 
 ggplot(data = CompiledOG, aes(x = pkThoraxRotVel_DS, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
 Thorax <- CompiledOG %>%
@@ -339,7 +352,7 @@ r2(thor_mod)
 
 
 
-# pelvis 
+# pelvis #######################################################################
 
 ggplot(data = DRF, aes(x = pkPelvisVel_DS, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
 pelv <- DRF %>%
@@ -367,7 +380,7 @@ coef(pelv_mod)
 r2(pelv_mod)
 
 
-# Hip Power DS
+# Hip Power DS ######################################################################
 ggplot(data = CompiledOG, aes(x = peakHipPower_lead_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
 hip <- CompiledOG %>%
   group_by(Subject) %>%
@@ -395,8 +408,8 @@ summary(hip_mod)
 coef(hip_mod)
 r2(hip_mod)
 
-
-# hip frontal ROM
+ 
+# hip frontal ROM #######################################################################
 ggplot(data = CompiledOG, aes(x = HipROMFrontal_lead_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
 hipROM <- CompiledOG %>%
   group_by(Subject) %>%
@@ -428,7 +441,7 @@ r2(hipROM_mod)
 
 
 
-# hip frontal Mom
+# hip frontal Mom #######################################################################
 ggplot(data = CompiledOG, aes(x = HipMomFrontal_lead_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
 hipMom <- CompiledOG %>%
   group_by(Subject) %>%
@@ -460,7 +473,7 @@ r2(hipMom_mod)
 
 
 
-# Knee Ext V DS
+# Knee Ext V DS #######################################################################
 
 ggplot(data = CompiledOG, aes(x = KneeExtensionVelo_lead_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
 kneeExt<-CompiledOG %>%
@@ -492,7 +505,7 @@ r2(kneeX_mod)
 
 
 
-# Knee ROM DS
+# Knee ROM DS #######################################################################
 ggplot(data = CompiledOG, aes(x = KneeROMSag_lead_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
 kneeROM<-CompiledOG %>%
   group_by(Subject) %>%
@@ -522,8 +535,8 @@ coef(kneeROM_mod)
 r2(kneeROM_mod)
 
 
-
-# Ank Ev V DS
+ 
+# Ank Ev V DS #######################################################################
 ggplot(data = CompiledOG, aes(x = peakAnkEvVelo_lead_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
 
 AnkEv <- CompiledOG%>%
@@ -554,7 +567,7 @@ coef(AnkEv_mod)
 r2(AnkEv_mod)
 
 
-# Ank ROM DS
+# Ank ROM DS #######################################################################
 ggplot(data = CompiledOG, aes(x = AnkROMFrontal_lead_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
 ankROM<-CompiledOG %>%
   group_by(Subject) %>%
@@ -582,7 +595,7 @@ summary(ankROM_mod)
 coef(ankROM_mod)
 r2(ankROM_mod)
 
-# Ank Front Mom DS
+# Ank Front Mom DS #######################################################################
 ggplot(data = CompiledOG, aes(x = AnkFrontalMom_lead_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
 
 AnkMom <- CompiledOG%>%
@@ -612,7 +625,7 @@ coef(AnkMom_mod)
 r2(AnkMom_mod)
 
 
-# Ank Lead Work
+# Ank Lead Work #######################################################################
 ggplot(data = CompiledOG, aes(x = AnkWork_lead_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
 
 AnkWorkL <- CompiledOG%>%
@@ -642,7 +655,7 @@ coef(AnkW_mod)
 r2(AnkW_mod)
 
 
-# Ank Trail Work
+# Ank Trail Work #######################################################################
 ggplot(data = CompiledOG, aes(x = AnkWork_trail_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
 
 AnkWorkT <- CompiledOG%>%
@@ -671,7 +684,7 @@ summary(AnkWT_mod)
 coef(AnkWT_mod)
 r2(AnkWT_mod)
 
-# Knee Lead Work
+# Knee Lead Work #######################################################################
 ggplot(data = CompiledOG, aes(x = KneeWork_lead_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
 
 KneeWorkL <- CompiledOG%>%
@@ -701,7 +714,7 @@ coef(KneeW_mod)
 r2(KneeW_mod)
 
 
-# Knee Trail Work
+# Knee Trail Work #######################################################################
 ggplot(data = CompiledOG, aes(x = KneeWork_trail_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
 
 KneeWorkT <- CompiledOG%>%
@@ -732,7 +745,7 @@ r2(KneeWT_mod)
 
 
 
-# Hip Lead Work
+# Hip Lead Work #######################################################################
 ggplot(data = CompiledOG, aes(x = HipWork_lead_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
 
 HipWorkL <- CompiledOG%>%
@@ -763,7 +776,7 @@ coef(HipW_mod)
 r2(HipW_mod)
 
 
-# Hip Trail Work
+# Hip Trail Work #######################################################################
 ggplot(data = CompiledOG, aes(x = HipWork_trail_Downswing, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
 
 HipWorkT <- CompiledOG%>%
@@ -793,8 +806,8 @@ coef(HipWT_mod)
 r2(HipWT_mod)
 
 
-
-# lower extremity work 
+ 
+# lower extremity work #######################################################################
 ggplot(data = CompiledOG, aes(x = LowerExtremity_Work, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
 
 LE_Work <- CompiledOG%>%
@@ -827,7 +840,7 @@ r2(LEwork_mod)
 
 
 
-# Neg DRF Pwr DS
+# Neg DRF Pwr DS #######################################################################
 
 ggplot(data = DRFp, aes(x = peakNegLeadDistalRFpower_DS, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
 
@@ -858,7 +871,7 @@ coef(DRFds_mod)
 r2(DRFds_mod)
 
 
-# Neg DRF Pwr Fullswing
+# Neg DRF Pwr Fullswing #######################################################################
 DRFf <- DRF%>%
   group_by(Subject) %>%
   mutate(z_score = scale(peakNegLeadDistalRFpower_full)) %>% 
@@ -889,9 +902,10 @@ r2(DRFfull)
 
 
 
+#######################################################################
+# assessing sex on performance outcome
 
-
-GolfANOVA <- function(metric, df) {
+GolfMF <- function(metric, df) {
   myformula <- as.formula(paste0(metric," ~ Config * Sex + (Config*Sex|Subject)"))
   myformula2 <- as.formula(paste0(metric, " ~ Config + (Config|Subject)"))
   full.mod = lmer(myformula, data = df, REML = TRUE, na.action = "na.omit")
@@ -903,6 +917,9 @@ GolfANOVA <- function(metric, df) {
   return(newList)
 }
 
-GolfANOVA('ClubSpeed', CompiledOG)
-GolfANOVA('BallSpeed', CompiledOG)
+GolfMF('ClubSpeed', CompiledOG)
+GolfMF('BallSpeed', CompiledOG)
+
+
+
 
