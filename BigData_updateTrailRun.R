@@ -4,13 +4,13 @@ library(readxl)
 rm(list=ls())
 
 # Read the existing database: Only to get column name order
-ParentDat <- read.csv('C:\\Users\\adam.luftglass\\OneDrive - Boa Technology Inc\\General/BigData/DB_V2/TrailDB.csv',nrows=1)
+ParentDat <- read.csv('Z:/BigData/DB_V2/TrailDB.csv',nrows=1)
 # ParentDat <- ParentDat %>%
 #   rename('Subject' = ?..Subject)
 name_order = colnames(ParentDat)
 
 # Read and summarize the IMU Data:
-IMUDat <- read.csv('C:\\Users\\adam.luftglass\\OneDrive - Boa Technology Inc\\General\\Testing Segments\\Material Testing\\UpperStiffnessE&H\\IMU\\IMUmetrics.csv')
+IMUDat <- read.csv('Z:\\Testing Segments\\Material Testing\\2023\\UpperStiffnessE&H_Performance_Aug2023\\IMU\\IMUmetrics.csv')
 
 IMUDat <- IMUDat %>%
   filter(Label > 0) %>%
@@ -19,12 +19,12 @@ IMUDat <- IMUDat %>%
             PeakAcc = mean(pAcc),RangeMLAcc = mean(rMLacc)) 
 
 # Read and summarize the pressure data
-PressDat <- read.csv('C:\\Users\\adam.luftglass\\OneDrive - Boa Technology Inc\\General\\Testing Segments\\Material Testing\\UpperStiffnessE&H\\XSensor/PressureOutcomes.csv')
+PressDat <- read.csv('Z:\\Testing Segments\\Material Testing\\2023\\UpperStiffnessE&H_Performance_Aug2023\\XSensor/PressureOutcomes.csv')
 
 PressDat <- PressDat %>%
   filter(Label > 0) %>%
   group_by(Subject, Config, Sesh, Label) %>%
-  summarize(HeelContact = mean(heelAreaP), PeakToePress = mean(ffPMax_late)) 
+  summarize(HeelContact = mean(heelAreaP), PeakToePress = mean(maxmaxToes)) 
 
 # Combine IMU and pressure data
 ChildDat <- merge(x=IMUDat,y=PressDat,all=TRUE) %>%
@@ -53,6 +53,6 @@ ChildDat$Model <- rep('GS Tam', dim(ChildDat)[1])
 # Sort the DataFrame columns into the right order (from the Parent)
 ChildDat <- ChildDat[,name_order]
 
-write.table(ChildDat, file = 'C:\\Users\\adam.luftglass\\OneDrive - Boa Technology Inc\\General/BigData/DB_V2/TrailDB.csv', sep = ',',
+write.table(PressDat, file = 'C:\\Users\\adam.luftglass\\OneDrive - Boa Technology Inc\\Documents/Pressure.csv', sep = ',',
             append = TRUE,col.names = FALSE, row.names = FALSE)
 
