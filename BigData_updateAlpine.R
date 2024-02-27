@@ -191,7 +191,7 @@ ParentDat <- read.csv('Z:/BigData/DB_V2/AlpineDB.csv',nrows=1)
 name_order = colnames(ParentDat)
 
 # Read and summarize the overground data:
-IMUDat <- read.csv('Z:\\Testing Segments\\Snow Performance\\EH_Alpine_FullBootVsShell_Jan2024\\IMU\\0_IMUOutcomes.csv') 
+IMUDat <- read.csv('Z:\\Testing Segments\\Snow Performance\\EH_Alpine_FullBootVsShell_Jan2024\\IMU\\0_IMUOutcomes2.csv') 
 IMUDat$Subject <- tolower(gsub(" ", "", IMUDat$Subject))
 Subject <- unique(IMUDat$Subject)
 Config <- unique(IMUDat$Config)
@@ -203,11 +203,10 @@ cmp_strings(Config,unique(IMUDat$Config),'config')
 
 IMUDat <- IMUDat %>%
   group_by(Subject, Config) %>%
-  summarise(EdgeAng_Dwn_gyr= mean(edgeang_dwn_gyr), EdgeAng_Up_gyr = mean(edgeang_up_gyr), RAD_dwn = mean(RAD_dwn),
-            EdgeAngT_Dwn_gyr = mean(edgeangt_dwn_gyr), Freq50fft = mean(freq50fft))
+  summarise(EdgeAng_Dwn_gyr= mean(edgeang_dwn_gyr), EdgeAng_Up_gyr = mean(edgeang_up_gyr), RAD_dwn = mean(RAD_dwn))
 
 
-pressDat <- read.csv('Z:\\Testing Segments\\Snow Performance\\EH_Alpine_FullBootVsShell_Jan2024\\XSENSOR\\Cropped\\0_CompiledResults_5.csv') 
+pressDat <- read.csv('Z:\\Testing Segments\\Snow Performance\\EH_Alpine_FullBootVsShell_Jan2024\\XSENSOR\\Cropped\\0_CompiledResults_7.csv') 
 pressDat$Subject <- tolower(gsub(" ", "", pressDat$Subject))
 Subject <- unique(pressDat$Subject)
 Config <- unique(pressDat$Config)
@@ -215,10 +214,22 @@ Config <- unique(pressDat$Config)
 
 pressDat <- pressDat %>%
   group_by(Subject, Config) %>%
-  summarise(MedialProportionMidfoot = mean(medPropMid), UphillMaxForce = mean(uphillMaxF), DownhillMaxForce = mean(downhillMax),
-            RFD = mean(RFD))
+  summarise(MedialProportionMidfoot = mean(medPropMid), PeakToePress =mean(maxmaxToes), HeelContactArea = mean(heelAreaP), UphillMaxForce = mean(InsTotMaxForce), DownhillMaxForce = mean(OutTotMaxForce),
+            RFD = mean(RFD)) 
 
-ChildDat <- list(pressDat,IMUDat) %>%
+
+gpsDat <- read.csv('Z:\\Testing Segments\\Snow Performance\\EH_Alpine_FullBootVsShell_Jan2024\\GPS\\3_GPSOutcomes.csv') 
+gpsDat$Subject <- tolower(gsub(" ", "", gpsDat$Subject))
+Subject <- unique(gpsDat$Subject)
+Config <- unique(gpsDat$Config)
+
+
+gpsDat <- gpsDat %>%
+  group_by(Subject, Config) %>%
+  summarise(SpeedMax = mean(TopSpeed), AvgSpeed = mean(AvgSpeed)) 
+
+
+ChildDat <- list(pressDat,IMUDat, gpsDat ) %>%
   reduce(full_join)
 
 
@@ -245,7 +256,7 @@ ChildDat <- ChildDat[,name_order]
 a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?')
 if (a == 'YES'){
   write.table(ChildDat, "Z:/BigData/DB_V2/AlpineDB.csv", sep=',', 
-              append = TRUE,col.names = TRUE, row.names = FALSE)
+              append = TRUE,col.names = FALSE, row.names = FALSE)
 }
 
 rm(ParentDat,ChildDat,name_order,a) 
