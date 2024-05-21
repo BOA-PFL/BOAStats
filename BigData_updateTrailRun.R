@@ -19,7 +19,7 @@ IMUDat <- IMUDat %>%
             PeakAcc = mean(pAcc),RangeMLAcc = mean(rMLacc)) 
 
 # Read and summarize the pressure data
-PressDat <- read.csv('Z:\\Testing Segments\\Material Testing\\2023\\UpperStiffnessE&H_Performance_Aug2023\\XSensor/PressureOutcomes.csv')
+PressDat <- read.csv('Z:\\Testing Segments\\Material Testing\\2023\\UpperStiffnessE&H_Performance_Aug2023\\XSensor\\PressureOutcomes.csv')
 
 PressDat <- PressDat %>%
   filter(Label > 0) %>%
@@ -53,6 +53,6 @@ ChildDat$Model <- rep('GS Tam', dim(ChildDat)[1])
 # Sort the DataFrame columns into the right order (from the Parent)
 ChildDat <- ChildDat[,name_order]
 
-write.table(PressDat, file = 'C:\\Users\\adam.luftglass\\OneDrive - Boa Technology Inc\\Documents/Pressure.csv', sep = ',',
+write.table(PressDat, file = 'Z:\\BigData\\DB_V2\\TrailDB.csv', sep = ',',
             append = TRUE,col.names = FALSE, row.names = FALSE)
 
