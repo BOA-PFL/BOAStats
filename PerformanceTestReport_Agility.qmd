@@ -97,14 +97,14 @@ rm(list=ls())
 dat <- read.csv(file.choose())
 
 #Load in Compiled Qualitative Sheet
-qualDat <- read_xlsx(file.choose())
+#qualDat <- read_xlsx(file.choose())
 
 
 baseline <- 'SD' # baseline configuration
 
 otherConfigs <- c('SDHL', 'DDHL') # other configurations tested against base
 allConfigs <- c(baseline, otherConfigs)
-qualDat$Config <- factor(qualDat$Config, allConfigs)
+#qualDat$Config <- factor(qualDat$Config, allConfigs)
 dat <- as_tibble(dat) # creating the data frame
 dat$Config <- factor(dat$Config, allConfigs)
 
