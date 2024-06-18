@@ -196,6 +196,7 @@ cmp_strings(Config,unique(AgilityDat$Config),'config')
 
 AgilityDat <- AgilityDat %>% 
   group_by(Subject) %>%
+  filter(PeakKneeAbMoment < 250) %>%
   mutate(z_score = scale(PeakKneeAbMoment))%>%
   group_by(Config) 
 
@@ -216,7 +217,8 @@ SKTDat <- AgilityDat %>%
   filter(Movement == 'Skater') %>%
   group_by(Subject, Config, Movement) %>%
   summarise(ContactTime = mean(CT), PeakAnklePFMoment = mean(peakPFmom), PropForce = mean(peakGRF_X),
-            PeakAnkleInMoment = mean(peakINVmom), KneeAbAdROM = mean(kneeABDrom), COMEccWork = mean(eccWork), COMConWork = mean(conWork))
+            PeakAnkleInMoment = mean(peakINVmom), KneeAbAdROM = mean(kneeABDrom), PeakKneeAbMoment = mean(PeakKneeAbMoment),
+            COMEccWork = mean(eccWork), COMConWork = mean(conWork))
 
 ChildDat <- merge(x=CMJDat,y=SKTDat,all=TRUE)
 ChildDat$Year <- rep(Year, dim(ChildDat)[1])
