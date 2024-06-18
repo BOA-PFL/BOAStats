@@ -10,23 +10,21 @@ editor_options:
 
 # CONFIDENTAL CONTENT FOR BOA EMPLOYEES ONLY. PLEASE CONTACT PFL DIRECTLY WITH ANY QUESTIONS.
 
-+--------------------+-------------------------------------+
-| Test Name          | AS_Trail_HeelLockAgility_Perf_Apr23 |
-+====================+=====================================+
-| **Benefit:**       | Agility & Speed                     |
-+--------------------+-------------------------------------+
-| **Date:**          | 4/2023                              |
-+--------------------+-------------------------------------+
-| **Test Type:**     | Performance                         |
-+--------------------+-------------------------------------+
-| **Configurations** | Baseline: SD (Single Dial)          |
-|                    |                                     |
-|                    | Test configurations:                |
-|                    |                                     |
-|                    | -   SDHL (Single Dial Heel-Lock)    |
-|                    |                                     |
-|                    | -   DDHL (Dual Dial Heel-Lock)      |
-+--------------------+-------------------------------------+
++--------------------+------------------------------------+
+| Test Name          | AS_DaniellePractice_Agility_Jun24  |
++====================+====================================+
+| **Benefit:**       | Agility & Speed                    |
++--------------------+------------------------------------+
+| **Date:**          | 6/2024                             |
++--------------------+------------------------------------+
+| **Test Type:**     | Practice                           |
++--------------------+------------------------------------+
+| **Configurations** | Baseline: Lace Replacement         |
+|                    |                                    |
+|                    | Test configurations:               |
+|                    |                                    |
+|                    | -   PFS                            |
++--------------------+------------------------------------+
 
 ## Purpose & Background
 
@@ -44,27 +42,27 @@ H1.a: Reduced contact time will be achieved through increased propulsive force (
 
 ## Methods
 
-+------------------+---------------------+-------------------------------+------------------------------+
-| Subjects         | Movements           | Equipment                     | Measurements                 |
-+==================+=====================+===============================+==============================+
-| 11 Male Athletes | Treadmill Running   | Pressure insoles              | Fit:                         |
-|                  |                     |                               |                              |
-|                  |                     |                               | -   Heel contact area        |
-|                  |                     |                               |                              |
-|                  |                     |                               | -   Forefoot contact area    |
-|                  |                     |                               |                              |
-|                  |                     |                               | -   Forefoot pressure        |
-+------------------+---------------------+-------------------------------+------------------------------+
-|                  | Vertical CMJ        | In-ground force plates        | Agility:                     |
-|                  |                     |                               |                              |
-|                  |                     | Motion capture                | -   Time to change direction |
-|                  |                     |                               |                              |
-|                  |                     |                               | -   Peak Power               |
-|                  |                     |                               |                              |
-|                  |                     |                               | -   Peak Ankle Force         |
-+------------------+---------------------+-------------------------------+------------------------------+
-|                  | Lateral Skater Jump | Force plates & Motion Capture |                              |
-+------------------+---------------------+-------------------------------+------------------------------+
++--------------+---------------------+-------------------------------+------------------------------+
+| Subjects     | Movements           | Equipment                     | Measurements                 |
++==============+=====================+===============================+==============================+
+| 2 Athletes   | Treadmill Running   | Pressure insoles              | Fit:                         |
+|              |                     |                               |                              |
+|              |                     |                               | -   Heel contact area        |
+|              |                     |                               |                              |
+|              |                     |                               | -   Forefoot contact area    |
+|              |                     |                               |                              |
+|              |                     |                               | -   Forefoot pressure        |
++--------------+---------------------+-------------------------------+------------------------------+
+|              | Vertical CMJ        | In-ground force plates        | Agility:                     |
+|              |                     |                               |                              |
+|              |                     | Motion capture                | -   Time to change direction |
+|              |                     |                               |                              |
+|              |                     |                               | -   Peak Power               |
+|              |                     |                               |                              |
+|              |                     |                               | -   Peak Ankle Force         |
++--------------+---------------------+-------------------------------+------------------------------+
+|              | Lateral Skater Jump | Force plates & Motion Capture |                              |
++--------------+---------------------+-------------------------------+------------------------------+
 
 ## Configurations
 
@@ -96,13 +94,16 @@ rm(list=ls())
 # Load in overground agility data
 dat <- read.csv(file.choose())
 
+#Load in pressure data
+presdat <- read.csv(file.choose())
+
 #Load in Compiled Qualitative Sheet
 #qualDat <- read_xlsx(file.choose())
 
 
-baseline <- 'SD' # baseline configuration
+baseline <- 'LR' # baseline configuration
 
-otherConfigs <- c('SDHL', 'DDHL') # other configurations tested against base
+otherConfigs <- c('PFS') # other configurations tested against base
 allConfigs <- c(baseline, otherConfigs)
 #qualDat$Config <- factor(qualDat$Config, allConfigs)
 dat <- as_tibble(dat) # creating the data frame
@@ -241,30 +242,30 @@ withinSubQualPlot <- function(inputDF) {
 
 **Qualitative**
 
-```{r}
-#| echo: false
-#| warning: false
-
-qualDat %>%
-  pivot_longer(cols = OverallFit:Heel, 
-               names_to = "Location", values_to = "Rating") %>%
-  group_by(Location, Config) %>%
-  summarize(
-    avg = mean(Rating, na.rm = TRUE),
-    medAvg = median(Rating, na.rm = TRUE)
-  ) %>%
-  gt()
-
-
-#Defining the rating for the location 
-#Density plots for fit ratings of shoe locations
-qualDat <- pivot_longer(qualDat, cols = Forefoot:Heel, names_to = 'Location', values_to = 'Rating')
-
-FF <- qualDat %>% 
-  filter(Location=="Forefoot")
-
-
-qualDat$Location <- factor(qualDat$Location, c('Forefoot', 'Midfoot', 'Heel')) 
+```{# {r}
+# #| echo: false
+# #| warning: false
+# 
+# qualDat %>%
+#   pivot_longer(cols = OverallFit:Heel, 
+#                names_to = "Location", values_to = "Rating") %>%
+#   group_by(Location, Config) %>%
+#   summarize(
+#     avg = mean(Rating, na.rm = TRUE),
+#     medAvg = median(Rating, na.rm = TRUE)
+#   ) %>%
+#   gt()
+# 
+# 
+# #Defining the rating for the location 
+# #Density plots for fit ratings of shoe locations
+# qualDat <- pivot_longer(qualDat, cols = Forefoot:Heel, names_to = 'Location', values_to = 'Rating')
+# 
+# FF <- qualDat %>% 
+#   filter(Location=="Forefoot")
+# 
+# 
+# qualDat$Location <- factor(qualDat$Location, c('Forefoot', 'Midfoot', 'Heel')) 
 
 ```
 
@@ -282,32 +283,38 @@ ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) +
 
 **Dial Torque**
 
-```{r}
-#| echo: false
-#| warning: false
-qualDat %>%
-  group_by(Config)%>%
-  summarize(
-    R_Torque_Prox = mean(R_DialTorque1, na.rm = TRUE),
-    R_Torque_Dist = mean(R_DialTorque2, na.rm = TRUE),
-    L_Torque_Prox = mean(L_DialTorque1, na.rm = TRUE),
-    L_Torque_Dist = mean(L_DialTorque2, na.rm = TRUE)
-  )%>%
-  gt()
-
-ggplot(qualDat, aes(x=Config, y = L_DialTorque1, color = Config, group= Subject)) + 
-  geom_point(size = 4)+ 
-  geom_line(aes(color=Config))+
-  # facet_wrap(~Subject)+
-  scale_color_manual(values=c("#000000","#00966C", "#ECE81A","#DC582A","#CAF0E4"))+ 
-  theme(text = element_text(size = 16))+ 
-  ylab('Proximal (instep) Dial - Torque [N-cm]')+ 
-  xlab('Config')+
-  ggtitle('Left Foot')
+```{# {r}
+# #| echo: false
+# #| warning: false
+# qualDat %>%
+#   group_by(Config)%>%
+#   summarize(
+#     R_Torque_Prox = mean(R_DialTorque1, na.rm = TRUE),
+#     R_Torque_Dist = mean(R_DialTorque2, na.rm = TRUE),
+#     L_Torque_Prox = mean(L_DialTorque1, na.rm = TRUE),
+#     L_Torque_Dist = mean(L_DialTorque2, na.rm = TRUE)
+#   )%>%
+#   gt()
+# 
+# ggplot(qualDat, aes(x=Config, y = L_DialTorque1, color = Config, group= Subject)) + 
+#   geom_point(size = 4)+ 
+#   geom_line(aes(color=Config))+
+#   # facet_wrap(~Subject)+
+#   scale_color_manual(values=c("#000000","#00966C", "#ECE81A","#DC582A","#CAF0E4"))+ 
+#   theme(text = element_text(size = 16))+ 
+#   ylab('Proximal (instep) Dial - Torque [N-cm]')+ 
+#   xlab('Config')+
+#   ggtitle('Left Foot')
 
 ```
 
 **Contact Time**
+
+```         
+We have moderate confidence that PFS performed worse than LR ( 88 %)     Estimated difference: -1.2 to 22.3 % based on Milena's Compiled Data
+We have moderate confidence that PFS performed worse than LR ( 86 %) 
+     Estimated difference: -1.8 to 15.2 % based on Adam
+```
 
 ```{r}
 #| echo: false
@@ -352,6 +359,12 @@ extractVals(cmjDatCT, cmjCTMod, otherConfigs, baseline, 'CT', 'lower')
 
 **Peak Force**
 
+```         
+We have moderate confidence that PFS performed worse than LR ( 86 %)     Estimated difference: -12.4 to 1.6 % based on Milenas compiled agility data
+We have moderate confidence that PFS performed worse than LR ( 87 %) 
+     Estimated difference: -10.1 to 1.2 % based on Adam
+```
+
 ```{r}
 #| echo: false
 #| warning: false
@@ -386,6 +399,12 @@ extractVals(cmjDatPF, cmjPFMod, otherConfigs, baseline, 'peakGRF_Z', 'higher')
 ```
 
 **Peak Plantarflexion Moment**
+
+```         
+There were inconsistent differences between PFS and LR ( 42 %)       Estimated difference: -12.4 to 9.1 % based on Milena
+We have moderate confidence that PFS performed worse than LR ( 84 %) 
+ 	 Estimated difference: -23.3 to 4.6 % based on Adam
+```
 
 ```{r}
 #| echo: false
@@ -424,6 +443,12 @@ extractVals(cmjDatPP, cmjPPMod, otherConfigs, baseline, 'peakPFmom', 'higher')
 ```
 
 **Skater Contact Time**
+
+```         
+We have minimal confidence that PFS performed worse than LR ( 78 %)      Estimated difference: -3.1 to 10 % based on Milena
+We have moderate confidence that PFS outperformed LR ( 85 %) 
+ 	 - Estimated difference: -25.7 to 3.8 % based on Adam
+```
 
 ```{r}
 #| echo: false
@@ -466,6 +491,12 @@ extractVals(skaterDatCT, skateCTMod, otherConfigs, baseline, 'CT', 'lower')
 
 **Skater Propulsive Force**
 
+```         
+We have minimal confidence that PFS performed worse than LR ( 79 %)      Estimated difference: -14.3 to 4.2 % based on Milena
+We have moderate confidence that PFS outperformed LR ( 87 %) 
+ 	 - Estimated difference: -1.5 to 20.8 %
+```
+
 ```{r}
 #| echo: false
 #| warning: false
@@ -503,6 +534,12 @@ extractVals(skaterDatPF, skatePFMod, otherConfigs, baseline, 'peakGRF_X', 'highe
 
 **Skater Power**
 
+```         
+We have minimal confidence that PFS performed worse than LR ( 71 %)      Estimated difference: -3.6 to 1.9 % based on Milena
+We have minimal confidence that PFS performed worse than LR ( 75 %) 
+ 	 Estimated difference: -9 to 3.4 % based on adam 
+```
+
 ```{r}
 #| echo: false
 #| warning: false
@@ -532,6 +569,40 @@ skatePowMod <- brm(data = skaterDatPow, # Bayes model
               seed = 190831)
 
 extractVals(skaterDatPow, skatePowMod, otherConfigs, baseline, 'peakPower', 'higher') 
+
+```
+
+**Run Pressure Data Toes**
+
+```{r}
+toedat <- presdat %>%
+  group_by(Subject) %>%
+  mutate(z_score = scale(maxmaxToes)) %>% 
+  group_by(Config)
+
+toedat<- subset(toedat, toedat$z_score < 2) #removing outliers  
+toedat<- subset(toedat, toedat$z_score > -2)
+
+ggplot(data = toedat, aes(x = peakPower)) + geom_histogram() + facet_wrap(~Subject) 
+
+p<-withinSubPlot(toedat, colName = 'maxmaxToes', dir = 'lower')
+p + ylab('Toe Pressure (KPA)')
+
+
+toedatMod <- brm(data = toedat, # Bayes model
+              family = gaussian,
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+extractVals(toedat, toedatMod, otherConfigs, baseline, 'maxmaxToes', 'lower') 
+
+
 
 ```
 
