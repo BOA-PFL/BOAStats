@@ -18,14 +18,14 @@ rm(list=ls())
 #
 ##############################
 
-Year <- '2023'  
-Month <- 'November'
+Year <- '2024'  
+Month <- 'May'
 Brand <- 'Giro'
 Model <- 'Regime' 
 Benefit <- 'P/P' 
 Type <- 'Performance'# Performance, mechanistic, materials
 
-TestName<-'PP_Cycling_Perf_CyclingGuidePairs_Nov23/PP_Cycling_CyclingGuidePairs_Perf_Nov2023'
+TestName<-'PP_Perf_CyclingUpperStiffnessII_May2024'
 
 
 ######### Cycling power and Pressure DB ##########################
@@ -38,32 +38,37 @@ name_order = colnames(pwerParentDat)
 # Read the Watt Bike Data:
 CycleDat <- read.csv(file.choose())
 # If any configurations need to be renamed
-# CycleDat <- CycleDat
-  # mutate(Subject= replace(Subject, Subject == 'RobinFassett','RobinFassettCarman'))
+CycleDat <- CycleDat%>% 
+  group_by(Subject, Config, Order)
+  # mutate(Subject= replace(Subject, Subject == 'TrapperSteinle','TrapperSteinle'))
 
 # Read and summarize the steady-state:
 PressDat <- read.csv(file.choose())
 
 PressSteadyDat <- PressDat %>%
   filter(Movement == 'Steady') %>%
-  group_by(Subject, Config) %>%
+  group_by(Subject, Config, Order) %>% 
   summarize(HeelContact_steady = mean(heelArea_Up, na.rm = TRUE), PeakToePress_steady = mean(maxmaxToes, na.rm = TRUE))
+  # mutate(Subject= replace(Subject, Subject == 'TrapperSteinle','TrapperSteinle'))
 
 
 
 PressSprintDat <- PressDat %>%
   filter(Movement == 'Sprint') %>%
-  group_by(Subject, Config) %>%
+  group_by(Subject, Config, Order) %>% 
   summarize(HeelContact_sprint = mean(heelArea_Up, na.rm = TRUE), PeakToePress_sprint = mean(maxmaxToes, na.rm = TRUE))
+  # mutate(Subject= replace(Subject, Subject == 'TrapperSteinle','TrapperSteinle'))
 
-# Combine IMU and pressure data
+  
+  # Combine IMU and pressure data
 pwer_ChildDat <- list(CycleDat,PressSteadyDat,PressSprintDat) %>%
   reduce(full_join)
 
 pwer_ChildDat$Year <- rep(Year, dim(pwer_ChildDat)[1])
 pwer_ChildDat$Month <- rep(Month, dim(pwer_ChildDat)[1])
 pwer_ChildDat$Brand <- rep(Brand, dim(pwer_ChildDat)[1])
-pwer_ChildDat$Model <- rep(Model, dim(pwer_ChildDat)[1])
+pwer_ChildDat$Model <- rep(Model, dim(pwer_ChildDat)[1]) 
+
 #ChildDat <- subset(ChildDat,select = -c(Trial))
 
 # Sort the DataFrame columns into the right order (from the Parent)
@@ -78,7 +83,7 @@ if (a == 'YES'){
 
 ######### Static pressure BD ############ 
 
-statParentDat <- read.csv('Z:/DB_V2/StaticPressureDB.csv',nrows=1)
+statParentDat <- read.csv('Z:/BigData/DB_V2/StaticPressureDB.csv',nrows=1)
 
 name_order = colnames(statParentDat)
 
@@ -100,7 +105,7 @@ statChildDat <- statChildDat[,name_order]
 a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?')
 if (a == 'YES'){
   # Check the Child Data before!!
-  write.table(statChildDat, file = 'Z:/DB_V2/StaticPressureDB.csv', sep = ',',
+  write.table(statChildDat, file = 'Z:/BigData/DB_V2/StaticPressureDB.csv', sep = ',',
               append = TRUE,col.names = FALSE, row.names = FALSE)
 }
 
@@ -116,7 +121,7 @@ qual_ParentDat <- read.csv('Z:/BigData/DB_V2/QualitativeBigData_v2.csv',nrows=1)
 name_order = colnames(qual_ParentDat)
 
 # Read the qualitative data to be added to master data
-qual_ChildDat <- read_xlsx('C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/Testing Segments/Cycling Performance Tests/PP_Cycling_Perf_CyclingGuidePairs_Nov23/PP_Cycling_CyclingGuidePairs_Perf_Nov2023_Qual.xlsx')
+qual_ChildDat <- read_xlsx('C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/Testing Segments/Cycling Performance Tests/PP_CyclingUpperStiffnessII_May2024/PP_CyclingUpperStiffnessII_May2024_Qual.xlsx')
 qual_ChildDat <- qual_ChildDat %>%
   rename('Overall' = OverallFit)
 noSub <- length(qual_ChildDat$Subject)
@@ -127,8 +132,8 @@ qual_ChildDat$Year <- rep(Year, each = noSub)
 qual_ChildDat$Month <- rep(Month, each = noSub)
 qual_ChildDat$Brand <- rep(Brand, each = noSub)
 qual_ChildDat$Model <- rep(Model, each = noSub) 
-qual_ChildDat$Dial1Closure <- rep('Mid', each = noSub) # refer to the "READ ME" on how the closures are defined
-qual_ChildDat$Dial2Closure <- rep('Instep', each = noSub)
+qual_ChildDat$Dial1Closure <- rep('Instep', each = noSub) # refer to the "READ ME" on how the closures are defined
+qual_ChildDat$Dial2Closure <- rep('NA', each = noSub)
 qual_ChildDat$Dial3Closure <- rep('NA', each = noSub)
 
 
@@ -165,7 +170,7 @@ ParentDat <- read.csv('Z:/BigData/DB_V2/MasterSubjectVisits.csv',nrows=1)
 #   rename('Subject' = ?..Subject)
 name_order = colnames(ParentDat)
 # Read in qual sheet to reference names
-ChildDat <- read_xlsx('C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/Testing Segments/Cycling Performance Tests/PP_Cycling_Perf_CyclingGuidePairs_Nov23/PP_Cycling_CyclingGuidePairs_Perf_Nov2023_Qual.xlsx',sheet = 'Sheet3')
+ChildDat <- read_xlsx('C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/Testing Segments/Cycling Performance Tests/PP_CyclingUpperStiffnessII_May2024/PP_CyclingUpperStiffnessII_May2024_Qual.xlsx',sheet = 'Sheet3')
 ChildDat <- subset(ChildDat,select = -c(FootScan,Compensation))
 # ChildDat <- ChildDat %>% rename(Speed.run. = RunSpeed)
 noSub <- length(ChildDat$Subject)
@@ -188,5 +193,38 @@ if (a == 'YES'){
               append = TRUE,col.names = FALSE, row.names = FALSE)
   
 }
+rm(ParentDat,ChildDat,noSub,name_order,a) 
+
+
+
+### Updating Config Big Data ###
+
+
+ParentDat <- read.csv('Z:\\BigData\\DB_V2\\ConfigDB.csv',nrows=1)
+# ParentDat <- ParentDat %>%
+#   rename('Name.of.Test' = ?..Name.of.Test)
+name_order = colnames(ParentDat)
+
+Config <- unique(ChildDat$Config)
+noSub <- length(Config)
+Config.Long <- c('High Stiffness 72.3','Mid Stiffness 36.8' ,'Low Stiffness 26.6')
+ChildDat <- data.frame(Config,Config.Long)
+ChildDat$Year <- rep(Year, each = noSub)
+ChildDat$Month <- rep(Month, each = noSub)
+ChildDat$Brand <- rep(Brand, each = noSub)
+ChildDat$Model <- rep(Model, each = noSub)
+ChildDat$Name.of.Test <- rep(TestName, each = noSub)
+
+# Sort the data into the correct order
+ChildDat <- ChildDat[,name_order]
+
+# write output. add a 1 to the end if you are at all unsure of output!!!
+a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?')
+if (a == 'YES'){
+  write.table(ChildDat, "Z:\\BigData\\DB_V2\\ConfigDB.csv", sep=',', 
+              append = TRUE,col.names = FALSE, row.names = FALSE)
+  
+}
+# Remove variables from the list
 rm(ParentDat,ChildDat,noSub,name_order,a)
 
