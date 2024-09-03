@@ -196,6 +196,7 @@ cmp_strings(Config,unique(AgilityDat$Config),'config')
 
 AgilityDat <- AgilityDat %>% 
   group_by(Subject) %>%
+  filter(PeakKneeAbMoment < 250) %>%
   mutate(z_score = scale(PeakKneeAbMoment))%>%
   group_by(Config) 
 
@@ -216,7 +217,8 @@ SKTDat <- AgilityDat %>%
   filter(Movement == 'Skater') %>%
   group_by(Subject, Config, Movement) %>%
   summarise(ContactTime = mean(CT), PeakAnklePFMoment = mean(peakPFmom), PropForce = mean(peakGRF_X),
-            PeakAnkleInMoment = mean(peakINVmom), KneeAbAdROM = mean(kneeABDrom), COMEccWork = mean(eccWork), COMConWork = mean(conWork))
+            PeakAnkleInMoment = mean(peakINVmom), KneeAbAdROM = mean(kneeABDrom), PeakKneeAbMoment = mean(PeakKneeAbMoment),
+            COMEccWork = mean(eccWork), COMConWork = mean(conWork))
 
 ChildDat <- merge(x=CMJDat,y=SKTDat,all=TRUE)
 ChildDat$Year <- rep(Year, dim(ChildDat)[1])
@@ -322,14 +324,14 @@ if (a == 'YES'){
               append = TRUE,col.names = FALSE, row.names = FALSE)
 }
 
-
+rm(ParentDat,ChildDat,name_order,a)
 
 ##################################################################### 
 
 ## Walk / Run BD 
 
 # Read the existing database: Only to get column name order
-ParentDat <- read.csv('C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/BigData/DB_V2/WalkRunDB.csv',nrows=1)
+ParentDat <- read.csv('Z:\\BigData\\DB_V2\\WalkRunDB.csv',nrows=1)
 # ParentDat <- ParentDat %>%
 #   rename('Subject' = ?..Subject)
 name_order = colnames(ParentDat)
@@ -376,7 +378,7 @@ ChildDat <- ChildDat[,name_order]
 a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?')
 if (a == 'YES'){
   # Check the Child Data before!!
-  write.table(ChildDat, file = 'C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/BigData/DB_V2/WalkRunDB.csv', sep = ',',
+  write.table(ChildDat, file = 'Z:\\BigData\\DB_V2\\WalkRunDB.csv', sep = ',',
               append = TRUE,col.names = FALSE, row.names = FALSE)
 } 
 

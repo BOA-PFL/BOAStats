@@ -4,7 +4,7 @@ library(readxl)
 rm(list=ls())
 
 # Read the existing database: Only to get column name order
-ParentDat <- read.csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/BigData/DB_V2/QualitativeBigData_v2.csv',nrows=1)
+ParentDat <- read.csv('Z:\\BigData\\DB_V2\\QualitativeBigData_v2.csv',nrows=1)
 ParentDat <- ParentDat %>%
   rename('Subject' = ï..Subject)
 name_order = colnames(ParentDat)

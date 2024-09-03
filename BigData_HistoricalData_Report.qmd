@@ -1,0 +1,530 @@
+---
+title: "BigData_HistoricalReport_WWHike"
+format: 
+  docx: 
+    reference-doc: 'C:/Users/milena.singletary/OneDrive - Boa Technology Inc/Documents/Report_Template.docx'
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+|                     |                         |
+|---------------------|-------------------------|
+| Date Rendered:      | 6/11/2024               |
+| Test Segment:       | Workwear/Hike           |
+| Databases Included: | Landing, Trail, WalkRun |
+
+# Purpose:
+
+The purpose of this document is to periodically visualize Big Data to ensure maintenance of data quality both of previous data and future data appended.
+
+```{r}
+#| echo: false
+#| include: false
+
+# qmd file for WorkWear/ hike metrics to check quality over time
+
+# step 1: adjust title as needed to BigData_XXX_Report , make sure reference-doc path has the report template; metrics and protocols can be found in the Living Doc in the respective test segment folder in sharepoint 
+
+# step 2: load library's/data
+# loading library's needed
+library(ggplot2)
+library(tidyverse)
+library(tidybayes)
+library(dplyr)
+library(ggpubr)
+
+#Clearing the environment
+rm(list=ls())
+
+# load data necessary for segment
+
+# load landing DB csv
+LandingDB <-read.csv('Z:/BigData/DB_V2/LandingDB.csv')
+
+# load landing DB csv
+TrailDB <-read.csv('Z:/BigData/DB_V2/TrailDB.csv')
+
+# load walkRun DB
+WalkRDB <-read.csv('Z:/BigData/DB_V2/WalkRunDB.csv')
+
+# load masterSubVisits DB csv
+subVisits <- read.csv('Z:/BigData/DB_V2/MasterSubjectVisits.csv')
+
+tName <- subVisits%>%
+  dplyr::select(c(Year, Month, Brand, Model, Name.of.Test))
+  
+tName <- as.data.frame(unique(tName))
+
+# if year, month, brand, model, match append test name
+# function to append test name
+appTestNam <- function(dataB, testNames)
+{dataB$Name.of.test <- NA
+  for (row in 1:nrow(dataB)) {
+      yr <- dataB$Year[row]
+      mo <- dataB$Month[row]
+      bd <- dataB$Brand[row]
+      md <- dataB$Model[row]
+      
+      for (test in 1:nrow(testNames)){
+            tyr <- testNames$Year[test]
+            tmo <- testNames$Month[test]
+            tbd <- testNames$Brand[test]
+            tmd <- testNames$Model[test]
+            tname <- testNames$Name.of.Test[test]
+            
+                if (tyr == yr & tmo == mo & tbd == bd & tmd == md)
+                      {dataB$Name.of.test[row] <- tname} }
+  }
+   return(dataB) 
+}
+
+# LandingDB$Name.of.test <- NA
+# for (row in 1: nrow(LandingDB)) {
+#   yr <- LandingDB$Year[row]
+#   mo <- LandingDB$Month[row]
+#   bd <- LandingDB$Brand[row]
+#   md <- LandingDB$Model[row]
+#   #print(row)
+#   
+#   for (test in 1:nrow(tName)){
+#     tyr <- tName$Year[test]
+#     tmo <- tName$Month[test]
+#     tbd <- tName$Brand[test]
+#     tmd <- tName$Model[test]
+#     tname <- tName$Name.of.Test[test]
+#     
+#     if (tyr == yr & tmo == mo & tbd == bd & tmd == md)
+#     {#print(row)
+#       #print(test)
+#       LandingDB$Name.of.test[row] <- tname}}
+# }
+
+
+
+# data cleaning
+# change all subject names to lower case
+tName <- tName%>%
+  mutate(Brand = tolower(gsub(" ", "", Brand)))%>%
+  mutate(Model = tolower(gsub(" ", "", Model)))
+  
+
+LandingDB <- LandingDB%>%
+  mutate(Subject = tolower(gsub(" ", "", Subject)))%>%
+  mutate(Brand = tolower(gsub(" ", "", Brand)))%>%
+  mutate(Model = tolower(gsub(" ", "", Model)))%>%
+  mutate(Movement = tolower(gsub(" ", "", Movement)))
+
+TrailDB <- TrailDB%>%
+  mutate(Subject = tolower(gsub(" ", "", Subject)))%>%
+  mutate(Brand = tolower(gsub(" ", "", Brand)))%>%
+  mutate(Model = tolower(gsub(" ", "", Model)))
+
+WalkRDB <- WalkRDB%>%
+  mutate(Subject = tolower(gsub(" ", "", Subject)))%>%
+  mutate(Brand = tolower(gsub(" ", "", Brand)))%>%
+  mutate(Model = tolower(gsub(" ", "", Model)))
+
+
+# converting month column to factor for sorting purposes
+LandingDB$Year <- factor(LandingDB$Year)
+LandingDB$Month <- factor(LandingDB$Month, levels = month.name)
+TrailDB$Month <- factor(TrailDB$Month, levels = month.name)
+TrailDB$Year <- factor(TrailDB$Year)
+WalkRDB$Month <- factor(WalkRDB$Month, levels = month.name)
+WalkRDB$Year <- factor(WalkRDB$Year)
+WalkRDB$Speed <- factor(WalkRDB$Speed)
+
+# adding test names to dataframes
+LandingDB <- appTestNam(LandingDB, tName)
+TrailDB <- appTestNam(TrailDB, tName)
+WalkRDB <- appTestNam(WalkRDB, tName)
+
+# function for splitting data frames into different task/ year : in progress 6/6/24
+# splitDF <- function(df){
+#   yearUnq <- unique(df$Year)
+#   taskUnq <- unique(df$Movement)
+#   numdfs <- length(taskUnq) * length(yearUnq)
+# 
+#   for (yr in yearUnq){
+#     for (task in taskUnq)
+#       { dfname <- paste0(task, yr)
+#         return( df%>%
+#                 filter(Movement == task , Year == yr))}
+#     
+# }
+#   }
+# 
+# 
+# splitDF(LandingDB_time)
+```
+
+## Landings: Time to Stabilize - Overground
+
+```{r}
+#| echo: false
+#| warning: false
+#| fig.width: 12
+#| fig.height: 8
+
+# filtering for greater then 100th of a second. noraml range 0.25 - 2 sec
+LandingDB_time <- LandingDB %>%
+  filter(Time2Stabilize > 0.1) %>%
+  group_by(Year, Month, Brand)
+
+# dfs by task and year
+sll24 <- LandingDB_time%>%
+  filter(Movement == 'sll' , Year == 2024)
+
+sll23 <- LandingDB_time%>%
+  filter(Movement == 'sll' , Year == 2023)
+
+sll22 <- LandingDB_time%>%
+  filter(Movement == 'sll' , Year == 2022)
+
+# histograms of metric: filled with either Config, Task, Model, or Brand
+ggplot(data = sll24, aes(x = Time2Stabilize, fill = Name.of.test)) + geom_histogram() + ggtitle("2024 Single Leg Landings Overground") + theme(legend.position="bottom")
+
+ggplot(data = sll23, aes(x = Time2Stabilize, fill = Name.of.test)) + geom_histogram() + ggtitle("2023 Single Leg Landings Overground") + theme(legend.position="bottom")
+
+ggplot(data = sll22, aes(x = Time2Stabilize, fill = Name.of.test)) + geom_histogram() + ggtitle("2022 Single Leg Landings Overground") + theme(legend.position="bottom")
+
+
+# violin of metric:
+# ggplot(sll24, aes(Year, Time2Stabilize)) + geom_violin()+ geom_jitter(aes(colour = Name.of.test))
+```
+
+## Landings: Time to Stabilize - Trail
+
+```{r}
+#| echo: false
+#| warning: false
+#| fig.width: 12
+#| fig.height: 8
+
+# filtering for greater then 100th of a second. noraml range 0.25 - 2 sec
+LandingTrail_time <- LandingDB %>%
+  filter(Time2Stabilize > 0.1) %>%
+  group_by(Year, Month, Brand)
+
+# dfs by task and year
+sllt24 <- LandingTrail_time%>%
+  filter(Movement == 'sllt' , Year == 2024)
+
+sllt23 <- LandingTrail_time%>%
+  filter(Movement == 'sllt' , Year == 2023)
+
+sllt22 <- LandingTrail_time%>%
+  filter(Movement == 'sllt' , Year == 2022)
+
+# histograms of metric: filled with either Config, Task, Model, or Brand
+ggplot(data = sllt24, aes(x = Time2Stabilize, fill = Name.of.test)) + geom_histogram() + ggtitle("2024 Trail Single Leg Landings") + theme(legend.position="bottom")
+
+ggplot(data = sllt23, aes(x = Time2Stabilize, fill = Name.of.test)) + geom_histogram() + ggtitle("2023 Trail Single Leg Landings") + theme(legend.position="bottom")
+
+ggplot(data = sllt22, aes(x = Time2Stabilize, fill = Name.of.test)) + geom_histogram() + ggtitle("2022 Trail Single Leg Landings") + theme(legend.position="bottom")
+
+```
+
+## Landings: Peak Knee Abduction Moment
+
+```{r}
+#| echo: false
+#| warning: false
+#| fig.width: 12
+#| fig.height: 8
+
+# filter data
+KneeABmom <- LandingDB %>%
+  filter(PeakKneeAbMoment > -250 & PeakKneeAbMoment != 'NA' )
+
+sll22 <- KneeABmom %>%
+  filter(Movement == 'sll' , Year == 2022)
+
+sll23 <- KneeABmom %>%
+  filter(Movement == 'sll' , Year == 2023)
+
+sll24 <- KneeABmom %>%
+  filter(Movement == 'sll' , Year == 2024)
+
+# histograms of metric: filled with either Config, Task, Model, or Brand
+ggplot(data = sll24, aes(x = PeakKneeAbMoment, fill = Name.of.test)) + geom_histogram() + ggtitle("2024 Single Leg Landings") + theme(legend.position="bottom")
+
+ggplot(data = sll23, aes(x = PeakKneeAbMoment, fill = Name.of.test)) + geom_histogram() + ggtitle("2023 Single Leg Landings") + theme(legend.position="bottom")
+
+ggplot(data = sll22, aes(x = PeakKneeAbMoment, fill = Name.of.test)) + geom_histogram() + ggtitle("2022 Single Leg Landings") + theme(legend.position="bottom")
+```
+
+## Landings: Knee Abduction Adduction Range of Motion
+
+```{r}
+#| echo: false
+#| warning: false
+
+# as of 5/20/24 KneeAbAd has been added to database
+
+# filter data
+# Landing_ROM <- LandingDB %>%
+#   filter(KneeAbAdROM != 'NA' )
+# 
+# # histograms of metric: filled with either Config, Task, Model, or Brand
+# ggplot(data = Landing_ROM, aes(x = KneeAbAdROM)) + geom_histogram(aes(fill = Brand))
+# 
+# ggplot(data = Landing_ROM, aes(x = KneeAbAdROM, fill = Movement)) + geom_histogram()
+# 
+# ggplot(data = Landing_ROM, aes(x = KneeAbAdROM)) + geom_histogram(aes(fill = Model))
+# 
+# ggplot(data = Landing_ROM, aes(x = KneeAbAdROM, fill = Config)) + geom_histogram()
+# 
+```
+
+## Trail: IMU Speed
+
+```{r}
+#| echo: false
+#| warning: false
+#| fig.width: 12
+#| fig.height: 8
+
+#set dataframe
+speed <- TrailDB 
+
+# split movement task and year
+walkT22 <- TrailDB %>%
+  filter(Movement == 'ILT', Year == 2022) # ILT = 'in lab trail' typically walking
+
+walkT23 <- TrailDB %>%
+  filter(Movement == 'ILT', Year == 2023) # ILT = 'in lab trail' typically walking
+
+walkT24 <- TrailDB %>%
+  filter(Movement == 'ILT', Year == 2024) # ILT = 'in lab trail' typically walking
+
+
+runT22 <- TrailDB %>%
+  filter(Movement != 'ILT', Year == 2022)
+
+runT23 <- TrailDB %>%
+  filter(Movement != 'ILT', Year == 2023)
+
+runT24 <- TrailDB %>%
+  filter(Movement != 'ILT', Year == 2024)
+
+############## plotting based on walking  ############## 
+# histograms of metric: 
+ggplot(data = walkT22, aes(x = IMUSpeed, fill = Name.of.test)) + geom_histogram() + ggtitle("2022 Trail Walking") + theme(legend.position="bottom")
+
+ggplot(data = walkT23, aes(x = IMUSpeed, fill = Name.of.test)) + geom_histogram() + ggtitle("2023 Trail Walking") + theme(legend.position="bottom")
+
+ggplot(data = walkT24, aes(x = IMUSpeed, fill = Name.of.test)) + geom_histogram() + ggtitle("2024 Trail Walking") + theme(legend.position="bottom")
+
+############## Running  ############## 
+# histograms of metric: 
+ggplot(data = runT22, aes(x = IMUSpeed, fill = Name.of.test)) + geom_histogram() + ggtitle("2022 Trail Running") + theme(legend.position="bottom")
+
+ggplot(data = runT23, aes(x = IMUSpeed, fill = Name.of.test)) + geom_histogram() + ggtitle("2023 Trail Running") + theme(legend.position="bottom")
+
+ggplot(data = runT24, aes(x = IMUSpeed, fill = Name.of.test)) + geom_histogram() + ggtitle("2024 Trail Running") + theme(legend.position="bottom")
+
+```
+
+## Trail: Peak Eversion Velocity
+
+```{r}
+#| echo: false
+#| warning: false
+#| fig.width: 12
+#| fig.height: 8
+
+#set dataframe
+pkEv <- TrailDB 
+
+# may need to filter some data before splitting by task/year
+# runT <- TrailDB %>%
+#   group_by(Subject)%>%
+#   filter(Movement != 'ILT')%>%
+#   mutate(z_score = scale(PeakEvVel))%>%
+#   group_by(Config)
+# 
+# runT<- subset(runT, runT$z_score < 2) #removing outliers
+# runT<- subset(runT, runT$z_score > -2)
+
+# new dfs - split movement task and year
+
+# plot histogram: fill by Test Name
+
+```
+
+## Trail: Peak Jerk
+
+```{r}
+#| echo: false
+#| warning: false
+
+#set dataframe
+pkJerk<- TrailDB 
+
+# new dfs - split movement task and year
+
+# plot histogram: fill by Test Name
+
+```
+
+## Trail: Peak Acceleration
+
+```{r}
+#| echo: false
+#| warning: false
+
+#set dataframe
+pkAcc<- TrailDB 
+
+# new dfs - split movement task and year
+
+# plot histogram: fill by Test Name
+```
+
+## Trail: RangeMLAcc
+
+```{r}
+#| echo: false
+#| warning: false
+
+#set dataframe
+rMLacc <- TrailDB%>%
+  filter(Movement != 'NA') 
+
+# new dfs - split movement task and year
+
+# plot histogram: fill by Test Name
+
+```
+
+## Trail: Heel Contact
+
+```{r}
+#| echo: false
+#| warning: false
+
+#set dataframe
+heelC  <- TrailDB%>%
+  filter(Movement != 'NA') 
+
+
+# new dfs - split movement task and year
+
+# plot histogram: fill by Test Name
+```
+
+## Trail: Peak Toe Pressure
+
+```{r}
+#| echo: false
+#| warning: false
+
+#set dataframe
+maxToe  <- TrailDB%>%
+  filter(Movement != 'NA') 
+
+# new dfs - split movement task and year
+
+# plot histogram: fill by Test Name
+```
+
+## WalkRun: Positive COM Work
+
+```{r}
+#| echo: false
+#| warning: false
+
+#set dataframe
+pCOMw  <- WalkRDB%>%
+  filter(PosCOMWork > 0) 
+
+# new dfs - split movement task and year
+
+# plot histogram: fill by Test Name
+```
+
+## WalkRun: Negative COM Work
+
+```{r}
+#| echo: false
+#| warning: false
+
+#set dataframe
+nCOMw  <- WalkRDB 
+
+# new dfs - split movement task and year
+
+# plot histogram: fill by Test Name
+```
+
+## WalkRun: Peak Ankle Eversion Velocity
+
+```{r}
+#| echo: false
+#| warning: false
+
+#set dataframe
+pAnkW  <- WalkRDB 
+
+# new dfs - split movement task and year
+
+# plot histogram: fill by Test Name
+```
+
+## WalkRun: Negative Foot Work
+
+```{r}
+#| echo: false
+#| warning: false
+
+#set dataframe
+nFootW  <- WalkRDB 
+
+# new dfs - split movement task and year
+
+# plot histogram: fill by Test Name
+```
+
+## WalkRun: Loading Rate
+
+```{r}
+#| echo: false
+#| warning: false
+
+#set dataframe
+LoadR  <- WalkRDB 
+
+# new dfs - split movement task and year
+
+# plot histogram: fill by Test Name
+```
+
+## WalkRun: Heel Contact
+
+```{r}
+#| echo: false
+#| warning: false
+
+#set dataframe
+HeelCont  <- WalkRDB 
+
+# new dfs - split movement task and year
+
+# plot histogram: fill by Test Name
+```
+
+## WalkRun: Peak Toe Pressure
+
+```{r}
+#| echo: false
+#| warning: false
+
+#set dataframe
+pkToe  <- WalkRDB 
+
+# new dfs - split movement task and year
+
+# plot histogram: fill by Test Name
+```

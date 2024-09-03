@@ -1,0 +1,554 @@
+---
+title: "PFL DATA REPORT"
+format: 
+  docx:
+    reference-doc: 'C:\\Users\\Kate.Harrison\\Boa Technology Inc\\PFL Team - General\\Testing Segments\\Report_Template.docx'
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+# CONFIDENTAL CONTENT FOR BOA EMPLOYEES ONLY. PLEASE CONTACT PFL DIRECTLY WITH ANY QUESTIONS.
+
++--------------------+------------------------------+
+| Test Name          | EH_TrailStabilityI_May24     |
++====================+==============================+
+| **Benefit:**       | Endurance & Health           |
++--------------------+------------------------------+
+| **Date:**          | 5/2023                       |
++--------------------+------------------------------+
+| **Test Type:**     | PFL Mechanistic              |
++--------------------+------------------------------+
+| **Configurations** | Baseline: Lace               |
+|                    |                              |
+|                    | Test configurations:         |
+|                    |                              |
+|                    | -   PFS with midfoot stretch |
++--------------------+------------------------------+
+
+## Purpose & Background
+
+-   The Endurance and Health trail validation showed that PFS improves ankle stability on trail
+
+-   Agility & Speed studies show stretch in the midfoot further improves performance over uniform stretch PFS
+
+-   Optimal fit may allow athletes to get a better sense of the terrain underfoot, and adapt better to technical environments
+
+-   The purpose of this study is to examine the effect of optimal fit on whole body stability on trail
+
+## Hypothesis
+
+H1: PFS with midfoot stretch will improve fit (heel hold), and running speed.
+
+H2: PFS with midfoot stretch will improve stability at the ankle (eversion velocity) and whole body (movement adaptation to terrain)
+
+## Methods
+
++------------------+---------------+------------------+----------------------------+
+| Subjects         | Movements     | Equipment        | Measurements               |
++==================+===============+==================+============================+
+| 10 Male Athletes | Trail Running | Pressure insoles | Endurance:                 |
+|                  |               |                  |                            |
+|                  |               | IMUs             | -   Running speed          |
+|                  |               |                  |                            |
+|                  |               | GPS watch        | -   Heart Rate             |
+|                  |               |                  |                            |
+|                  |               |                  | Health:                    |
+|                  |               |                  |                            |
+|                  |               |                  | -   Peak eversion velocity |
+|                  |               |                  | -   Adaptability           |
+|                  |               |                  |                            |
+|                  |               |                  | Fit:                       |
+|                  |               |                  |                            |
+|                  |               |                  | -   Heel contact area      |
++------------------+---------------+------------------+----------------------------+
+
+## Configurations
+
+| Baseline: Lace | PFS with midfoot stretch |
+|----------------|--------------------------|
+|                |                          |
+
+## Summary of Findings
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: false
+library(readxl)
+library(tidyverse)
+library(tm)
+library(SnowballC)
+library(RColorBrewer)
+library(wordcloud)
+library(readxl)
+library(brms)
+library(patchwork)
+library(tidyr)
+library(fmsb)
+library(gt)
+rm(list=ls())
+```
+
+```{r}
+#| echo: false
+#| include: false
+
+#Load in Compiled Qualitative Sheet
+qualDat <- read_xlsx('C:\\Users\\Kate.Harrison\\Boa Technology Inc\\PFL Team - General\\Testing Segments\\WorkWear_Performance\\EH_Workwear_LowCuffStiffness_Perf_Jul24\\EH_Workwear_LowCuffStiffness_Perf_Jul24_Qual.xlsx')
+
+# Load in the IMU data
+IMUdat <- read.csv('Z:\\Testing Segments\\WorkWear_Performance\\EH_Workwear_LowCuffStiffness_Perf_Jun24\\IMU\\0_Trail_CompIMUmetrics.csv')
+
+# Load entropy data
+sedat <- read_csv('Z:\\Testing Segments\\WorkWear_Performance\\EH_Workwear_LowCuffStiffness_Perf_Jun24\\IMU\\CompiledSampleEntropy_Rotated.csv') # Reading in the CSV
+
+colnames(sedat)[3] = 'Sesh'
+
+# Load in the insole data
+Pressdat <- read.csv('Z:\\Testing Segments\\WorkWear_Performance\\EH_Workwear_LowCuffStiffness_Perf_Jun24\\XSENSOR\\cropped\\0_CompiledResults_Trail.csv')
+
+speedSummary <- IMUdat %>% ## Average speed data across sections within each trial
+  group_by(Subject, Config) %>%
+  summarise(Speed = mean(imuSpeed, na.rm = TRUE))
+
+sedat <- merge(speedSummary, sedat)
+sedat$Config <- factor(sedat$Config, allConfigs)
+
+baseline <- 'Mid' # baseline configuration
+
+otherConfigs <- c('Low', 'High') # other configurations tested against base
+allConfigs <- c(baseline, otherConfigs)
+
+
+qualDat$Config <- factor(qualDat$Config, allConfigs)
+
+IMUdat <- as_tibble(IMUdat) # creating the data frame
+IMUdat$Config <- factor(IMUdat$Config, allConfigs)
+
+
+Pressdat <- as_tibble(Pressdat) # creating the data frame
+Pressdat$Config <- factor(Pressdat$Config, allConfigs)
+
+withinSubPlot <- function(inputDF, colName, dir) {
+  
+  # direction can be 'lower' or higher'. It is the direction of change that is better. 
+  # For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher. 
+  
+  #inputDF <- HRdat_long
+  #colName <- 'HR'
+  #dir = 'lower'
+  
+  meanDat <- inputDF %>%
+    group_by(Subject, Config) %>%
+    reframe(mean = mean(!! sym(colName)))
+  
+  if (dir == 'lower'){
+    whichConfig <- meanDat %>%
+      group_by(Subject) %>%
+      reframe(
+        BestConfig = Config[which.min(mean)]
+      )
+    
+  } else if (dir == 'higher') {
+    whichConfig <- meanDat %>%
+      group_by(Subject) %>% 
+      reframe(
+        BestConfig = Config[which.max(mean)]
+      )
+    
+  }
+  
+  whichConfig <- merge(meanDat, whichConfig)
+  
+  ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = mean, col = BestConfig, group = Subject)) + geom_point(size = 4) + 
+    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000","#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 16)) + ylab(paste0({{colName}})) 
+  
+}
+
+
+extractVals <- function(dat, mod, configNames, baseConfig, var, dir) {
+  
+  Config = rep(NA, length(configNames))
+  ProbImp = matrix(0, length(configNames))
+  lowCI = matrix(0, length(configNames))
+  highCI = matrix(0, length(configNames))
+  
+  for (i in 1:length(configNames)) {
+    # This function takes the original dataframe (dat, same one entered into runmod), the Bayesian model from brms (runmod), 
+    # the configuration Name, and the variable you are testing. It returns:
+    # [1] the probabality the variable was better in the test config vs. the baseline config
+    # [3] the lower bound of the bayesian 95% posterior interval (as percent change from baseline) 
+    # [4] the upper bound of the bayesian 95% posterior interval (as percent change from baseline)
+    #i = 1
+    
+    configName = configNames[i]
+    configColName <- paste('b_Config', configName, sep = "")
+    posterior <- as_draws_matrix(mod)
+    
+    if (dir == 'lower'){
+      prob <- sum(posterior[,configColName] < 0) / length(posterior[,configColName])
+      
+    } else if (dir == 'higher') {
+      
+      prob <- sum(posterior[,configColName] > 0) / length(posterior[,configColName])
+    }
+    
+    ci <- posterior_interval(mod, prob = 0.80)
+    ciLow <- ci[configColName,1] 
+    ciHigh <- ci[configColName,2]
+    
+    SDdat <- dat %>%
+      group_by(Subject) %>%
+      summarize(sd = sd(!! sym(var), na.rm = TRUE), mean = mean(!! sym(var), na.rm = TRUE))
+    
+    meanSD = mean(SDdat$sd , na.rm = TRUE)
+    mean = mean(SDdat$mean, na.rm = TRUE)
+    ci_LowPct <- meanSD*ciLow/mean*100
+    ci_HighPct <- meanSD*ciHigh/mean*100
+    
+    output = list('Config:', configName, 'Probability of Improvement:', prob, 'Worse end of CI:', ci_LowPct, 'Best end of CI:', ci_HighPct)
+    Config[i] = configName
+    ProbImp[i] = prob
+    lowCI[i] = ci_LowPct
+    highCI[i] = ci_HighPct
+  }
+  ProbImp = round(ProbImp*100)
+  lowCI = round(lowCI, 1)
+  highCI = round(highCI,1)
+  output = cbind(Config, ProbImp, lowCI, highCI)
+  
+  colnames(output) = c('Config', 'Probability of Improvement', 'Low end of CI', 'High end of CI')
+  
+  sentences = rep(NA, nrow(output))
+  
+  for (i in 1:nrow(output)){
+    if (as.numeric(output[i,2]) >= 90){
+      sentences[i] <- paste0('We have meaningful confidence that ',output[i,1], ' outperformed ', baseConfig, ' (',output[i,2], '%)', '\n', '\t', '- Estimated difference: ',output[i,3],' to ',output[i,4],'%' )
+    } else if (as.numeric(output[i,2]) >= 80) {      
+      sentences[i] <- paste('We have moderate confidence that',output[i,1], 'outperformed', baseConfig, '(',output[i,2], '%)','\n', '\t', '- Estimated difference:',output[i,3],'to',output[i,4],'%')
+    } else if (as.numeric(output[i,2]) >= 70){
+      sentences[i] <- paste('We have minimal confidence that',output[i,1], 'outperformed', baseConfig, '(',output[i,2], '%)','\n', '\t', '- Estimated difference:',output[i,3],'to',output[i,4],'%')
+    } else if (as.numeric(output[i,2]) >= 30){
+      sentences[i] <- paste('There were inconsistent differences between',output[i,1],'and',baseConfig,'(',output[i,2],'%)','\n', '\t', '- Estimated difference:',output[i,3],'to',output[i,4],'%')
+    } else if (as.numeric(output[i,2]) >= 20){
+      sentences[i] <- paste('We have minimal confidence that',output[i,1],'performed worse than',baseConfig,'(',(100 - as.numeric(output[i,2])),'%)','\n', '\t', '- Estimated difference:',output[i,3],'to',output[i,4],'%')
+    } else if (as.numeric(output[i,2]) >= 10){
+      sentences[i] <- paste('We have moderate confidence that',output[i,1],'performed worse than',baseConfig,'(',(100 - as.numeric(output[i,2])),'%)','\n', '\t', '- Estimated difference:',output[i,3],'to',output[i,4],'%')
+    } else {
+      sentences[i] <- paste('We have meaningful confidence that',output[i,1],'performed worse than',baseConfig,'(',(100 - as.numeric(output[i,2])),'%)','\n', '\t', '- Estimated difference:',output[i,3],'to',output[i,4],'%')
+    }
+  }
+  
+  writeLines(sentences)
+  
+}
+
+# Setting up  "Best Of" line plots 
+withinSubQualPlot <- function(inputDF) {
+  
+  # direction can be 'lower' or higher'. It is the direction of change that is better. 
+  # For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher. 
+  
+  whichConfig <- inputDF %>%
+    group_by(Subject) %>%
+    reframe(
+      BestConfig = Config[which.max(OverallFit)]
+    )
+  
+  whichConfig <- merge(inputDF, whichConfig)
+  
+  ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = OverallFit, col = BestConfig, group = Subject)) + geom_point(size = 4) + 
+    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + ylab('Rating') + theme(text = element_text(size = 16))
+  
+}
+
+###############################
+```
+
+**Qualitative**
+
+```{r}
+#| echo: false
+#| warning: false
+
+qualDat %>%
+  pivot_longer(cols = OverallFit:Heel, 
+               names_to = "Location", values_to = "Rating") %>%
+  group_by(Location, Config) %>%
+  summarize(
+    avg = mean(Rating, na.rm = TRUE),
+    medAvg = median(Rating, na.rm = TRUE)
+  ) %>%
+  gt()
+
+
+#Defining the rating for the location 
+#Density plots for fit ratings of shoe locations
+qualDat <- pivot_longer(qualDat, cols = Forefoot:Heel, names_to = 'Location', values_to = 'Rating')
+
+FF <- qualDat %>% 
+  filter(Location=="Forefoot")
+
+
+qualDat$Location <- factor(qualDat$Location, c('Forefoot', 'Midfoot', 'Heel')) 
+
+```
+
+```{r}
+#| echo: false
+withinSubQualPlot(qualDat)
+ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) + 
+  geom_histogram(position = 'dodge', binwidth = 1) + facet_wrap(~Location) + scale_fill_manual(values=c("#999999", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) +
+  ylab('Responses') + theme(text=element_text(size=20)) + geom_vline(xintercept = 5, linewidth = 1)
+```
+
+**Dial Torque**
+
+```{r}
+#| echo: false
+#| warning: false
+qualDat %>%
+  group_by(Config)%>%
+  summarize(
+    R_Torque_Prox = mean(R_DialTorque1, na.rm = TRUE),
+    R_Torque_Dist = mean(R_DialTorque2, na.rm = TRUE),
+    L_Torque_Prox = mean(L_DialTorque1, na.rm = TRUE),
+    L_Torque_Dist = mean(L_DialTorque2, na.rm = TRUE)
+  )%>%
+  gt()
+
+ggplot(qualDat, aes(x=Config, y = L_DialTorque1, color = Config, group= Subject)) + 
+  geom_point(size = 4)+ 
+  geom_line(aes(color=Config))+
+  # facet_wrap(~Subject)+
+  scale_color_manual(values=c("#000000","#00966C", "#ECE81A","#DC582A","#CAF0E4"))+ 
+  theme(text = element_text(size = 16))+ 
+  ylab('Proximal (instep) Dial - Torque [N-cm]')+ 
+  xlab('Config')+
+  ggtitle('Left Foot')
+
+```
+
+## Endurance
+
+**Walking Speed: Higher is better**
+
+```{r}
+#| echo: false
+#| warning: false
+#| layout-ncol: 2
+################
+
+###### Running Speed
+
+IMUdat <- IMUdat %>% 
+  group_by(Subject) %>%
+  subset(imuSpeed > 2) %>%
+  mutate(z_score = scale(imuSpeed)) %>% 
+  group_by(Config)
+
+# Look at histogram of the data if any outliers need to be removed
+# ggplot(data = IMUdat, aes(x = imuSpeed, color = Config)) + geom_histogram() + facet_wrap(~Subject)
+
+
+
+ # Note for trail run metrics: Warmup was reduced (from 1000 to 500)
+SpeedMod <- brm(data = IMUdat, # Bayes model
+              family = gaussian,
+              z_score ~ Config + Slope + Order + (Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 500, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+
+
+p <- withinSubPlot(IMUdat, colName = 'imuSpeed', dir = 'higher')
+p + ylab('Running Speed (m/s)')
+
+extractVals(IMUdat, SpeedMod, otherConfigs, baseline, 'imuSpeed', 'higher') 
+
+```
+
+## Health
+
+**Peak Eversion Velocity (ankle stability): Lower is better**
+
+```{r}
+#| echo: false
+#| warning: false
+#| layout-ncol: 2
+################
+
+###### Peak eversion velocity
+
+Everdat <- IMUdat %>% 
+  group_by(Subject) %>%
+  mutate(z_score = scale(pIEgyro)) %>% 
+  group_by(Config)
+
+
+# Look at histogram of the data if any outliers need to be removed
+# ggplot(data = Everdat1, aes(x = imuSpeed, color = Config)) + geom_histogram() + facet_wrap(~Subject)
+
+
+# Note for trail run metrics: Warmup was reduced (from 1000 to 500)
+EverMod <- brm(data = Everdat, # Bayes model
+              family = gaussian,
+              z_score ~ Config + imuSpeed + Slope + Order + (1| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 500, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+
+
+
+
+p <- withinSubPlot(Everdat, colName = 'pIEgyro', dir = 'lower')
+p + ylab('Eversion Velcity (deg/s)')
+
+extractVals(Everdat, EverMod, otherConfigs, baseline, 'pIEgyro', 'lower')
+
+```
+
+## Quantitative Fit
+
+**Heel contact area (heel hold): Higher is better**
+
+```{r}
+#| echo: false
+#| warning: false
+#| layout-ncol: 2
+################
+
+###### Heel Contact
+
+HeelCondat <- Pressdat %>% 
+  group_by(Subject) %>%
+  mutate(z_score = scale(heelAreaP)) %>% 
+  group_by(Config)
+
+
+# Note for trail run metrics: Warmup was reduced (from 1000 to 500)
+HeelMod <- brm(data = HeelCondat, # Bayes model
+              family = gaussian,
+              z_score ~ Config + Slope + Order + (1| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 500, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+
+p <- withinSubPlot(HeelCondat, colName = 'heelAreaP', dir = 'higher')
+p + ylab('Heel Contact (%)')
+
+extractVals(HeelCondat, HeelMod, otherConfigs, baseline, 'heelAreaP', 'higher')
+```
+
+## Adaptability
+
+**Vertical adaptability: Higher is better**
+
+```{r}
+#| echo: false
+#| warning: false
+#| layout-ncol: 2
+
+xdat <- sedat %>% 
+  group_by(Subject) %>%
+  mutate(z_score = scale(sampEntX_foot)) %>% 
+  group_by(Config)
+
+
+# Note for trail run metrics: Warmup was reduced (from 1000 to 500)
+xmod <- brm(data = xdat, # Bayes model
+              family = gaussian,
+              z_score ~ Config + Sesh + Speed + (1|Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 4000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+
+p <- withinSubPlot(xdat, colName = 'sampEntX_foot', dir = 'higher')
+p + ylab('Sample Entropy (X)')
+
+extractVals(xdat, xmod, otherConfigs, baseline, 'sampEntX_foot', 'higher')
+```
+
+**Mediolateral adaptability: higher is better**
+
+```{r}
+#| echo: false
+#| warning: false
+#| layout-ncol: 2
+
+ydat <- sedat %>% 
+  group_by(Subject) %>%
+  mutate(z_score = scale(sampEntY_foot)) %>% 
+  group_by(Config)
+
+
+# Note for trail run metrics: Warmup was reduced (from 1000 to 500)
+ymod <- brm(data = ydat, # Bayes model
+              family = gaussian,
+              z_score ~ Config + Sesh + Speed + (1| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 500, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+
+p <- withinSubPlot(ydat, colName = 'sampEntY_foot', dir = 'higher')
+p + ylab('Sample Entropy (Y)')
+
+extractVals(ydat, ymod, otherConfigs, baseline, 'sampEntY_foot', 'higher')
+```
+
+**Anteroposterior adaptability: higher is better**
+
+```{r}
+#| echo: false
+#| warning: false
+#| layout-ncol: 2
+
+zdat <- sedat %>% 
+  group_by(Subject) %>%
+  mutate(z_score = scale(sampEntZ_foot)) %>% 
+  group_by(Config)
+
+
+# Note for trail run metrics: Warmup was reduced (from 1000 to 500)
+zmod <- brm(data = zdat, # Bayes model
+              family = gaussian,
+              z_score ~ Config + Sesh + Speed + (1| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 500, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+p <- withinSubPlot(ydat, colName = 'sampEntZ_foot', dir = 'higher')
+p + ylab('Sample Entropy (Z)')
+
+extractVals(zdat, zmod, otherConfigs, baseline, 'sampEntZ_foot', 'higher')
+```
