@@ -166,7 +166,7 @@ WalkRDB <- appTestNam(WalkRDB, tName)
 #| warning: false
 #| fig.width: 12
 #| fig.height: 8
-#| layout-ncol: 2
+#| layout-ncol: 3
 
 # filtering for greater then 100th of a second. noraml range 0.25 - 2 sec
 LandingDB_time <- LandingDB %>%
@@ -202,7 +202,6 @@ ggplot(data = sll22, aes(x = Time2Stabilize, fill = Name.of.test)) + geom_histog
 #| warning: false
 #| fig.width: 12
 #| fig.height: 8
-#| layout-ncol: 2
 
 # filtering for greater then 100th of a second. noraml range 0.25 - 2 sec
 LandingTrail_time <- LandingDB %>%
@@ -235,7 +234,6 @@ ggplot(data = sllt22, aes(x = Time2Stabilize, fill = Name.of.test)) + geom_histo
 #| warning: false
 #| fig.width: 12
 #| fig.height: 8
-#| layout-ncol: 2
 
 # filter data
 KneeABmom <- LandingDB %>%
@@ -263,7 +261,6 @@ ggplot(data = sll22, aes(x = PeakKneeAbMoment, fill = Name.of.test)) + geom_hist
 ```{r}
 #| echo: false
 #| warning: false
-#| layout-ncol: 2
 
 # as of 5/20/24 KneeAbAd has been added to database
 
@@ -289,7 +286,6 @@ ggplot(data = sll22, aes(x = PeakKneeAbMoment, fill = Name.of.test)) + geom_hist
 #| warning: false
 #| fig.width: 12
 #| fig.height: 8
-#| layout-ncol: 2
 
 #set dataframe
 speed <- TrailDB 
@@ -339,8 +335,6 @@ ggplot(data = runT24, aes(x = IMUSpeed, fill = Name.of.test)) + geom_histogram()
 #| warning: false
 #| fig.width: 12
 #| fig.height: 8
-#| layout-ncol: 2
-
 
 #set dataframe
 pkEv <- TrailDB 
