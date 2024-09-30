@@ -6,10 +6,10 @@ library(readxl)
 rm(list=ls())
 # Create overall variables for each test
 Year <- '2024'
-Month <- 'January'
+Month <- 'August'
 Brand <- 'Elten'
 Model <- 'Tommaso'
-TestName <- 'EH_Workwear_MidCutStabilityIII_Mech_Jan24'
+TestName <- 'EH_Workwear_MidcutStabilityFinal_Mech_Aug24'
 Benefit <- 'E/H'
 TestType <- 'Mechanistic'
 ### Functions
@@ -43,13 +43,13 @@ cmp_strings <- function(instr1,instr2,strtype){
 ################################################################################
 ### Updating Quantitative Big Data ###
 # Read the existing database: Only to get column name order
-ParentDat <- read.csv('Z:/BigData/DB_V2/QualitativeBigData_v2.csv',nrows=1)
-ParentDat <- ParentDat %>%
-  rename('Subject' = ï..Subject)
+ParentDat <- read.csv('\\\\boa-srv10\\PFL-DATA\\BigData\\DB_V2\\QualitativeBigData_v2.csv',nrows=1)
+# ParentDat <- ParentDat %>%
+#   rename('Subject' = ?..Subject)
 name_order = colnames(ParentDat)
 
 # Read the qualitative data to be added to master data
-ChildDat <- read_xlsx('C:/Users/milena.singletary/Boa Technology Inc/PFL Team - Documents/General/Testing Segments/WorkWear_Performance/EH_Workwear_MidCutStabilityIII_Mech_Jan24/CompiledQualData_MidcutStabilityIII.xlsx')
+ChildDat <- read_xlsx('C:\\Users\\bethany.kilpatrick\\BOA Technology Inc\\PFL Team - General\\Testing Segments\\WorkWear_Performance\\EH_Workwear_MidcutStabilityFinal_Mech_Aug24\\CompiledQualData_MidcutStabilityFinal_Qual.xlsx')
 ChildDat <- ChildDat %>%
   rename('Overall' = OverallFit)
 noSub <- length(ChildDat$Subject)
@@ -87,7 +87,7 @@ ChildDat <- ChildDat[,name_order]
 # write output. add a 1 to the end if you are at all unsure of output!!!
 a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?')
 if (a == 'YES'){
-  write.table(ChildDat, "Z:/BigData/DB_V2/QualitativeBigData_v2.csv", sep=',', 
+  write.table(ChildDat, "\\\\boa-srv10\\PFL-DATA\\BigData\\DB_V2\\QualitativeBigData_v2.csv", sep=',', 
               append = TRUE,col.names = FALSE, row.names = FALSE)
   
 }
@@ -96,14 +96,14 @@ rm(ParentDat,noSub,name_order)
 
 ################################################################################
 ### Updating Config Big Data ###
-ParentDat <- read.csv('Z:/BigData/DB_V2/ConfigDB.csv',nrows=1)
-ParentDat <- ParentDat %>%
-  rename('Name.of.Test' = ï..Name.of.Test)
+ParentDat <- read.csv('\\\\boa-srv10\\PFL-DATA\\BigData\\DB_V2\\ConfigDB.csv',nrows=1)
+# ParentDat <- ParentDat %>%
+#   rename('Name.of.Test' = ?..Name.of.Test)
 name_order = colnames(ParentDat)
 
 Config <- unique(ChildDat$Config)
 noSub <- length(Config)
-Config.Long <- c('Medial Cuff Wrap','External Ankle Straps','Lateral Cuff Wrap')
+Config.Long <- c('Classic Fit Solution','Dual Dial','Lace')
 ChildDat <- data.frame(Config,Config.Long)
 ChildDat$Year <- rep(Year, each = noSub)
 ChildDat$Month <- rep(Month, each = noSub)
@@ -117,7 +117,7 @@ ChildDat <- ChildDat[,name_order]
 # write output. add a 1 to the end if you are at all unsure of output!!!
 a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?')
 if (a == 'YES'){
-  write.table(ChildDat, "Z:/BigData/DB_V2/ConfigDB.csv", sep=',', 
+  write.table(ChildDat, "\\\\boa-srv10\\PFL-DATA\\BigData\\DB_V2\\ConfigDB.csv", sep=',', 
               append = TRUE,col.names = FALSE, row.names = FALSE)
   
 }
@@ -126,12 +126,12 @@ rm(ParentDat,ChildDat,noSub,name_order,a)
 ################################################################################
 ### Update Subject Visits ###
 # Read the existing database: Only to get column name order
-ParentDat <- read.csv('Z:/BigData/DB_V2/MasterSubjectVisits.csv',nrows=1)
-ParentDat <- ParentDat %>%
-  rename('Subject' = ï..Subject)
+ParentDat <- read.csv('\\\\boa-srv10\\PFL-DATA\\BigData\\DB_V2\\MasterSubjectVisits.csv',nrows=1)
+# ParentDat <- ParentDat %>%
+#   rename('Subject' = ?..Subject)
 name_order = colnames(ParentDat)
 
-ChildDat <- read_xlsx('C:/Users/milena.singletary/Boa Technology Inc/PFL Team - Documents/General/Testing Segments/WorkWear_Performance/EH_Workwear_MidCutStabilityIII_Mech_Jan24/CompiledQualData_MidcutStabilityIII.xlsx',sheet = 'Sheet3')
+ChildDat <- read_xlsx('C:\\Users\\bethany.kilpatrick\\BOA Technology Inc\\PFL Team - General\\Testing Segments\\WorkWear_Performance\\EH_Workwear_MidcutStabilityFinal_Mech_Aug24\\CompiledQualData_MidcutStabilityFinal_Qual.xlsx',sheet = 'Sheet3')
 ChildDat <- subset(ChildDat,select = -c(FootScan,Compensation,Height))
 ChildDat <- ChildDat %>% rename(Speed.run. = RunSpeed)
 noSub <- length(ChildDat$Subject)
@@ -150,7 +150,7 @@ ChildDat <- ChildDat[,name_order]
 # write output. add a 1 to the end if you are at all unsure of output!!!
 a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?')
 if (a == 'YES'){
-  write.table(ChildDat, "Z:/BigData/DB_V2/MasterSubjectVisits.csv", sep=',', 
+  write.table(ChildDat, "\\\\boa-srv10\\PFL-DATA\\BigData\\DB_V2\\MasterSubjectVisits.csv", sep=',', 
               append = TRUE,col.names = FALSE, row.names = FALSE)
   
 }
@@ -158,13 +158,13 @@ rm(ParentDat,ChildDat,noSub,name_order,a)
 ################################################################################
 ### Overground Landing ###
 # Read the existing database: Only to get column name order
-ParentDat <- read.csv('Z:/BigData/DB_V2/LandingDB.csv',nrows=1)
-ParentDat <- ParentDat %>%
-  rename('Subject' = ï..Subject)
+ParentDat <- read.csv("\\\\boa-srv10\\PFL-DATA\\BigData\\DB_V2\\LandingDB.csv",nrows=1)
+# ParentDat <- ParentDat %>%
+#   rename('Subject' = ?..Subject)
 name_order = colnames(ParentDat)
 
 # Read and summarize the overground data:
-LandingDat <- read.csv('Z:/Testing Segments/WorkWear_Performance/EH_Workwear_MidCutStabilityIII_Mech_Jan24/Overground/0_OGStabilization.csv')
+LandingDat <- read.csv('C:\\Users\\bethany.kilpatrick\\BOA Technology Inc\\PFL Team - General\\Testing Segments\\WorkWear_Performance\\EH_Workwear_MidcutStabilityFinal_Mech_Aug24\\Overground\\0_OGStabilization.csv')
 
 LandingDat$Subject <- tolower(gsub(" ", "", LandingDat$Subject))
 # Set Up 2 Checks here: Config Names and Subject Names 
@@ -173,7 +173,7 @@ cmp_strings(Config,unique(LandingDat$Config),'config')
 
 # Adjust names as necessary
 LandingDat <- LandingDat %>%
-  mutate(Subject = replace(Subject, Subject == 'rosalloveszy','rosaloveszy'))
+  filter(Subject != 'walterbourque')
 
 # Single Leg Landing (SLL) data only: Make sure to apply correct data filters
 ChildDat <- LandingDat %>%
@@ -182,9 +182,9 @@ ChildDat <- LandingDat %>%
   summarize(Time2Stabilize = mean(StabTime, na.rm = TRUE))
 
 ChildDat <- left_join(ChildDat,LandingDat %>%
-                        filter(RkneeABDMom > -500) %>%
-                        group_by(Subject, Config, Movement) %>%
-                        summarize(PeakKneeAbMoment = mean(RkneeABDMom, na.rm = TRUE)), by = c('Subject','Config','Movement'))
+                        filter(RkneeABDMom > -200) %>%
+                        group_by(Subject, Config,Order, Movement) %>%
+                        summarize(PeakKneeAbMoment = mean(RkneeABDMom, na.rm = TRUE), KneeAbAdROM = mean(RKneeABDROM, na.rm = TRUE)), by = c('Subject','Config','Movement'))
 
 ChildDat$Year <- rep(Year, dim(ChildDat)[1])
 ChildDat$Month <- rep(Month, dim(ChildDat)[1])
@@ -192,7 +192,7 @@ ChildDat$Brand <- rep(Brand, dim(ChildDat)[1])
 ChildDat$Model <- rep(Model, dim(ChildDat)[1])
 #_______________________________________________________________________________
 # Place NaNs for missing data
-ChildDat$KneeAbAdROM <- rep('NA', dim(ChildDat)[1])
+# ChildDat$KneeAbAdROM <- rep('NA', dim(ChildDat)[1])
 # ChildDat$PeakKneeAbMoment <- rep('NA', dim(ChildDat)[1])
 #_______________________________________________________________________________
 # Sort the DataFrame columns into the right order (from the Parent)
@@ -200,20 +200,20 @@ ChildDat <- ChildDat[,name_order]
 
 a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?')
 if (a == 'YES'){
-  write.table(ChildDat, "Z:/BigData/DB_V2/LandingDB.csv", sep=',', 
+  write.table(ChildDat, "\\\\boa-srv10\\PFL-DATA\\BigData\\DB_V2\\LandingDB.csv", sep=',', 
               append = TRUE,col.names = FALSE, row.names = FALSE)
 }
 rm(ParentDat,ChildDat,LandingDat,name_order,a)
 ################################################################################
 ### Uneven terrain landing ###
 # Read the existing database: Only to get column name order
-ParentDat <- read.csv('Z:/BigData/DB_V2/LandingDB.csv',nrows=1)
+ParentDat <- read.csv("\\\\boa-srv10\\PFL-DATA\\BigData\\DB_V2\\LandingDB.csv",nrows=1)
 ParentDat <- ParentDat %>%
-  rename('Subject' = ï..Subject)
+  rename('Subject' = ?..Subject)
 name_order = colnames(ParentDat)
 
-# Read and summarize the trail landing data:
-LandingDat <- read.csv('Z:/Testing Segments/WorkWear_Performance/EH_Workwear_MidCutStabilityIII_Mech_Jan24/IMU/1_TrailStabilize.csv')
+# Read and summarize the overground data:
+LandingDat <- read.csv('C:\\Users\\bethany.kilpatrick\\BOA Technology Inc\\PFL Team - General\\Testing Segments\\WorkWear_Performance\\EH_Workwear_MidcutStabilityFinal_Mech_Aug24\\IMU\\0_TrailStabilize.csv')
 LandingDat$Subject <- tolower(gsub(" ", "", LandingDat$Subject))
 
 #Check Names and Configs
@@ -221,18 +221,20 @@ cmp_strings(Subject,unique(LandingDat$Subject),'subject')
 cmp_strings(Config,unique(LandingDat$Config),'config')
 
 # Adjust names as necessary
-LandingDat <- LandingDat %>%
-  mutate(Subject = replace(Subject, Subject == 'tj','tjditallo'))
+# LandingDat <- LandingDat %>%
+#   mutate(Subject = replace(Subject, Subject == 'tj','tjditallo'))
 
-# Single Leg Landing (SLL) data only
+# Single Leg Landing (SLLt) data only
 ChildDat <- LandingDat %>%
-  group_by(Subject, Config) %>%
+  group_by(Subject, Config,Order) %>%
   summarize(Time2Stabilize = mean(StabalizeTime, na.rm = TRUE))
 
 ChildDat$Year <- rep(Year, dim(ChildDat)[1])
 ChildDat$Month <- rep(Month, dim(ChildDat)[1])
 ChildDat$Brand <- rep(Brand, dim(ChildDat)[1])
 ChildDat$Model <- rep(Model, dim(ChildDat)[1])
+ChildDat$Movement <- rep('SLLt', dim(ChildDat)[1])
+
 
 #_______________________________________________________________________________
 # Place NaNs for missing biomechanical data
@@ -244,54 +246,57 @@ ChildDat <- ChildDat[,name_order]
 
 a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?')
 if (a == 'YES'){
-  write.table(ChildDat, "Z:/BigData/DB_V2/LandingDB.csv", sep=',', 
+  write.table(ChildDat, "\\\\boa-srv10\\PFL-DATA\\BigData\\DB_V2\\LandingDB.csv", sep=',', 
               append = TRUE,col.names = FALSE, row.names = FALSE)
 }
 rm(ParentDat,ChildDat,LandingDat,name_order,a)
 ################################################################################
 ### Uneven terrain walking  ###
 # Read the existing database: Only to get column name order
-ParentDat <- read.csv('Z:/BigData/DB_V2/TrailDB.csv',nrows=1)
+ParentDat <- read.csv('\\\\boa-srv10\\PFL-DATA\\BigData\\DB_V2\\TrailDB.csv',nrows=1)
 # ParentDat <- ParentDat %>%
-#   rename('Subject' = ï..Subject)
+#   rename('Subject' = ?..Subject)
 name_order = colnames(ParentDat)
 
 # Read and summarize the IMU Data:
-IMUDat <- read.csv('Z:/Testing Segments/WorkWear_Performance/EH_Workwear_MidCutStabilityIII_Mech_Jan24/IMU/0_CompIMUmetrics.csv')
+IMUDat <- read.csv('C:\\Users\\bethany.kilpatrick\\BOA Technology Inc\\PFL Team - General\\Testing Segments\\WorkWear_Performance\\EH_Workwear_MidcutStabilityFinal_Mech_Aug24\\IMU\\0_CompIMUmetrics.csv')
 IMUDat$Subject <- tolower(gsub(" ", "", IMUDat$Subject))
 
 # Check Subject and Config Names
-cmp_strings(Subject,unique(IMUDat$Subject),'subject')
-cmp_strings(Config,unique(IMUDat$Config),'config')
+cmp_strings(subject,unique(IMUDat$Subject),'subject')
+cmp_strings(config,unique(IMUDat$Config),'config')
 
 # Summarize all metrics: Make sure to use correct data filters
 ChildDat <- IMUDat %>%
-  group_by(Subject, Config) %>%
+  group_by(Subject, Config,Order) %>%
   filter(imuSpeed > 0.25) %>%
   summarize(IMUSpeed = mean(imuSpeed))
 
+
+
 ChildDat <- left_join(ChildDat,IMUDat %>%
                         filter(pIEgyro > 0, imuSpeed > 0.25) %>%
-                        group_by(Subject, Config) %>%
-                        summarize(PeakEvVel = mean(pGyr)), by = c('Subject','Config'))
+                        group_by(Subject, Config, Order) %>%
+                        summarize(PeakEvVel = mean(pGyr)), by = c('Subject','Config','Order'))
 
 ChildDat <- left_join(ChildDat,IMUDat %>%
                         filter(imuSpeed > 0.25) %>%
-                        group_by(Subject, Config) %>%
-                        summarize(PeakJerk = mean(pJerk)), by = c('Subject','Config'))
+                        group_by(Subject, Config, Order) %>%
+                        summarize(PeakJerk = mean(pJerk)), by = c('Subject','Config','Order'))
 
 ChildDat <- left_join(ChildDat,IMUDat %>%
                         filter(imuSpeed > 0.25) %>%
-                        group_by(Subject, Config) %>%
-                        summarize(PeakAcc = mean(pAcc)), by = c('Subject','Config'))
+                        group_by(Subject, Config, Order) %>%
+                        summarize(PeakAcc = mean(pAcc)), by = c('Subject','Config','Order'))
 
 ChildDat <- left_join(ChildDat,IMUDat %>%
                         filter(imuSpeed > 0.25) %>%
-                        group_by(Subject, Config) %>%
-                        summarize(RangeMLAcc = mean(rMLacc)), by = c('Subject','Config'))
+                        group_by(Subject, Config, Order) %>%
+                        summarize(RangeMLAcc = mean(rMLacc)), by = c('Subject','Config','Order'))
+
 
 # Read and summarize the pressure data
-PressDat <- read.csv('Z:/Testing Segments/WorkWear_Performance/EH_Workwear_MidCutStabilityIII_Mech_Jan24/Xsensor/cropped/0_CompiledResults_Trail.csv')
+PressDat <- read.csv('C:\\Users\\bethany.kilpatrick\\BOA Technology Inc\\PFL Team - General\\Testing Segments\\WorkWear_Performance\\EH_Workwear_MidcutStabilityFinal_Mech_Aug24\\Xsensor\\Cropped\\0_CompiledResults_Trail.csv')
 PressDat$Subject <- tolower(gsub(" ", "", PressDat$Subject))
 
 # Check Subject and Config Names
@@ -300,11 +305,11 @@ cmp_strings(Config,unique(PressDat$Config),'config')
 
 # Summarize all metrics: Make sure to use correct data filters
 ChildDat <- left_join(ChildDat,PressDat %>%
-                        group_by(Subject, Config) %>%
-                        summarize(HeelContact = mean(heelAreaP)), by = c('Subject','Config'))
+                        group_by(Subject, Config, Order) %>%
+                        summarize(HeelContact = mean(heelAreaP)), by = c('Subject','Config','Order'))
 ChildDat <- left_join(ChildDat,PressDat %>%
-                        group_by(Subject, Config) %>%
-                        summarize(PeakToePress = mean(maxmaxToes)), by = c('Subject','Config'))
+                        group_by(Subject, Config, Order) %>%
+                        summarize(PeakToePress = mean(maxmaxToes)), by = c('Subject','Config','Order'))
 
 #_______________________________________________________________________________
 # Append other necessary information to the DataFrame
@@ -319,16 +324,16 @@ ChildDat <- ChildDat[,name_order]
 
 a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?')
 if (a == 'YES'){
-  write.table(ChildDat, file = 'Z:/BigData/DB_V2/TrailDB.csv', sep = ',',
+  write.table(ChildDat, file = '\\\\boa-srv10\\PFL-DATA\\BigData\\DB_V2\\TrailDB.csv', sep = ',',
               append = TRUE,col.names = FALSE, row.names = FALSE)
 }
-rm(ParentDat,ChildDat,IMUDat,PressDat,name_order,a)
+rm(ParentDat,ChildDat,IMUDat,PressDat,name_order,a) 
 ################################################################################
 ### Static Pressure  ###
-ParentDat <- read.csv('Z:/BigData/DB_V2/StaticPressureDB.csv',nrows=1)
+ParentDat <- read.csv('\\\\boa-srv10\\PFL-DATA\\BigData\\DB_V2\\StaticPressureDB.csv',nrows=1)
 name_order = colnames(ParentDat)
 
-ChildDat <- read.csv('Z:/Testing Segments/WorkWear_Performance/EH_Workwear_MidCutStabilityIII_Mech_Jan24/Xsensor/cropped/0_CompiledResults_Static.csv')
+ChildDat <- read.csv('C:\\Users\\bethany.kilpatrick\\BOA Technology Inc\\PFL Team - General\\Testing Segments\\WorkWear_Performance\\EH_Workwear_MidcutStabilityFinal_Mech_Aug24\\Xsensor\\Cropped\\0_CompiledResults_Static.csv')
 ChildDat$Year <- rep(Year, dim(ChildDat)[1])
 ChildDat$Month <- rep(Month, dim(ChildDat)[1])
 ChildDat$Brand <- rep(Brand, dim(ChildDat)[1])
@@ -339,6 +344,6 @@ ChildDat <- ChildDat[,name_order]
 a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?')
 if (a == 'YES'){
   # Check the Child Data before!!
-  write.table(ChildDat, file = 'Z:/BigData/DB_V2/StaticPressureDB.csv', sep = ',',
+  write.table(ChildDat, file = '\\\\boa-srv10\\PFL-DATA\\BigData\\DB_V2\\StaticPressureDB.csv', sep = ',',
               append = TRUE,col.names = FALSE, row.names = FALSE)
 }
