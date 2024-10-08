@@ -1,12 +1,12 @@
 ---
-title: "BigData_HistoricalReport_WWHike_0923"
+title: "BigData_HistoricalReport_WWHike_1008"
 format: pdf
 editor: visual
 ---
 
 |                     |                         |
 |---------------------|-------------------------|
-| Date Rendered:      | 09/23/2024              |
+| Date Rendered:      | 10/08/2024              |
 | Test Segment:       | Workwear/Hike           |
 | Databases Included: | Landing, Trail, WalkRun |
 
@@ -36,16 +36,16 @@ rm(list=ls())
 # load data necessary for segment
 
 # load landing DB csv
-LandingDB <-read.csv('Z:/BigData/DB_V2/LandingDB.csv')
+LandingDB <-read.csv('\\\\boa-srv10\\PFL-DATA\\BigData\\DB_V2\\LandingDB.csv')
 
 # load landing DB csv
-TrailDB <-read.csv('Z:/BigData/DB_V2/TrailDB.csv')
+TrailDB <-read.csv('\\\\boa-srv10\\PFL-DATA\\BigData\\DB_V2\\TrailDB.csv')
 
 # load walkRun DB
-WalkRDB <-read.csv('Z:/BigData/DB_V2/WalkRunDB.csv')
+WalkRDB <-read.csv('\\\\boa-srv10\\PFL-DATA\\BigData\\DB_V2\\WalkRunDB.csv')
 
 # load masterSubVisits DB csv
-subVisits <- read.csv('Z:/BigData/DB_V2/MasterSubjectVisits.csv')
+subVisits <- read.csv('\\\\boa-srv10\\PFL-DATA\\BigData\\DB_V2\\MasterSubjectVisits.csv')
 
 tName <- subVisits%>%
   dplyr::select(c(Year, Month, Brand, Model, Name.of.Test))
@@ -735,8 +735,8 @@ ggplot(data = run24, aes(x = NegCOMWork, fill = Name.of.test)) + geom_histogram(
 #| layout-ncol: 3
 
 #set dataframe
-pAnkW  <- WalkRDB
-  #filter(PeakAnkleEvVel > 0) 
+pAnkW  <- WalkRDB%>%
+  filter(PeakAnkleEvVel < 3000) 
   #filter(PeakAnkleEvVel != 'NA')
 
 # split movement task and year
