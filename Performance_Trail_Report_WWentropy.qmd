@@ -130,40 +130,90 @@ IMUdat$Config <- factor(IMUdat$Config, allConfigs)
 Pressdat <- as_tibble(Pressdat) # creating the data frame
 Pressdat$Config <- factor(Pressdat$Config, allConfigs)
 
-withinSubPlot <- function(inputDF, colName, dir) {
-  
-  # direction can be 'lower' or higher'. It is the direction of change that is better. 
-  # For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher. 
-  
-  #inputDF <- HRdat_long
-  #colName <- 'HR'
-  #dir = 'lower'
-  
+# function pre Nov 2024
+
+# withinSubPlot <- function(inputDF, colName, dir) {
+#   
+#   # direction can be 'lower' or higher'. It is the direction of change that is better. 
+#   # For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher. 
+#   
+#   #inputDF <- HRdat_long
+#   #colName <- 'HR'
+#   #dir = 'lower'
+#   
+#   meanDat <- inputDF %>%
+#     group_by(Subject, Config) %>%
+#     reframe(mean = mean(!! sym(colName)))
+#   
+#   if (dir == 'lower'){
+#     whichConfig <- meanDat %>%
+#       group_by(Subject) %>%
+#       reframe(
+#         BestConfig = Config[which.min(mean)]
+#       )
+#     
+#   } else if (dir == 'higher') {
+#     whichConfig <- meanDat %>%
+#       group_by(Subject) %>% 
+#       reframe(
+#         BestConfig = Config[which.max(mean)]
+#       )
+#     
+#   }
+#   
+#   whichConfig <- merge(meanDat, whichConfig)
+#   
+#   ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = mean, col = BestConfig, group = Subject)) + geom_point(size = 4) + 
+#     geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000","#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 16)) + ylab(paste0({{colName}})) 
+#   
+# }
+
+
+# updated withinAvg plot 
+withinSubPlotAvg <- function(inputDF, colName, dir = 'lower', yLabel = NULL) {
+  # Validate the `dir` input
+  if(!dir %in% c('lower', 'higher')){
+    stop("The 'dir' argument must be either 'lower' or 'higher'.")
+  }
+  # Calculate the mean for each Subject and Config, removing NA values
   meanDat <- inputDF %>%
     group_by(Subject, Config) %>%
-    reframe(mean = mean(!! sym(colName)))
-  
+    summarize(mean = mean(!! sym(colName), na.rm = TRUE), .groups = 'drop')
+  # Determine the best configuration based on the direction
   if (dir == 'lower'){
     whichConfig <- meanDat %>%
       group_by(Subject) %>%
-      reframe(
-        BestConfig = Config[which.min(mean)]
-      )
-    
+      reframe(BestConfig = Config[which.min(mean)])
   } else if (dir == 'higher') {
     whichConfig <- meanDat %>%
-      group_by(Subject) %>% 
-      reframe(
-        BestConfig = Config[which.max(mean)]
-      )
-    
+      group_by(Subject) %>%
+      reframe(BestConfig = Config[which.max(mean)])
   }
-  
-  whichConfig <- merge(meanDat, whichConfig)
-  
-  ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = mean, col = BestConfig, group = Subject)) + geom_point(size = 4) + 
-    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000","#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 16)) + ylab(paste0({{colName}})) 
-  
+  # Rename BestConfig to Config for merging
+  whichConfig <- whichConfig %>%
+    rename(Config = BestConfig)
+  # Merge the best configuration back to the mean data
+  mergedData <- merge(meanDat, whichConfig, by = c("Subject", "Config"))
+  # Calculate overall mean for each Config, removing NA values
+  overallMean <- meanDat %>%
+    group_by(Config) %>%
+    summarize(overallMean = mean(mean, na.rm = TRUE), .groups = 'drop')
+  # Plotting with ggplot2
+  plot <- ggplot() +
+    geom_point(data = meanDat, mapping = aes(x = as.factor(Config), y = mean, group = Subject, color = 'Subject Means'), size = 3, alpha = 0.5) +
+    geom_line(data = meanDat, mapping = aes(x = as.factor(Config), y = mean, group = Subject, color = 'Subject Means'), alpha = 0.5) +
+    geom_point(data = overallMean, mapping = aes(x = as.factor(Config), y = overallMean, color = 'Overall Mean'), size = 4, shape = 17) +
+    geom_line(data = overallMean, mapping = aes(x = as.factor(Config), y = overallMean, group = 1, color = 'Overall Mean'), size = 1.5) +
+    scale_color_manual(values = c('Subject Means' = 'grey', 'Overall Mean' = '#003C4C')) +
+    xlab('Configuration') +
+    theme(text = element_text(size = 16), legend.title = element_blank())
+  # Set y-axis label
+  if (!is.null(yLabel)) {
+    plot <- plot + ylab(yLabel)
+  } else {
+    plot <- plot + ylab(paste0(colName))
+  }
+  print(plot)
 }
 
 
