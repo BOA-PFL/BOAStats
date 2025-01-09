@@ -1,16 +1,12 @@
 ---
-title: "BigData_HistoricalReport_WWHike"
-format: 
-  docx: 
-    reference-doc: 'C:/Users/milena.singletary/OneDrive - Boa Technology Inc/Documents/Report_Template.docx'
+title: "BigData_HistoricalReport_WWHike_1008"
+format: pdf
 editor: visual
-editor_options: 
-  chunk_output_type: console
 ---
 
 |                     |                         |
 |---------------------|-------------------------|
-| Date Rendered:      | 6/11/2024               |
+| Date Rendered:      | 10/08/2024              |
 | Test Segment:       | Workwear/Hike           |
 | Databases Included: | Landing, Trail, WalkRun |
 
@@ -40,16 +36,16 @@ rm(list=ls())
 # load data necessary for segment
 
 # load landing DB csv
-LandingDB <-read.csv('Z:/BigData/DB_V2/LandingDB.csv')
+LandingDB <-read.csv('\\\\boa-srv10\\PFL-DATA\\BigData\\DB_V2\\LandingDB.csv')
 
 # load landing DB csv
-TrailDB <-read.csv('Z:/BigData/DB_V2/TrailDB.csv')
+TrailDB <-read.csv('\\\\boa-srv10\\PFL-DATA\\BigData\\DB_V2\\TrailDB.csv')
 
 # load walkRun DB
-WalkRDB <-read.csv('Z:/BigData/DB_V2/WalkRunDB.csv')
+WalkRDB <-read.csv('\\\\boa-srv10\\PFL-DATA\\BigData\\DB_V2\\WalkRunDB.csv')
 
 # load masterSubVisits DB csv
-subVisits <- read.csv('Z:/BigData/DB_V2/MasterSubjectVisits.csv')
+subVisits <- read.csv('\\\\boa-srv10\\PFL-DATA\\BigData\\DB_V2\\MasterSubjectVisits.csv')
 
 tName <- subVisits%>%
   dplyr::select(c(Year, Month, Brand, Model, Name.of.Test))
@@ -166,6 +162,7 @@ WalkRDB <- appTestNam(WalkRDB, tName)
 #| warning: false
 #| fig.width: 12
 #| fig.height: 8
+#| layout-ncol: 3
 
 # filtering for greater then 100th of a second. noraml range 0.25 - 2 sec
 LandingDB_time <- LandingDB %>%
@@ -201,6 +198,7 @@ ggplot(data = sll22, aes(x = Time2Stabilize, fill = Name.of.test)) + geom_histog
 #| warning: false
 #| fig.width: 12
 #| fig.height: 8
+#| layout-ncol: 3
 
 # filtering for greater then 100th of a second. noraml range 0.25 - 2 sec
 LandingTrail_time <- LandingDB %>%
@@ -233,6 +231,7 @@ ggplot(data = sllt22, aes(x = Time2Stabilize, fill = Name.of.test)) + geom_histo
 #| warning: false
 #| fig.width: 12
 #| fig.height: 8
+#| layout-ncol: 3
 
 # filter data
 KneeABmom <- LandingDB %>%
@@ -285,6 +284,7 @@ ggplot(data = sll22, aes(x = PeakKneeAbMoment, fill = Name.of.test)) + geom_hist
 #| warning: false
 #| fig.width: 12
 #| fig.height: 8
+#| layout-ncol: 3
 
 #set dataframe
 speed <- TrailDB 
@@ -334,23 +334,46 @@ ggplot(data = runT24, aes(x = IMUSpeed, fill = Name.of.test)) + geom_histogram()
 #| warning: false
 #| fig.width: 12
 #| fig.height: 8
+#| layout-ncol: 3
 
 #set dataframe
 pkEv <- TrailDB 
 
-# may need to filter some data before splitting by task/year
-# runT <- TrailDB %>%
-#   group_by(Subject)%>%
-#   filter(Movement != 'ILT')%>%
-#   mutate(z_score = scale(PeakEvVel))%>%
-#   group_by(Config)
-# 
-# runT<- subset(runT, runT$z_score < 2) #removing outliers
-# runT<- subset(runT, runT$z_score > -2)
+# split movement task and year
+walkT22 <- pkEv %>%
+  filter(Movement == 'ILT', Year == 2022) # ILT = 'in lab trail' typically walking
 
-# new dfs - split movement task and year
+walkT23 <- pkEv %>%
+  filter(Movement == 'ILT', Year == 2023) # ILT = 'in lab trail' typically walking
 
-# plot histogram: fill by Test Name
+walkT24 <- pkEv %>%
+  filter(Movement == 'ILT', Year == 2024) # ILT = 'in lab trail' typically walking
+
+
+runT22 <- pkEv %>%
+  filter(Movement != 'ILT', Year == 2022)
+
+runT23 <- pkEv %>%
+  filter(Movement != 'ILT', Year == 2023)
+
+runT24 <- pkEv %>%
+  filter(Movement != 'ILT', Year == 2024)
+
+############## plotting based on walking  ############## 
+# histograms of metric: 
+ggplot(data = walkT22, aes(x = PeakEvVel, fill = Name.of.test)) + geom_histogram() + ggtitle("2022 Trail Walking") + theme(legend.position="bottom")
+
+ggplot(data = walkT23, aes(x = PeakEvVel, fill = Name.of.test)) + geom_histogram() + ggtitle("2023 Trail Walking") + theme(legend.position="bottom")
+
+ggplot(data = walkT24, aes(x = PeakEvVel, fill = Name.of.test)) + geom_histogram() + ggtitle("2024 Trail Walking") + theme(legend.position="bottom")
+
+############## Running  ############## 
+# histograms of metric: 
+ggplot(data = runT22, aes(x = PeakEvVel, fill = Name.of.test)) + geom_histogram() + ggtitle("2022 Trail Running") + theme(legend.position="bottom")
+
+ggplot(data = runT23, aes(x = PeakEvVel, fill = Name.of.test)) + geom_histogram() + ggtitle("2023 Trail Running") + theme(legend.position="bottom")
+
+ggplot(data = runT24, aes(x = PeakEvVel, fill = Name.of.test)) + geom_histogram() + ggtitle("2024 Trail Running") + theme(legend.position="bottom")
 
 ```
 
@@ -359,14 +382,48 @@ pkEv <- TrailDB
 ```{r}
 #| echo: false
 #| warning: false
+#| fig.width: 12
+#| fig.height: 8
+#| layout-ncol: 3
 
 #set dataframe
 pkJerk<- TrailDB 
 
-# new dfs - split movement task and year
+# split movement task and year
+walkT22 <- pkJerk %>%
+  filter(Movement == 'ILT', Year == 2022) # ILT = 'in lab trail' typically walking
 
-# plot histogram: fill by Test Name
+walkT23 <- pkJerk %>%
+  filter(Movement == 'ILT', Year == 2023) # ILT = 'in lab trail' typically walking
 
+walkT24 <- pkJerk %>%
+  filter(Movement == 'ILT', Year == 2024) # ILT = 'in lab trail' typically walking
+
+
+runT22 <- pkJerk %>%
+  filter(Movement != 'ILT', Year == 2022)
+
+runT23 <- pkJerk %>%
+  filter(Movement != 'ILT', Year == 2023)
+
+runT24 <- pkJerk %>%
+  filter(Movement != 'ILT', Year == 2024)
+
+############## plotting based on walking  ############## 
+# histograms of metric: 
+ggplot(data = walkT22, aes(x = PeakJerk, fill = Name.of.test)) + geom_histogram() + ggtitle("2022 Trail Walking") + theme(legend.position="bottom")
+
+ggplot(data = walkT23, aes(x = PeakJerk, fill = Name.of.test)) + geom_histogram() + ggtitle("2023 Trail Walking") + theme(legend.position="bottom")
+
+ggplot(data = walkT24, aes(x = PeakJerk, fill = Name.of.test)) + geom_histogram() + ggtitle("2024 Trail Walking") + theme(legend.position="bottom")
+
+############## Running  ############## 
+# histograms of metric: 
+ggplot(data = runT22, aes(x = PeakJerk, fill = Name.of.test)) + geom_histogram() + ggtitle("2022 Trail Running") + theme(legend.position="bottom")
+
+ggplot(data = runT23, aes(x = PeakJerk, fill = Name.of.test)) + geom_histogram() + ggtitle("2023 Trail Running") + theme(legend.position="bottom")
+
+ggplot(data = runT24, aes(x = PeakJerk, fill = Name.of.test)) + geom_histogram() + ggtitle("2024 Trail Running") + theme(legend.position="bottom")
 ```
 
 ## Trail: Peak Acceleration
@@ -374,13 +431,48 @@ pkJerk<- TrailDB
 ```{r}
 #| echo: false
 #| warning: false
+#| fig.width: 12
+#| fig.height: 8
+#| layout-ncol: 3
 
 #set dataframe
 pkAcc<- TrailDB 
 
-# new dfs - split movement task and year
+# split movement task and year
+walkT22 <- pkAcc %>%
+  filter(Movement == 'ILT', Year == 2022) # ILT = 'in lab trail' typically walking
 
-# plot histogram: fill by Test Name
+walkT23 <- pkAcc %>%
+  filter(Movement == 'ILT', Year == 2023) # ILT = 'in lab trail' typically walking
+
+walkT24 <- pkAcc %>%
+  filter(Movement == 'ILT', Year == 2024) # ILT = 'in lab trail' typically walking
+
+
+runT22 <- pkAcc %>%
+  filter(Movement != 'ILT', Year == 2022)
+
+runT23 <- pkAcc %>%
+  filter(Movement != 'ILT', Year == 2023)
+
+runT24 <- pkAcc %>%
+  filter(Movement != 'ILT', Year == 2024)
+
+############## plotting based on walking  ############## 
+# histograms of metric: 
+ggplot(data = walkT22, aes(x = PeakAcc, fill = Name.of.test)) + geom_histogram() + ggtitle("2022 Trail Walking") + theme(legend.position="bottom")
+
+ggplot(data = walkT23, aes(x = PeakAcc, fill = Name.of.test)) + geom_histogram() + ggtitle("2023 Trail Walking") + theme(legend.position="bottom")
+
+ggplot(data = walkT24, aes(x = PeakAcc, fill = Name.of.test)) + geom_histogram() + ggtitle("2024 Trail Walking") + theme(legend.position="bottom")
+
+############## Running  ############## 
+# histograms of metric: 
+ggplot(data = runT22, aes(x = PeakAcc, fill = Name.of.test)) + geom_histogram() + ggtitle("2022 Trail Running") + theme(legend.position="bottom")
+
+ggplot(data = runT23, aes(x = PeakAcc, fill = Name.of.test)) + geom_histogram() + ggtitle("2023 Trail Running") + theme(legend.position="bottom")
+
+ggplot(data = runT24, aes(x = PeakAcc, fill = Name.of.test)) + geom_histogram() + ggtitle("2024 Trail Running") + theme(legend.position="bottom")
 ```
 
 ## Trail: RangeMLAcc
@@ -388,15 +480,49 @@ pkAcc<- TrailDB
 ```{r}
 #| echo: false
 #| warning: false
+#| fig.width: 12
+#| fig.height: 8
+#| layout-ncol: 3
 
 #set dataframe
-rMLacc <- TrailDB%>%
-  filter(Movement != 'NA') 
+rMLacc <- TrailDB %>%
+  filter(Movement != 'NA')
 
-# new dfs - split movement task and year
+# split movement task and year
+walkT22 <- rMLacc %>%
+  filter(Movement == 'ILT', Year == 2022) # ILT = 'in lab trail' typically walking
 
-# plot histogram: fill by Test Name
+walkT23 <- rMLacc %>%
+  filter(Movement == 'ILT', Year == 2023) # ILT = 'in lab trail' typically walking
 
+walkT24 <- rMLacc %>%
+  filter(Movement == 'ILT', Year == 2024) # ILT = 'in lab trail' typically walking
+
+
+runT22 <- rMLacc %>%
+  filter(Movement != 'ILT', Year == 2022)
+
+runT23 <- rMLacc %>%
+  filter(Movement != 'ILT', Year == 2023)
+
+runT24 <- rMLacc %>%
+  filter(Movement != 'ILT', Year == 2024)
+
+############## plotting based on walking  ############## 
+# histograms of metric: 
+ggplot(data = walkT22, aes(x = RangeMLAcc, fill = Name.of.test)) + geom_histogram() + ggtitle("2022 Trail Walking") + theme(legend.position="bottom")
+
+ggplot(data = walkT23, aes(x = RangeMLAcc, fill = Name.of.test)) + geom_histogram() + ggtitle("2023 Trail Walking") + theme(legend.position="bottom")
+
+ggplot(data = walkT24, aes(x = RangeMLAcc, fill = Name.of.test)) + geom_histogram() + ggtitle("2024 Trail Walking") + theme(legend.position="bottom")
+
+############## Running  ############## 
+# histograms of metric: 
+ggplot(data = runT22, aes(x = RangeMLAcc, fill = Name.of.test)) + geom_histogram() + ggtitle("2022 Trail Running") + theme(legend.position="bottom")
+
+ggplot(data = runT23, aes(x = RangeMLAcc, fill = Name.of.test)) + geom_histogram() + ggtitle("2023 Trail Running") + theme(legend.position="bottom")
+
+ggplot(data = runT24, aes(x = RangeMLAcc, fill = Name.of.test)) + geom_histogram() + ggtitle("2024 Trail Running") + theme(legend.position="bottom")
 ```
 
 ## Trail: Heel Contact
@@ -404,15 +530,49 @@ rMLacc <- TrailDB%>%
 ```{r}
 #| echo: false
 #| warning: false
+#| fig.width: 12
+#| fig.height: 8
+#| layout-ncol: 3
 
 #set dataframe
-heelC  <- TrailDB%>%
+HeelContact <- TrailDB%>%
   filter(Movement != 'NA') 
 
+# split movement task and year
+walkT22 <- HeelContact %>%
+  filter(Movement == 'ILT', Year == 2022) # ILT = 'in lab trail' typically walking
 
-# new dfs - split movement task and year
+walkT23 <- HeelContact %>%
+  filter(Movement == 'ILT', Year == 2023) # ILT = 'in lab trail' typically walking
 
-# plot histogram: fill by Test Name
+walkT24 <- HeelContact %>%
+  filter(Movement == 'ILT', Year == 2024) # ILT = 'in lab trail' typically walking
+
+
+runT22 <- HeelContact %>%
+  filter(Movement != 'ILT', Year == 2022)
+
+runT23 <- HeelContact %>%
+  filter(Movement != 'ILT', Year == 2023)
+
+runT24 <- HeelContact %>%
+  filter(Movement != 'ILT', Year == 2024)
+
+############## plotting based on walking  ############## 
+# histograms of metric: 
+ggplot(data = walkT22, aes(x = HeelContact, fill = Name.of.test)) + geom_histogram() + ggtitle("2022 Trail Walking Heel Contact") + theme(legend.position="bottom")
+
+ggplot(data = walkT23, aes(x = HeelContact, fill = Name.of.test)) + geom_histogram() + ggtitle("2023 Trail Walking Heel Contact") + theme(legend.position="bottom")
+
+ggplot(data = walkT24, aes(x = HeelContact, fill = Name.of.test)) + geom_histogram() + ggtitle("2024 Trail Walking Heel Contact") + theme(legend.position="bottom")
+
+############## Running  ############## 
+# histograms of metric: 
+ggplot(data = runT22, aes(x = HeelContact, fill = Name.of.test)) + geom_histogram() + ggtitle("2022 Trail Running Heel Contact") + theme(legend.position="bottom")
+
+ggplot(data = runT23, aes(x = HeelContact, fill = Name.of.test)) + geom_histogram() + ggtitle("2023 Trail Running Heel Contact") + theme(legend.position="bottom")
+
+ggplot(data = runT24, aes(x = HeelContact, fill = Name.of.test)) + geom_histogram() + ggtitle("2024 Trail Running Heel Contact") + theme(legend.position="bottom")
 ```
 
 ## Trail: Peak Toe Pressure
@@ -420,14 +580,49 @@ heelC  <- TrailDB%>%
 ```{r}
 #| echo: false
 #| warning: false
+#| fig.width: 12
+#| fig.height: 8
+#| layout-ncol: 3
 
 #set dataframe
 maxToe  <- TrailDB%>%
   filter(Movement != 'NA') 
 
-# new dfs - split movement task and year
+# split movement task and year
+walkT22 <- TrailDB %>%
+  filter(Movement == 'ILT', Year == 2022) # ILT = 'in lab trail' typically walking
 
-# plot histogram: fill by Test Name
+walkT23 <- TrailDB %>%
+  filter(Movement == 'ILT', Year == 2023) # ILT = 'in lab trail' typically walking
+
+walkT24 <- TrailDB %>%
+  filter(Movement == 'ILT', Year == 2024) # ILT = 'in lab trail' typically walking
+
+
+runT22 <- TrailDB %>%
+  filter(Movement != 'ILT', Year == 2022)
+
+runT23 <- TrailDB %>%
+  filter(Movement != 'ILT', Year == 2023)
+
+runT24 <- TrailDB %>%
+  filter(Movement != 'ILT', Year == 2024)
+
+############## plotting based on walking  ############## 
+# histograms of metric: 
+ggplot(data = walkT22, aes(x = PeakToePress, fill = Name.of.test)) + geom_histogram() + ggtitle("2022 Trail Walking") + theme(legend.position="bottom")
+
+ggplot(data = walkT23, aes(x = PeakToePress, fill = Name.of.test)) + geom_histogram() + ggtitle("2023 Trail Walking") + theme(legend.position="bottom")
+
+ggplot(data = walkT24, aes(x = PeakToePress, fill = Name.of.test)) + geom_histogram() + ggtitle("2024 Trail Walking") + theme(legend.position="bottom")
+
+############## Running  ############## 
+# histograms of metric: 
+ggplot(data = runT22, aes(x = PeakToePress, fill = Name.of.test)) + geom_histogram() + ggtitle("2022 Trail Running") + theme(legend.position="bottom")
+
+ggplot(data = runT23, aes(x = PeakToePress, fill = Name.of.test)) + geom_histogram() + ggtitle("2023 Trail Running") + theme(legend.position="bottom")
+
+ggplot(data = runT24, aes(x = PeakToePress, fill = Name.of.test)) + geom_histogram() + ggtitle("2024 Trail Running") + theme(legend.position="bottom")
 ```
 
 ## WalkRun: Positive COM Work
@@ -435,14 +630,49 @@ maxToe  <- TrailDB%>%
 ```{r}
 #| echo: false
 #| warning: false
+#| fig.width: 12
+#| fig.height: 8
+#| layout-ncol: 3
 
 #set dataframe
 pCOMw  <- WalkRDB%>%
   filter(PosCOMWork > 0) 
 
-# new dfs - split movement task and year
+# split movement task and year
+walk22 <- pCOMw %>%
+  filter(Year == 2022)
 
-# plot histogram: fill by Test Name
+walk23 <- pCOMw %>%
+  filter(Year == 2023) 
+
+walk24 <- pCOMw %>%
+  filter(Year == 2024) 
+
+
+run22 <- pCOMw %>%
+  filter(Year == 2022)
+
+run23 <- pCOMw %>%
+  filter(Year == 2023)
+
+run24 <- pCOMw %>%
+  filter(Year == 2024)
+
+############## plotting based on walking  ############## 
+# histograms of metric: 
+ggplot(data = walk22, aes(x = PosCOMWork, fill = Name.of.test)) + geom_histogram() + ggtitle("2022 Walking") + theme(legend.position="bottom")
+
+ggplot(data = walk23, aes(x = PosCOMWork, fill = Name.of.test)) + geom_histogram() + ggtitle("2023 Walking") + theme(legend.position="bottom")
+
+ggplot(data = walk24, aes(x = PosCOMWork, fill = Name.of.test)) + geom_histogram() + ggtitle("2024 Walking") + theme(legend.position="bottom")
+
+############## Running  ############## 
+# histograms of metric: 
+ggplot(data = run22, aes(x = PosCOMWork, fill = Name.of.test)) + geom_histogram() + ggtitle("2022 Running") + theme(legend.position="bottom")
+
+ggplot(data = run23, aes(x = PosCOMWork, fill = Name.of.test)) + geom_histogram() + ggtitle("2023 Running") + theme(legend.position="bottom")
+
+ggplot(data = run24, aes(x = PosCOMWork, fill = Name.of.test)) + geom_histogram() + ggtitle("2024 Running") + theme(legend.position="bottom")
 ```
 
 ## WalkRun: Negative COM Work
@@ -450,13 +680,49 @@ pCOMw  <- WalkRDB%>%
 ```{r}
 #| echo: false
 #| warning: false
+#| fig.width: 12
+#| fig.height: 8
+#| layout-ncol: 3
 
 #set dataframe
-nCOMw  <- WalkRDB 
+nCOMw  <- WalkRDB%>%
+  filter(NegCOMWork < 0) 
 
-# new dfs - split movement task and year
+# split movement task and year
+walk22 <- nCOMw %>%
+  filter(Year == 2022)
 
-# plot histogram: fill by Test Name
+walk23 <- nCOMw %>%
+  filter(Year == 2023) 
+
+walk24 <- nCOMw %>%
+  filter(Year == 2024) 
+
+
+run22 <- nCOMw %>%
+  filter(Year == 2022)
+
+run23 <- nCOMw %>%
+  filter(Year == 2023)
+
+run24 <- nCOMw %>%
+  filter(Year == 2024)
+
+############## plotting based on walking  ############## 
+# histograms of metric: 
+ggplot(data = walk22, aes(x = NegCOMWork, fill = Name.of.test)) + geom_histogram() + ggtitle("2022 Walking") + theme(legend.position="bottom")
+
+ggplot(data = walk23, aes(x = NegCOMWork, fill = Name.of.test)) + geom_histogram() + ggtitle("2023 Walking") + theme(legend.position="bottom")
+
+ggplot(data = walk24, aes(x = NegCOMWork, fill = Name.of.test)) + geom_histogram() + ggtitle("2024 Walking") + theme(legend.position="bottom")
+
+############## Running  ############## 
+# histograms of metric: 
+ggplot(data = run22, aes(x = NegCOMWork, fill = Name.of.test)) + geom_histogram() + ggtitle("2022 Running") + theme(legend.position="bottom")
+
+ggplot(data = run23, aes(x = NegCOMWork, fill = Name.of.test)) + geom_histogram() + ggtitle("2023 Running") + theme(legend.position="bottom")
+
+ggplot(data = run24, aes(x = NegCOMWork, fill = Name.of.test)) + geom_histogram() + ggtitle("2024 Running") + theme(legend.position="bottom")
 ```
 
 ## WalkRun: Peak Ankle Eversion Velocity
@@ -464,13 +730,50 @@ nCOMw  <- WalkRDB
 ```{r}
 #| echo: false
 #| warning: false
+#| fig.width: 12
+#| fig.height: 8
+#| layout-ncol: 3
 
 #set dataframe
-pAnkW  <- WalkRDB 
+pAnkW  <- WalkRDB%>%
+  filter(PeakAnkleEvVel < 3000) 
+  #filter(PeakAnkleEvVel != 'NA')
 
-# new dfs - split movement task and year
+# split movement task and year
+walk22 <- pAnkW %>%
+  filter(Year == 2022)
 
-# plot histogram: fill by Test Name
+walk23 <- pAnkW %>%
+  filter(Year == 2023) 
+
+walk24 <- pAnkW %>%
+  filter(Year == 2024) 
+
+
+run22 <- pAnkW %>%
+  filter(Year == 2022)
+
+run23 <- pAnkW %>%
+  filter(Year == 2023)
+
+run24 <- pAnkW %>%
+  filter(Year == 2024)
+
+############## plotting based on walking  ############## 
+# histograms of metric: 
+ggplot(data = walk22, aes(x = PeakAnkleEvVel, fill = Name.of.test)) + geom_histogram() + ggtitle("2022 Walking") + theme(legend.position="bottom")
+
+ggplot(data = walk23, aes(x = PeakAnkleEvVel, fill = Name.of.test)) + geom_histogram() + ggtitle("2023 Walking") + theme(legend.position="bottom")
+
+ggplot(data = walk24, aes(x = PeakAnkleEvVel, fill = Name.of.test)) + geom_histogram() + ggtitle("2024 Walking") + theme(legend.position="bottom")
+
+############## Running  ############## 
+# histograms of metric: 
+ggplot(data = run22, aes(x = PeakAnkleEvVel, fill = Name.of.test)) + geom_histogram() + ggtitle("2022 Running") + theme(legend.position="bottom")
+
+ggplot(data = run23, aes(x = PeakAnkleEvVel, fill = Name.of.test)) + geom_histogram() + ggtitle("2023 Running") + theme(legend.position="bottom")
+
+ggplot(data = run24, aes(x = PeakAnkleEvVel, fill = Name.of.test)) + geom_histogram() + ggtitle("2024 Running") + theme(legend.position="bottom")
 ```
 
 ## WalkRun: Negative Foot Work
@@ -478,13 +781,48 @@ pAnkW  <- WalkRDB
 ```{r}
 #| echo: false
 #| warning: false
+#| fig.width: 12
+#| fig.height: 8
+#| layout-ncol: 3
 
 #set dataframe
 nFootW  <- WalkRDB 
+  
 
-# new dfs - split movement task and year
+walk22 <- nFootW %>%
+  filter(Year == 2022)
 
-# plot histogram: fill by Test Name
+walk23 <- nFootW %>%
+  filter(Year == 2023) 
+
+walk24 <- nFootW %>%
+  filter(Year == 2024) 
+
+
+run22 <- nFootW %>%
+  filter(Year == 2022)
+
+run23 <- nFootW %>%
+  filter(Year == 2023)
+
+run24 <- nFootW %>%
+  filter(Year == 2024)
+
+############## plotting based on walking  ############## 
+# histograms of metric: 
+ggplot(data = walk22, aes(x = NegFootWork, fill = Name.of.test)) + geom_histogram() + ggtitle("2022 Walking") + theme(legend.position="bottom")
+
+ggplot(data = walk23, aes(x = NegFootWork, fill = Name.of.test)) + geom_histogram() + ggtitle("2023 Walking") + theme(legend.position="bottom")
+
+ggplot(data = walk24, aes(x = NegFootWork, fill = Name.of.test)) + geom_histogram() + ggtitle("2024 Walking") + theme(legend.position="bottom")
+
+############## Running  ############## 
+# histograms of metric: 
+ggplot(data = run22, aes(x = NegFootWork, fill = Name.of.test)) + geom_histogram() + ggtitle("2022 Running") + theme(legend.position="bottom")
+
+ggplot(data = run23, aes(x = NegFootWork, fill = Name.of.test)) + geom_histogram() + ggtitle("2023 Running") + theme(legend.position="bottom")
+
+ggplot(data = run24, aes(x = NegFootWork, fill = Name.of.test)) + geom_histogram() + ggtitle("2024 Running") + theme(legend.position="bottom")
 ```
 
 ## WalkRun: Loading Rate
@@ -492,13 +830,47 @@ nFootW  <- WalkRDB
 ```{r}
 #| echo: false
 #| warning: false
+#| fig.width: 12
+#| fig.height: 8
+#| layout-ncol: 3
 
 #set dataframe
 LoadR  <- WalkRDB 
 
-# new dfs - split movement task and year
+walk22 <- LoadR %>%
+  filter(Year == 2022)
 
-# plot histogram: fill by Test Name
+walk23 <- LoadR %>%
+  filter(Year == 2023) 
+
+walk24 <- LoadR %>%
+  filter(Year == 2024) 
+
+
+run22 <- LoadR %>%
+  filter(Year == 2022)
+
+run23 <- LoadR %>%
+  filter(Year == 2023)
+
+run24 <- LoadR %>%
+  filter(Year == 2024)
+
+############## plotting based on walking  ############## 
+# histograms of metric: 
+ggplot(data = walk22, aes(x = LoadingRate, fill = Name.of.test)) + geom_histogram() + ggtitle("2022 Walking") + theme(legend.position="bottom")
+
+ggplot(data = walk23, aes(x = LoadingRate, fill = Name.of.test)) + geom_histogram() + ggtitle("2023 Walking") + theme(legend.position="bottom")
+
+ggplot(data = walk24, aes(x = LoadingRate, fill = Name.of.test)) + geom_histogram() + ggtitle("2024 Walking") + theme(legend.position="bottom")
+
+############## Running  ############## 
+# histograms of metric: 
+ggplot(data = run22, aes(x = LoadingRate, fill = Name.of.test)) + geom_histogram() + ggtitle("2022 Running") + theme(legend.position="bottom")
+
+ggplot(data = run23, aes(x = LoadingRate, fill = Name.of.test)) + geom_histogram() + ggtitle("2023 Running") + theme(legend.position="bottom")
+
+ggplot(data = run24, aes(x = LoadingRate, fill = Name.of.test)) + geom_histogram() + ggtitle("2024 Running") + theme(legend.position="bottom")
 ```
 
 ## WalkRun: Heel Contact
@@ -506,13 +878,48 @@ LoadR  <- WalkRDB
 ```{r}
 #| echo: false
 #| warning: false
+#| fig.width: 12
+#| fig.height: 8
+#| layout-ncol: 3
 
 #set dataframe
 HeelCont  <- WalkRDB 
 
-# new dfs - split movement task and year
+walk22 <- HeelCont %>%
+  filter(Year == 2022)
 
-# plot histogram: fill by Test Name
+walk23 <- HeelCont %>%
+  filter(Year == 2023) 
+
+walk24 <- HeelCont %>%
+  filter(Year == 2024) 
+
+
+run22 <- HeelCont %>%
+  filter(Year == 2022)
+
+run23 <- HeelCont %>%
+  filter(Year == 2023)
+
+run24 <- HeelCont %>%
+  filter(Year == 2024)
+
+############## plotting based on walking  ############## 
+# histograms of metric: 
+ggplot(data = walk22, aes(x = HeelContact, fill = Name.of.test)) + geom_histogram() + ggtitle("2022 Walking") + theme(legend.position="bottom")
+
+ggplot(data = walk23, aes(x = HeelContact, fill = Name.of.test)) + geom_histogram() + ggtitle("2023 Walking") + theme(legend.position="bottom")
+
+ggplot(data = walk24, aes(x = HeelContact, fill = Name.of.test)) + geom_histogram() + ggtitle("2024 Walking") + theme(legend.position="bottom")
+
+############## Running  ############## 
+# histograms of metric: 
+ggplot(data = run22, aes(x = HeelContact, fill = Name.of.test)) + geom_histogram() + ggtitle("2022 Running") + theme(legend.position="bottom")
+
+ggplot(data = run23, aes(x = HeelContact, fill = Name.of.test)) + geom_histogram() + ggtitle("2023 Running") + theme(legend.position="bottom")
+
+ggplot(data = run24, aes(x = HeelContact, fill = Name.of.test)) + geom_histogram() + ggtitle("2024 Running") + theme(legend.position="bottom")
+
 ```
 
 ## WalkRun: Peak Toe Pressure
@@ -520,11 +927,45 @@ HeelCont  <- WalkRDB
 ```{r}
 #| echo: false
 #| warning: false
+#| fig.width: 12
+#| fig.height: 8
+#| layout-ncol: 3
 
 #set dataframe
-pkToe  <- WalkRDB 
+pkToe  <- WalkRDB
 
-# new dfs - split movement task and year
+walk22 <- pkToe %>%
+  filter(Year == 2022)
 
-# plot histogram: fill by Test Name
+walk23 <- pkToe %>%
+  filter(Year == 2023) 
+
+walk24 <- pkToe %>%
+  filter(Year == 2024) 
+
+
+run22 <- pkToe %>%
+  filter(Year == 2022)
+
+run23 <- pkToe %>%
+  filter(Year == 2023)
+
+run24 <- pkToe %>%
+  filter(Year == 2024)
+
+############## plotting based on walking  ############## 
+# histograms of metric: 
+ggplot(data = walk22, aes(x = PeakToePress, fill = Name.of.test)) + geom_histogram() + ggtitle("2022 Walking") + theme(legend.position="bottom")
+
+ggplot(data = walk23, aes(x = PeakToePress, fill = Name.of.test)) + geom_histogram() + ggtitle("2023 Walking") + theme(legend.position="bottom")
+
+ggplot(data = walk24, aes(x = PeakToePress, fill = Name.of.test)) + geom_histogram() + ggtitle("2024 Walking") + theme(legend.position="bottom")
+
+############## Running  ############## 
+# histograms of metric: 
+ggplot(data = run22, aes(x = PeakToePress, fill = Name.of.test)) + geom_histogram() + ggtitle("2022 Running") + theme(legend.position="bottom")
+
+ggplot(data = run23, aes(x = PeakToePress, fill = Name.of.test)) + geom_histogram() + ggtitle("2023 Running") + theme(legend.position="bottom")
+
+ggplot(data = run24, aes(x = PeakToePress, fill = Name.of.test)) + geom_histogram() + ggtitle("2024 Running") + theme(legend.position="bottom")
 ```
