@@ -62,11 +62,11 @@ H3: Improved fit and heel hold will allow for better edge control, indicated by 
 
 ## Configurations
 
-+-------------------------+-------------------+
-| Baseline: Dual Dial CFS | fTriple Dial PFW  |
-+=========================+===================+
-|                         |                   |
-+-------------------------+-------------------+
++-------------------------+------------------+
+| Baseline: Dual Dial CFS | fTriple Dial PFW |
++=========================+==================+
+|                         |                  |
++-------------------------+------------------+
 
 ## Summary of Findings
 
@@ -132,35 +132,50 @@ staticDat <- as_tibble(staticDat) # creating the data frame
 staticDat$Config <- factor(staticDat$Config, allConfigs)
 
 
-withinSubPlot <- function(inputDF, colName, dir) {
-  
-  # direction can be 'lower' or higher'. It is the direction of change that is better. 
-  # For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher. 
+withinSubPlotAvg <- function(inputDF, colName, dir = 'lower', yLabel = NULL) {
+  # Validate the `dir` input
+  if(!dir %in% c('lower', 'higher')){
+    stop("The 'dir' argument must be either 'lower' or 'higher'.")
+  }
+  # Calculate the mean for each Subject and Config, removing NA values
   meanDat <- inputDF %>%
     group_by(Subject, Config) %>%
-    summarize(mean = mean(!! sym(colName),na.rm = TRUE))
-  
+    summarize(mean = mean(!! sym(colName), na.rm = TRUE), .groups = 'drop')
+  # Determine the best configuration based on the direction
   if (dir == 'lower'){
     whichConfig <- meanDat %>%
       group_by(Subject) %>%
-      summarize(
-        BestConfig = Config[which.min(mean)]
-      )
-    
+      reframe(BestConfig = Config[which.min(mean)])
   } else if (dir == 'higher') {
     whichConfig <- meanDat %>%
-      group_by(Subject) %>% 
-      summarize(
-        BestConfig = Config[which.max(mean)]
-      )
-    
+      group_by(Subject) %>%
+      reframe(BestConfig = Config[which.max(mean)])
   }
-  
-  whichConfig <- merge(meanDat, whichConfig)
-  
-  ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = mean, col = BestConfig, group = Subject)) + geom_point(size = 4) + 
-    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000","#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 16)) + ylab(paste0({{colName}})) 
-  
+  # Rename BestConfig to Config for merging
+  whichConfig <- whichConfig %>%
+    rename(Config = BestConfig)
+  # Merge the best configuration back to the mean data
+  mergedData <- merge(meanDat, whichConfig, by = c("Subject", "Config"))
+  # Calculate overall mean for each Config, removing NA values
+  overallMean <- meanDat %>%
+    group_by(Config) %>%
+    summarize(overallMean = mean(mean, na.rm = TRUE), .groups = 'drop')
+  # Plotting with ggplot2
+  plot <- ggplot() +
+    geom_point(data = meanDat, mapping = aes(x = as.factor(Config), y = mean, group = Subject, color = 'Subject Means'), size = 3, alpha = 0.5) +
+    geom_line(data = meanDat, mapping = aes(x = as.factor(Config), y = mean, group = Subject, color = 'Subject Means'), alpha = 0.5) +
+    geom_point(data = overallMean, mapping = aes(x = as.factor(Config), y = overallMean, color = 'Overall Mean'), size = 4, shape = 17) +
+    geom_line(data = overallMean, mapping = aes(x = as.factor(Config), y = overallMean, group = 1, color = 'Overall Mean'), size = 1.5) +
+    scale_color_manual(values = c('Subject Means' = 'grey', 'Overall Mean' = '#003C4C')) +
+    xlab('Configuration') +
+    theme(text = element_text(size = 16), legend.title = element_blank())
+  # Set y-axis label
+  if (!is.null(yLabel)) {
+    plot <- plot + ylab(yLabel)
+  } else {
+    plot <- plot + ylab(paste0(colName))
+  }
+  print(plot)
 }
 
 
@@ -335,7 +350,7 @@ avgMod <- brm(data = avgDat, # Bayes model
 #| warning: false
 #| layout-ncol: 2
 
-p <- withinSubPlot(avgDat, colName = 'AvgSpeed', dir = 'higher')
+p <- withinSubPlotAvg(avgDat, colName = 'AvgSpeed', dir = 'higher')
 p + ylab('Average Speed (kph)')
 
 extractVals(avgDat, avgMod, otherConfigs, baseline, 'AvgSpeed', 'higher') 
@@ -378,7 +393,7 @@ topMod <- brm(data = topDat, # Bayes model
 #| warning: false
 #| layout-ncol: 2
 
-p <- withinSubPlot(topDat, colName = 'TopSpeed', dir = 'higher')
+p <- withinSubPlotAvg(topDat, colName = 'TopSpeed', dir = 'higher')
 p + ylab('Top Speed (kph)')
 
 extractVals(topDat, topMod, otherConfigs, baseline, 'TopSpeed', 'higher') 
@@ -398,11 +413,12 @@ Heel Turns
 heelFdat <- pressDat %>% 
   group_by(Subject) %>%
   filter(TurnDirection == 'Heel') %>%
+  filter(HeelTotMaxForce > 250) %>%
   mutate(z_score = scale(HeelTotMaxForce)) %>% 
   group_by(Config)
 
 # Look at histogram of the data if any outliers need to be removed
-# ggplot(data = Speeddat, aes(x = imuSpeed, color = Config)) + geom_histogram() + facet_wrap(~Subject)
+ggplot(data = heelFdat, aes(x = HeelTotMaxForce, color = Config)) + geom_histogram() + facet_wrap(~Subject)
 
 
 
@@ -424,7 +440,7 @@ heelFmod <- brm(data = heelFdat, # Bayes model
 #| warning: false
 #| layout-ncol: 2
 
-p <- withinSubPlot(heelFdat, colName = 'HeelTotMaxForce', dir = 'higher')
+p <- withinSubPlotAvg(heelFdat, colName = 'HeelTotMaxForce', dir = 'higher')
 p + ylab('Heel Edge Force (N)')
 
 extractVals(heelFdat, heelFmod, otherConfigs, baseline, 'HeelTotMaxForce', 'higher') 
@@ -470,13 +486,13 @@ toeFmod <- brm(data = toeFdat, # Bayes model
 #| layout-ncol: 2
 
 
-p <- withinSubPlot(toeFdat, colName = 'ToeTotMaxForce', dir = 'higher')
+p <- withinSubPlotAvg(toeFdat, colName = 'ToeTotMaxForce', dir = 'higher')
 p + ylab('Toe Edge Force (N)')
 
 extractVals(toeFdat, toeFmod, otherConfigs, baseline, 'ToeTotMaxForce', 'higher')
 ```
 
-**Board Angle - Higher is Better**
+**Board Angle**
 
 Heel Turns
 
@@ -513,7 +529,7 @@ heelEmod <- brm(data = heelEdat,
 #| warning: false
 #| layout-ncol: 2
 
-p <- withinSubPlot(heelEdat, colName = 'BoardAngle_HeelTurns', dir = 'higher')
+p <- withinSubPlotAvg(heelEdat, colName = 'BoardAngle_HeelTurns', dir = 'higher')
 p + ylab('Board Angle (deg)')
 
 extractVals(heelEdat, heelEmod, otherConfigs, baseline, 'BoardAngle_HeelTurns', 'higher')
@@ -554,7 +570,7 @@ toeEmod <- brm(data = toeEdat,
 #| warning: false
 #| layout-ncol: 2
 
-p <- withinSubPlot(toeEdat, colName = 'BoardAngle_ToeTurns', dir = 'higher')
+p <- withinSubPlotAvg(toeEdat, colName = 'BoardAngle_ToeTurns', dir = 'higher')
 p + ylab('Board Angle (deg)')
 
 extractVals(toeEdat, toeEmod, otherConfigs, baseline, 'BoardAngle_ToeTurns', 'higher')
@@ -578,7 +594,7 @@ heelRFDdat <- pressDat %>%
   group_by(Config)
 
 # Look at histogram of the data if any outliers need to be removed
-# ggplot(data = Everdat, aes(x = pIEgyro, color = Config)) + geom_histogram() + facet_wrap(~Subject)
+ggplot(data = heelRFDdat, aes(x = RFD, color = Config)) + geom_histogram() + facet_wrap(~Subject)
 
 
 
@@ -599,7 +615,7 @@ heelRFDmod <- brm(data = heelRFDdat, # Bayes model
 #| warning: false
 #| layout-ncol: 2
 
-p <- withinSubPlot(heelRFDdat, colName = 'RFD', dir = 'higher')
+p <- withinSubPlotAvg(heelRFDdat, colName = 'RFD', dir = 'higher')
 p + ylab('RFD (N/s)')
 
 extractVals(heelRFDdat, heelRFDmod, otherConfigs, baseline, 'RFD', 'higher')
@@ -615,11 +631,12 @@ Toe Turns
 toeRFDdat <- pressDat %>% 
   group_by(Subject) %>%
   filter(TurnDirection == 'Toe') %>%
+  filter(RFD > 100) %>%
   mutate(z_score = scale(RFD)) %>% 
   group_by(Config)
 
 # Look at histogram of the data if any outliers need to be removed
-# ggplot(data = KABDOGLandDat, aes(x = RkneeABDMom, color = Config)) + geom_histogram() + facet_wrap(~Subject)
+ggplot(data = toeRFDdat, aes(x = RFD, color = Config)) + geom_histogram() + facet_wrap(~Subject)
 
 
 
@@ -640,7 +657,7 @@ toeRFDmod <- brm(data = toeRFDdat,
 #| warning: false
 #| layout-ncol: 2
 
-p <- withinSubPlot(toeRFDdat, colName = 'RFD', dir = 'higher')
+p <- withinSubPlotAvg(toeRFDdat, colName = 'RFD', dir = 'higher')
 p + ylab('RFD (N/s)')
 
 extractVals(toeRFDdat, toeRFDmod, otherConfigs, baseline, 'RFD', 'higher')
@@ -663,13 +680,13 @@ heeldat <- pressDat %>%
   group_by(Config)
 
 # Look at histogram of the data if any outliers need to be removed
-# ggplot(data = TimeOGLandDat, aes(x = StabTime, color = Config)) + geom_histogram() + facet_wrap(~Subject)
+ggplot(data = heeldat, aes(x = heelAreaP, color = Config)) + geom_histogram() + facet_wrap(~Subject)
 
 
 
 heelmod <- brm(data = heeldat, 
               family = gaussian,
-              z_score ~ Config + ToeTotMaxForce+(Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              z_score ~ Config + ToeTotMaxForce + (Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
                         prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
                         prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
@@ -684,7 +701,7 @@ heelmod <- brm(data = heeldat,
 #| warning: false
 #| layout-ncol: 2
 
-p <- withinSubPlot(heeldat, colName = 'heelAreaP', dir = 'higher')
+p <- withinSubPlotAvg(heeldat, colName = 'heelAreaP', dir = 'higher')
 p + ylab('Heel Contact Area (%)')
 
 extractVals(heeldat, heelmod, otherConfigs, baseline, 'heelAreaP', 'higher')
@@ -726,7 +743,7 @@ avgDorsalmod <- brm(data = avgDorsaldat, # Bayes model
 #| warning: false
 #| layout-ncol: 2
 
-p <- withinSubPlot(avgDorsaldat, colName = 'avgDorsal', dir = 'higher')
+p <- withinSubPlotAvg(avgDorsaldat, colName = 'avgDorsal', dir = 'higher')
 p + ylab('Average Dorsal Pressure (kPa)')
 
 extractVals(avgDorsaldat, avgDorsalmod, otherConfigs, baseline, 'avgDorsal', 'higher')
@@ -768,7 +785,7 @@ varDorsalmod <- brm(data = varDorsaldat, # Bayes model
 #| warning: false
 #| layout-ncol: 2
 
-p <- withinSubPlot(varDorsaldat, colName = 'varDorsal', dir = 'lower')
+p <- withinSubPlotAvg(varDorsaldat, colName = 'varDorsal', dir = 'lower')
 p + ylab('Variation in Dorsal Pressure')
 
 extractVals(varDorsaldat, varDorsalmod, otherConfigs, baseline, 'varDorsal', 'lower')
@@ -788,7 +805,7 @@ avgShindat <- staticDat %>%
   group_by(Config)
 
 # Look at histogram of the data if any outliers need to be removed
-# ggplot(data = HeelCondat, aes(x = heelAreaP, color = Config)) + geom_histogram() + facet_wrap(~Subject)
+ggplot(data = avgShindat, aes(x = avgShin, color = Config)) + geom_histogram() + facet_wrap(~Subject)
 
 
 
@@ -810,7 +827,7 @@ avgShinmod <- brm(data = avgShindat, # Bayes model
 #| warning: false
 #| layout-ncol: 2
 
-p <- withinSubPlot(avgShindat, colName = 'avgShin', dir = 'higher')
+p <- withinSubPlotAvg(avgShindat, colName = 'avgShin', dir = 'higher')
 p + ylab('Average Shin Pressure (kPa)')
 
 extractVals(avgShindat, avgShinmod, otherConfigs, baseline, 'avgShin', 'higher')
@@ -852,7 +869,7 @@ varShinmod <- brm(data = varShindat, # Bayes model
 #| warning: false
 #| layout-ncol: 2
 
-p <- withinSubPlot(varShindat, colName = 'varShin', dir = 'lower')
+p <- withinSubPlotAvg(varShindat, colName = 'varShin', dir = 'lower')
 p + ylab('Variation in Shin Pressure')
 
 extractVals(varShindat, varShinmod, otherConfigs, baseline, 'varShin', 'lower')
@@ -868,11 +885,12 @@ extractVals(varShindat, varShinmod, otherConfigs, baseline, 'varShin', 'lower')
 
 avgCalfdat <- staticDat %>% 
   group_by(Subject) %>%
+  filter(avgCalf >1) %>%
   mutate(z_score = scale(avgCalf)) %>% 
   group_by(Config)
 
 # Look at histogram of the data if any outliers need to be removed
-# ggplot(data = HeelCondat, aes(x = heelAreaP, color = Config)) + geom_histogram() + facet_wrap(~Subject)
+ggplot(data = avgCalfdat, aes(x = avgCalf, color = Config)) + geom_histogram() + facet_wrap(~Subject)
 
 
 
@@ -894,7 +912,7 @@ avgCalfmod <- brm(data = avgCalfdat, # Bayes model
 #| warning: false
 #| layout-ncol: 2
 
-p <- withinSubPlot(avgCalfdat, colName = 'avgCalf', dir = 'higher')
+p <- withinSubPlotAvg(avgCalfdat, colName = 'avgCalf', dir = 'higher')
 p + ylab('Average Calf Pressure (kPa)')
 
 extractVals(avgCalfdat, avgCalfmod, otherConfigs, baseline, 'avgCalf', 'higher')
@@ -936,7 +954,7 @@ varCalfmod <- brm(data = varCalfdat, # Bayes model
 #| warning: false
 #| layout-ncol: 2
 
-p <- withinSubPlot(varCalfdat, colName = 'varCalf', dir = 'lower')
+p <- withinSubPlotAvg(varCalfdat, colName = 'varCalf', dir = 'lower')
 p + ylab('Variation in Calf Pressure')
 
 extractVals(varCalfdat, varCalfmod, otherConfigs, baseline, 'varCalf', 'lower')
