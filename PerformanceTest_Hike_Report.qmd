@@ -48,33 +48,32 @@ H3: Similarly, the medial wrap will provide better balance with faster stabilizi
 
 ## Methods
 
-+--------------+-------------------------+---------------------------------------+----------------------------------+
-| Subjects     | Movements               | Equipment                             | Measurements                     |
-+==============+=========================+=======================================+==================================+
-| 10 Athletes  | Uneven terrain walking  | -   Pressure insoles                  | Endurance:                       |
-|              |                         |                                       |                                  |
-| -   9 Male   |                         | -   Inertial Measurement Units (IMUs) | -   Peak toe pressure            |
-|              |                         |                                       |                                  |
-| -   1 Female |                         |                                       | Health:                          |
-|              |                         |                                       |                                  |
-|              |                         |                                       | -   Peak eversion velocity       |
-|              |                         |                                       |                                  |
-|              |                         |                                       | Fit:                             |
-|              |                         |                                       |                                  |
-|              |                         |                                       | -   Heel contact area            |
-+--------------+-------------------------+---------------------------------------+----------------------------------+
-|              | Single Leg Landings     | -   In-ground force plates            | Health:                          |
-|              |                         |                                       |                                  |
-|              | -   Weighted Level      | -   Motion Capture cameras            | -   Time-to-stabilize            |
-|              |                         |                                       |                                  |
-|              | -   On Trail            |                                       | -   Knee abduction moment        |
-+--------------+-------------------------+---------------------------------------+----------------------------------+
-|              | Weighted Lunge to Stand |                                       | Endurance:                       |
-|              |                         |                                       |                                  |
-|              |                         |                                       | -   Rate of force development    |
-|              |                         |                                       |                                  |
-|              |                         |                                       | -   Center-of-pressure excursion |
-+--------------+-------------------------+---------------------------------------+----------------------------------+
++--------------+------------------------+---------------------------------------+----------------------------+
+| Subjects     | Movements              | Equipment                             | Measurements               |
++==============+========================+=======================================+============================+
+| 10 Athletes  | Uneven terrain walking | -   Pressure insoles                  | Efficiency:                |
+|              |                        |                                       |                            |
+| -   9 Male   |                        | -   Inertial Measurement Units (IMUs) | -   Walking Speed          |
+|              |                        |                                       |                            |
+| -   1 Female |                        |                                       | Stability:                 |
+|              |                        |                                       |                            |
+|              |                        |                                       | -   Peak eversion velocity |
+|              |                        |                                       |                            |
+|              |                        |                                       | Fit:                       |
+|              |                        |                                       |                            |
+|              |                        |                                       | -   Heel contact area      |
+|              |                        |                                       | -   Peak toe pressure      |
++--------------+------------------------+---------------------------------------+----------------------------+
+|              | Single Leg Landings    | -   In-ground force plates            | Stability:                 |
+|              |                        |                                       |                            |
+|              | -   On Trail           | -   Motion Capture cameras            | -   Time-to-stabilize      |
++--------------+------------------------+---------------------------------------+----------------------------+
+|              | Treadmill Walking      |                                       | Efficiency:                |
+|              |                        |                                       |                            |
+|              | -   Uphill             |                                       | -   Center of mass work    |
+|              |                        |                                       |                            |
+|              | -   Downhill           |                                       |                            |
++--------------+------------------------+---------------------------------------+----------------------------+
 
 ## Configurations
 
@@ -162,35 +161,81 @@ treadmill  <- as_tibble(treadmill )
 treadmill$Config <- factor(treadmill$Config, allConfigs)
 
 
-withinSubPlot <- function(inputDF, colName, dir) {
-  
-  # direction can be 'lower' or higher'. It is the direction of change that is better. 
-  # For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher. 
+# withinSubPlot <- function(inputDF, colName, dir) {
+#   
+#   # direction can be 'lower' or higher'. It is the direction of change that is better. 
+#   # For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher. 
+#   meanDat <- inputDF %>%
+#     group_by(Subject, Config) %>%
+#     summarize(mean = mean(!! sym(colName),na.rm = TRUE))
+#   
+#   if (dir == 'lower'){
+#     whichConfig <- meanDat %>%
+#       group_by(Subject) %>%
+#       summarize(
+#         BestConfig = Config[which.min(mean)]
+#       )
+#     
+#   } else if (dir == 'higher') {
+#     whichConfig <- meanDat %>%
+#       group_by(Subject) %>% 
+#       summarize(
+#         BestConfig = Config[which.max(mean)]
+#       )
+#     
+#   }
+#   
+#   whichConfig <- merge(meanDat, whichConfig)
+#   
+#   ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = mean, col = BestConfig, group = Subject)) + geom_point(size = 4) + 
+#     geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000","#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 16)) + ylab(paste0({{colName}})) 
+#   
+# }
+
+withinSubPlotAvg <- function(inputDF, colName, dir = 'lower', yLabel = NULL) {
+  # Validate the `dir` input
+  if(!dir %in% c('lower', 'higher')){
+    stop("The 'dir' argument must be either 'lower' or 'higher'.")
+  }
+  # Calculate the mean for each Subject and Config, removing NA values
   meanDat <- inputDF %>%
     group_by(Subject, Config) %>%
-    summarize(mean = mean(!! sym(colName),na.rm = TRUE))
-  
+    summarize(mean = mean(!! sym(colName), na.rm = TRUE), .groups = 'drop')
+  # Determine the best configuration based on the direction
   if (dir == 'lower'){
     whichConfig <- meanDat %>%
       group_by(Subject) %>%
-      summarize(
-        BestConfig = Config[which.min(mean)]
-      )
-    
+      reframe(BestConfig = Config[which.min(mean)])
   } else if (dir == 'higher') {
     whichConfig <- meanDat %>%
-      group_by(Subject) %>% 
-      summarize(
-        BestConfig = Config[which.max(mean)]
-      )
-    
+      group_by(Subject) %>%
+      reframe(BestConfig = Config[which.max(mean)])
   }
-  
-  whichConfig <- merge(meanDat, whichConfig)
-  
-  ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = mean, col = BestConfig, group = Subject)) + geom_point(size = 4) + 
-    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000","#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 16)) + ylab(paste0({{colName}})) 
-  
+  # Rename BestConfig to Config for merging
+  whichConfig <- whichConfig %>%
+    rename(Config = BestConfig)
+  # Merge the best configuration back to the mean data
+  mergedData <- merge(meanDat, whichConfig, by = c("Subject", "Config"))
+  # Calculate overall mean for each Config, removing NA values
+  overallMean <- meanDat %>%
+    group_by(Config) %>%
+    summarize(overallMean = mean(mean, na.rm = TRUE), .groups = 'drop')
+  # Plotting with ggplot2
+  plot <- ggplot() +
+    geom_point(data = meanDat, mapping = aes(x = as.factor(Config), y = mean, group = Subject, color = 'Subject Means'), size = 3, alpha = 0.5) +
+    geom_line(data = meanDat, mapping = aes(x = as.factor(Config), y = mean, group = Subject, color = 'Subject Means'), alpha = 0.5) +
+    geom_point(data = overallMean, mapping = aes(x = as.factor(Config), y = overallMean, color = 'Overall Mean'), size = 4, shape = 17) +
+    geom_line(data = overallMean, mapping = aes(x = as.factor(Config), y = overallMean, group = 1, color = 'Overall Mean'), linewidth = 1.5) +
+    scale_color_manual(values = c('Subject Means' = 'grey', 'Overall Mean' = '#003C4C')) +
+    xlab('Configuration') +
+    theme(text = element_text(size = 16), legend.title = element_blank())
+  # Set y-axis label
+  if (!is.null(yLabel)) {
+    plot <- plot + ylab(yLabel)
+  } else {
+    plot <- plot + ylab(paste0(colName))
+  }
+  print(plot)
 }
 
 
@@ -290,6 +335,48 @@ withinSubQualPlot <- function(inputDF) {
   
 }
 
+
+
+# qual average plot
+withinSubQualAvg <- function(inputDF) {
+  
+  # direction can be 'lower' or higher'. It is the direction of change that is better. 
+  # For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher. 
+  # Calculate the mean for each Subject and Config, removing NA values
+  meanDat <- inputDF %>%
+    group_by(Subject, Config) %>%
+    summarize(mean = mean(OverallFit, na.rm = TRUE), .groups = 'drop')
+  
+  
+  whichConfig <- inputDF %>%
+    group_by(Subject) %>%
+    summarize(
+      BestConfig = Config[which.max(OverallFit)]
+    )
+  
+  whichConfig <- whichConfig %>%
+    rename(Config = BestConfig)
+  
+  mergeDat <- merge(meanDat, whichConfig)
+  
+  overallMean <- meanDat %>%
+    group_by(Config) %>%
+    summarize(overallMean = mean(mean, na.rm = TRUE), .groups = 'drop')
+  # Plotting with ggplot2
+  plot <- ggplot() +
+    geom_point(data = meanDat, mapping = aes(x = as.factor(Config), y = mean, group = Subject, color = 'Subject Means'), size = 3, alpha = 0.5) +
+    geom_line(data = meanDat, mapping = aes(x = as.factor(Config), y = mean, group = Subject, color = 'Subject Means'), alpha = 0.5) +
+    geom_point(data = overallMean, mapping = aes(x = as.factor(Config), y = overallMean, color = 'Overall Mean'), size = 4, shape = 17) +
+    geom_line(data = overallMean, mapping = aes(x = as.factor(Config), y = overallMean, group = 1, color = 'Overall Mean'), linewidth = 1.5) +
+    scale_color_manual(values = c('Subject Means' = 'grey', 'Overall Mean' = '#003C4C')) +
+    xlab('Configuration') + ylab('Rating') +
+    theme(text = element_text(size = 16), legend.title = element_blank()) 
+    
+  
+  print(plot)
+  
+}
+
 ###############################
 ```
 
@@ -335,6 +422,13 @@ ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) +
   ylab('Responses') + theme(text=element_text(size=20)) + geom_vline(xintercept = 5, linewidth = 1)
 ```
 
+```{r}
+#| echo: false
+#| # average qual within plot
+
+withinSubQualAvg(qualDat)
+```
+
 **Dial Torque**
 
 ```{r}
@@ -363,7 +457,7 @@ ggplot(qualDat, aes(x=Config, y = R_DialTorque1, color = Config, group= Subject)
 
 
 
-
+withinSubPlotAvg(qualDat, colName ='R_DialTorque1', dir = 'higher')  + ylab('Instep Dial - Torque [N-cm]')
 
 
 torqueDat <- qualDat %>%
@@ -388,7 +482,7 @@ extractVals(torqueDat , torqueMod, otherConfigs, baseline, 'R_DialTorque1', 'hig
 
 ```
 
-# Endurance 
+# Efficiency
 
 ### Positive Center of Mass Work- Uphill walking (lower is better)
 
@@ -431,7 +525,7 @@ psCOM_UH_mod <- brm(data = psCOM_UH,
 
 
 
-p <- withinSubPlot(psCOM_UH, colName = 'COMWork_pos', dir = 'lower')
+p <- withinSubPlotAvg(psCOM_UH, colName = 'COMWork_pos', dir = 'lower')
 p + ylab('Postitive COM - Uphill (J)')
 
 
@@ -474,8 +568,7 @@ ngCOM_DH_mod <- brm(data = ngCOM_DH ,
 ```{r}
 
 
-
-p <- withinSubPlot(ngCOM_DH, colName = 'COMWork_neg', dir = 'higher')
+p <- withinSubPlotAvg(ngCOM_DH, colName = 'COMWork_neg', dir = 'higher')
 p + ylab('Negative COM - Downhill (J)')
 
 
@@ -530,7 +623,7 @@ SpeeddatMod <- brm(data = Speeddat, # Bayes model
 #| layout-ncol: 2  
 
 
-p <- withinSubPlot(Speeddat, colName = 'imuSpeed', dir = 'higher')
+p <- withinSubPlotAvg(Speeddat, colName = 'imuSpeed', dir = 'higher')
 p + ylab('Walking Speed (m/s)')
 
 
@@ -577,13 +670,13 @@ PeakToeWalkdatMod <- brm(data = PeakToeWalkdat, # Bayes model
 #| warning: false
 #| layout-ncol: 2 
 
-p <- withinSubPlot(PeakToeWalkdat, colName = 'maxmaxToes', dir = 'lower')
+p <- withinSubPlotAvg(PeakToeWalkdat, colName = 'maxmaxToes', dir = 'lower')
 p + ylab('Peak Toe Pressure (kPa)')
 
 extractVals(PeakToeWalkdat, PeakToeWalkdatMod, otherConfigs, baseline, 'maxmaxToes', 'lower')
 ```
 
-# Health
+# Stability
 
 ### **Ankle Stability: Peak Eversion Velocity (lower is better) - Uneven Terrain Walking**
 
@@ -639,7 +732,7 @@ extractVals(Everdat, EverdatMod, otherConfigs, baseline, 'pIEgyro', 'lower')
 
 ```
 
-### **Knee Joint Loading: Knee Abduction Moment (lower magnitude is better)** 
+### **Knee Joint Loading: Knee Abduction Moment (lower magnitude is better)**
 
 ```{r}
 #| echo: false
@@ -859,6 +952,58 @@ extractVals(peakDorsal, DorsalMaxMod, otherConfigs, baseline, 'maxDorsalPressure
 
 ```
 
+### **Static Pressure - Mean Dorsal Pressure**
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: false 
+################
+###### peak dorsal pressure 
+
+Static <- subset(Static, Static$Movement == 'Standing')
+
+
+avgDorsal <- Static%>% 
+  group_by(Subject) %>%
+  mutate(z_score = scale(meanDorsalPressure)) %>% 
+  group_by(Config)
+
+ggplot(data = avgDorsal, aes(x = meanDorsalPressure, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
+
+# peakDorsal  <- subset(peakDorsal , peakDorsal $z_score < 2) #remov. outliers
+# peakDorsal  <- subset(peakDorsal , peakDorsal $z_score > -2)
+# 
+
+
+
+
+DorsalMeanMod <- brm(data = avgDorsal, # Bayes model
+              family = gaussian,
+              # z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              z_score ~ Config + (1|Subject),
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| layout-ncol: 2  
+
+
+p <- withinSubPlotAvg(avgDorsal, colName = 'meanDorsalPressure', dir = 'higher')
+p + ylab('Mean Dorsal Pressure (kPa)') 
+
+extractVals(avgDorsal, DorsalMeanMod, otherConfigs, baseline, 'meanDorsalPressure', 'higher')
+
+```
+
 **Radar Plots**
 
 ```{r}
@@ -866,15 +1011,15 @@ extractVals(peakDorsal, DorsalMaxMod, otherConfigs, baseline, 'maxDorsalPressure
 
 ### radar for MED config
 
-Endurance <- 66 
+Efficiency <- 66 
 
-Health <- 33
+Stability <- 33
 
 Fit <- 76
 
 Qual <- 77
 
-data <- t(c(Endurance, Health, Fit, Qual))
+data <- t(c(Efficiency, Stability, Fit, Qual))
 
 data <- as.data.frame(data)
 improvThresh<- as.data.frame(t(c(70,70,70,70)))
@@ -884,7 +1029,8 @@ min =as.data.frame(t(rep(0, 4)))
 max = as.data.frame(t(rep(100,4)))
 data <- rbind(max, min, improvThresh, equalThresh, data)
 
-colnames(data) <- c("Endurance", "Health", "Fit", "Qual")
+colnames(data) <- c("Efficiency", "Stability", "Fit", "Qual")
+data$Qual[4] <- 92 # qual for baseline
 
 colors <- c("#C8C9C7","#53565A", "#00966C")
 
@@ -922,15 +1068,15 @@ legend(x = "topright", inset = c(- 0.3, 0.2), legend = c("Threshold for confiden
 
 # # #### LAT Config
 
-Endurance <- 47
+Efficiency <- 47
 
-Health <- 52
+Stability <- 52
 
 Fit <- 52
 
 Qual <- 91
 
-data <- t(c(Endurance, Health, Fit, Qual))
+data <- t(c(Efficiency, Stability, Fit, Qual))
 
 data <- as.data.frame(data)
 
@@ -941,7 +1087,10 @@ min =as.data.frame(t(rep(0, 4)))
 max = as.data.frame(t(rep(100,4)))
 data <- rbind(max, min, improvThresh, equalThresh, data)
 
-colnames(data) <- c("Endurance", "Health", "Fit", "Qual")
+colnames(data) <- c("Efficiency", "Stability", "Fit", "Qual")
+
+data$Qual[4] <- 92 # qual for baseline
+
 
 colors <- c("#C8C9C7","#53565A", "#00966C")
 
