@@ -5,7 +5,10 @@ format:
     reference-doc: 'C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/Testing Segments/Report_Template.docx'
 editor: visual
 editor_options: 
-  chunk_output_type: console
+  chunk_output_type: console 
+execute:
+  error: true 
+  warning: false
 ---
 
 # CONFIDENTAL CONTENT FOR BOA EMPLOYEES ONLY. PLEASE CONTACT PFL DIRECTLY WITH ANY QUESTIONS.
@@ -68,9 +71,11 @@ H3: The heel lock will improve running speed with no change in heart rate. The d
 
 ## Configurations
 
++-----------------------------+------------------------------+-----------------------------+
 | Baseline: Single Dial (SD)  | Single Dial Heel Lock (SDHL) | Dual Dial Heel Lock (DDHL)  |
-|-----------------------------|------------------------------|-----------------------------|
++=============================+==============================+=============================+
 | ![](images/config1_LAT.png) | ![](images/config2_LAT.png)  | ![](images/config3_LAT.png) |
++-----------------------------+------------------------------+-----------------------------+
 
 ## Summary of Findings
 
@@ -78,6 +83,7 @@ H3: The heel lock will improve running speed with no change in heart rate. The d
 #| echo: false
 #| warning: false
 #| include: false
+
 library(readxl)
 library(tidyverse)
 library(tm)
@@ -127,6 +133,11 @@ IMUdat$Config <- factor(IMUdat$Config, allConfigs)
 
 Pressdat <- as_tibble(Pressdat) # creating the data frame
 Pressdat$Config <- factor(Pressdat$Config, allConfigs)
+
+
+
+
+
 
 withinSubPlot <- function(inputDF, colName, dir) {
   
@@ -290,6 +301,8 @@ qualDat$Location <- factor(qualDat$Location, c('Forefoot', 'Midfoot', 'Heel'))
 
 ```{r}
 #| echo: false
+
+
 withinSubQualPlot(qualDat)
 ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) + 
   geom_histogram(position = 'dodge', binwidth = 1) + facet_wrap(~Location) + scale_fill_manual(values=c("#999999", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) +
@@ -301,6 +314,8 @@ ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) +
 ```{r}
 #| echo: false
 #| warning: false
+
+
 qualDat %>%
   group_by(Config)%>%
   summarize(
@@ -330,7 +345,7 @@ ggplot(qualDat, aes(x=Config, y = L_DialTorque1, color = Config, group= Subject)
 ```{r}
 #| echo: false
 #| warning: false
-################
+
 
 ###### Heart Rate
 
@@ -409,7 +424,7 @@ p + ylab('Downhill Heart Rate (bpm)')
 ```{r}
 #| echo: false
 #| warning: false
-################
+
 
 ###### Running Speed
 
@@ -504,7 +519,7 @@ p + ylab('Downhill Speed (m/s)')
 ```{r}
 #| echo: false
 #| warning: false
-################
+
 
 ###### Peak eversion velocity
 
@@ -596,7 +611,7 @@ p + ylab('Downhill Eversion Velcity (deg/s)')
 ```{r}
 #| echo: false
 #| warning: false
-################
+
 
 ###### Heel Contact
 
@@ -688,7 +703,7 @@ p + ylab('Downhill Heel Contact (%)')
 ```{r}
 #| echo: false
 #| warning: false
-################
+
 
 ###### Forefoot Contact
 
