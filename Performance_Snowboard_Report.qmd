@@ -101,10 +101,12 @@ rm(list=ls())
 qualDat <- read_xlsx('C:\\Users\\bethany.kilpatrick\\BOA Technology Inc\\PFL Team - General\\Testing Segments\\Snow Performance\\2025_Mech_LowZonePFW_Ride\\2025_Mech_LowZonePFW_Ride_Qualitative.xlsx')
 
 # # Load in the IMU data
-imuDat <- read.csv('C:\\Users\\bethany.kilpatrick\\BOA Technology Inc\\PFL Team - General\\Testing Segments\\Snow Performance\\2025_Mech_LowZonePFW_Ride\\IMU\\1_IMUOutcomes.csv')
+imuDat <- read.csv('C:\\Users\\bethany.kilpatrick\\BOA Technology Inc\\PFL Team - General\\Testing Segments\\Snow Performance\\2025_Mech_LowZonePFW_Ride\\IMU\\2_IMUOutcomes.csv') 
+
+
 
 # Pressure from Insoles - during carving
-pressDat <- read.csv('C:\\Users\\bethany.kilpatrick\\BOA Technology Inc\\PFL Team - General\\Testing Segments\\Snow Performance\\2025_Mech_LowZonePFW_Ride\\Xsensor\\Exported\\0_CompiledResults_7.csv')
+pressDat <- read.csv('C:\\Users\\bethany.kilpatrick\\BOA Technology Inc\\PFL Team - General\\Testing Segments\\Snow Performance\\2025_Mech_LowZonePFW_Ride\\Xsensor\\Exported\\0_CompiledResults_2.csv')
 
 # Pressure from Insoles - static
 # staticDat <- read.csv('C:\\Users\\Kate.Harrison\\Boa Technology Inc\\PFL Team - General\\Testing Segments\\Snow Performance\\EH_Snowboard_BurtonWrap_Perf_Dec2024\\InLabPressure\\0_CompiledResults.csv')
@@ -123,11 +125,11 @@ qualDat$Config <- factor(qualDat$Config, allConfigs)
 
 gpsDat <- as_tibble(gpsDat) # creating the data frame
 gpsDat$Config <- factor(gpsDat$Config, allConfigs)
-# 
-# imuDat <- as_tibble(imuDat) # creating the data frame
-# imuDat$Config <- factor(imuDat$Config, allConfigs)
-# imuDat <- imuDat %>%
-#   mutate(Config = replace(Config, Config == 'PFS','PFW'))
+
+
+imuDat <- as_tibble(imuDat) # creating the data frame
+imuDat$Config <- factor(imuDat$Config, allConfigs)
+
 
 pressDat <- as_tibble(pressDat) # creating the data frame
 pressDat$Config <- factor(pressDat$Config, allConfigs)
@@ -289,7 +291,7 @@ withinSubQualPlot <- function(inputDF) {
 #| layout-ncol: 2
 
 qualDat %>%
-  pivot_longer(cols = OverallFit:Cuff, 
+  pivot_longer(cols = Stiffness:FreeRiding, 
                names_to = "Location", values_to = "Rating") %>%
   group_by(Location, Config) %>%
   summarize(
@@ -326,18 +328,40 @@ ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) +
 #| include: false
 
 
+heelAvg_speedAngle <- imuDat%>% 
+  group_by(Subject, Config, Order)%>%
+  summarize(
+    BA_HeelTurn_Mean = mean(BoardAngle_HeelTurns, na.rm = TRUE),
+  )
+
+toeAvg_speedAngle <- imuDat%>% 
+  group_by(Subject, Config, Order)%>%
+  summarize(
+    BA_ToeTurn_Mean = mean(BoardAngle_ToeTurns, na.rm = TRUE),
+  )
+
+
 
 avgDat <- gpsDat %>% 
   group_by(Subject) %>%
   mutate(z_score = scale(AvgSpeed)) %>% 
-  group_by(Config)
+  group_by(Config) 
+
+
+
+heelspdat <- merge(x=heelAvg_speedAngle ,y=avgDat,all=TRUE) 
+
+
+toespdat <- merge(x=toeAvg_speedAngle ,y=avgDat,all=TRUE)
+
 
 # Look at histogram of the data if any outliers need to be removed
 ggplot(data = avgDat, aes(x = AvgSpeed, color = Config)) + geom_histogram() + facet_wrap(~Subject)
 
 
 
-# Note for trail run metrics: Warmup was reduced (from 1000 to 400)
+
+
 avgMod <- brm(data = avgDat, # Bayes model
               family = gaussian,
               z_score ~ Config + (1+ Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
@@ -347,7 +371,53 @@ avgMod <- brm(data = avgDat, # Bayes model
                         prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
               iter = 2000, warmup = 1000, chains = 4, cores = 4,
               control = list(adapt_delta = .975, max_treedepth = 20),
-              seed = 190831)
+              seed = 190831) 
+
+
+
+
+
+
+
+
+#### Models factoring in Heel  & Toe Turn Angles
+
+
+# Note for trail run metrics: Warmup was reduced (from 1000 to 400)
+heelspdatMod <- brm(data = heelspdat, # Bayes model
+              family = gaussian,
+              z_score ~ Config + BA_HeelTurn_Mean + (1+ Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831) 
+
+# p <- withinSubPlotAvg(heelspdat, colName = 'AvgSpeed', dir = 'higher','Average Speed (kph)')
+
+
+extractVals(heelspdat, heelspdatMod , otherConfigs, baseline, 'AvgSpeed', 'higher') 
+
+
+
+
+
+# Note for trail run metrics: Warmup was reduced (from 1000 to 400)
+toespdatMod <- brm(data = toespdat, # Bayes model
+              family = gaussian,
+              z_score ~ Config +  BA_ToeTurn_Mean + (1+ Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831) 
+
+
+extractVals(toespdat, toespdatMod , otherConfigs, baseline, 'AvgSpeed', 'higher') 
 ```
 
 ```{r}
@@ -369,10 +439,40 @@ extractVals(avgDat, avgMod, otherConfigs, baseline, 'AvgSpeed', 'higher')
 #| include: false
 
 
+
+heel_speedAngle <- imuDat%>% 
+  group_by(Subject, Config, Order)%>%
+  summarize(
+    BA_HeelTurn_Mean = mean(BoardAngle_HeelTurns, na.rm = TRUE),
+  )
+
+toe_speedAngle <- imuDat%>% 
+  group_by(Subject, Config, Order)%>%
+  summarize(
+    BA_ToeTurn_Mean = mean(BoardAngle_ToeTurns, na.rm = TRUE),
+  )
+
+
+
+
 topDat <- gpsDat %>% 
   group_by(Subject) %>%
   mutate(z_score = scale(TopSpeed)) %>% 
   group_by(Config)
+
+
+
+
+
+topHeelSpDat <- merge(x=heel_speedAngle ,y=topDat,all=TRUE) 
+
+
+topToeSpDat <- merge(x=toe_speedAngle ,y=topDat,all=TRUE)
+
+
+
+
+
 
 # Look at histogram of the data if any outliers need to be removed
 ggplot(data = topDat, aes(x = TopSpeed, color = Config)) + geom_histogram() + facet_wrap(~Subject)
@@ -389,7 +489,51 @@ topMod <- brm(data = topDat, # Bayes model
                         prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
               iter = 2000, warmup = 1000, chains = 4, cores = 4,
               control = list(adapt_delta = .975, max_treedepth = 20),
-              seed = 190831)
+              seed = 190831) 
+
+
+#### Models factoring in Heel  & Toe Turn Angles
+
+
+# Note for trail run metrics: Warmup was reduced (from 1000 to 400)
+topHeelSpDatMod <- brm(data = topHeelSpDat, # Bayes model
+              family = gaussian,
+              z_score ~ Config + BA_HeelTurn_Mean + (1+ Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831) 
+
+
+
+
+extractVals(topHeelSpDat, topHeelSpDatMod  , otherConfigs, baseline, 'TopSpeed', 'higher') 
+
+
+
+
+
+
+topToeSpDatMod <- brm(data = topToeSpDat , # Bayes model
+              family = gaussian,
+              z_score ~ Config +  BA_ToeTurn_Mean + (1+ Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831) 
+
+
+extractVals(topToeSpDat, topToeSpDatMod, otherConfigs, baseline, 'TopSpeed', 'higher') 
+
+
+
+
 ```
 
 ```{r}
@@ -458,7 +602,7 @@ Toe edge
 #| include: false
 
 
-###### Peak Toe Pressure Walking
+###### Peak Toe Pressure 
 
 toeFdat <- pressDat %>% 
   group_by(Subject) %>%
@@ -644,16 +788,14 @@ Toe Turns
 toeRFDdat <- pressDat %>% 
   group_by(Subject) %>%
   filter(TurnDirection == 'Toe') %>%
-  filter(RFD > 100) %>%
+  filter(RFD > 100) %>% 
+  filter(RFD < 1000) %>%
   mutate(z_score = scale(RFD)) %>% 
   group_by(Config)
 
 # Look at histogram of the data if any outliers need to be removed
 ggplot(data = toeRFDdat, aes(x = RFD, color = Config)) + geom_histogram() + facet_wrap(~Subject)
 
-
-toeRFDdat<- subset(toeRFDdat, toeRFDdat$z_score < 2) #removing outliers
-toeRFDdat<- subset(toeRFDdat, toeRFDdat$z_score > -2)
 
 toeRFDmod <- brm(data = toeRFDdat, 
               family = gaussian,
@@ -687,12 +829,27 @@ extractVals(toeRFDdat, toeRFDmod, otherConfigs, baseline, 'RFD', 'higher')
 #| warning: false
 #| include: false
 
+toeTurnDat <- imuDat%>% 
+  group_by(Subject, Config, Order)%>%
+  summarize(
+    BA_TorTurn_Mean = mean(BoardAngle_ToeTurns, na.rm = TRUE),
+  )
 
-heeldat <- pressDat %>% 
+
+
+
+
+heeldat1 <- pressDat %>% 
   group_by(Subject) %>%
   filter(TurnDirection == 'Toe') %>%
   mutate(z_score = scale(heelAreaP)) %>% 
   group_by(Config)
+
+
+heeldat <- merge(x=heeldat1 ,y=toeTurnDat,all=TRUE)
+
+
+
 
 # Look at histogram of the data if any outliers need to be removed
 ggplot(data = heeldat, aes(x = heelAreaP, color = Config)) + geom_histogram() + facet_wrap(~Subject)
@@ -703,7 +860,7 @@ heeldat<- subset(heeldat, heeldat$z_score > -2)
 
 heelmod <- brm(data = heeldat, 
               family = gaussian,
-              z_score ~ Config + ToeTotMaxForce + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              z_score ~ Config + BA_TorTurn_Mean + (1 | Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
                         prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
                         prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
@@ -722,6 +879,54 @@ p <- withinSubPlotAvg(heeldat, colName = 'heelAreaP', dir = 'higher','Heel Conta
 
 
 extractVals(heeldat, heelmod, otherConfigs, baseline, 'heelAreaP', 'higher')
+```
+
+Toe Contact Area During Heel Turns
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: false
+
+
+Toedat <- pressDat %>% 
+  group_by(Subject) %>%
+  filter(TurnDirection == 'Heel') %>%
+  mutate(z_score = scale(ToeAreaP)) %>% 
+  group_by(Config)
+
+
+
+
+
+# Look at histogram of the data if any outliers need to be removed
+ggplot(data = Toedat, aes(x = ToeAreaP, color = Config)) + geom_histogram() + facet_wrap(~Subject)
+
+
+heeldat<- subset(heeldat, heeldat$z_score < 2) #removing outliers
+heeldat<- subset(heeldat, heeldat$z_score > -2)
+
+ToedatMod <- brm(data = Toedat, 
+              family = gaussian,
+              z_score ~ Config + (1 | Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| layout-ncol: 2
+
+p <- withinSubPlotAvg(Toedat, colName = 'ToeAreaP', dir = 'higher','Toe Contact Area - Heel Turns (%)')
+
+
+extractVals(Toedat, ToedatMod, otherConfigs, baseline, 'ToeAreaP', 'higher')
 ```
 
 **Average Dorsal Pressure**
