@@ -7,11 +7,11 @@ rm(list=ls())
 
 
 
-Year <- '2023'
-Month <- 'August'
-Brand <- 'lasportiva'
-Model <- 'cyklon'
-TestName <- 'Test'
+Year <- '2025'
+Month <- 'January'
+Brand <- 'adidas'
+Model <- 'ubersonic'
+TestName <- '2025_Mech_WomensPanelStiffnessI_Adidas'
 Benefit <- 'A/S'
 Type <- 'Performance' 
 
@@ -55,7 +55,7 @@ qual_ParentDat <- read.csv('Z:\\BigData\\DB_V2\\QualitativeBigData_v2.csv',nrows
 name_order = colnames(qual_ParentDat)
 
 # Read the qualitative data to be added to master data
-ChildDat <- read_xlsx('Z:\\Testing Segments\\AgilityPerformanceData\\AS_Trail_MidfootPanelStiffness_Perf_Oct23\\Qual_AS_Trail_MidfootPanelStiffness_Perf_Oct23.xlsx')
+ChildDat <- read_xlsx('Z:\\Testing Segments\\AgilityPerformanceData\\2025_Mech_WomensPanelStiffnessI_Adidas\\AS_Court_WomensPanelStiffnessI_Mech_Jan25.xlsx')
 ChildDat <- ChildDat %>%
   rename('Overall' = OverallFit)
 noSub <- length(ChildDat$Subject)
@@ -97,7 +97,7 @@ ChildDat <- ChildDat[,name_order]
 # write output. add a 1 to the end if you are at all unsure of output!!!
 a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?')
 if (a == 'YES'){
-  write.table(ChildDat, "Z:\\BigData\\DB_V2\\QualitativeBigData_v2.csv", sep=',', 
+  write.table(ChildDat, "Z:/BigData/DB_V2/QualitativeBigData_v2.csv", sep=',', 
               append = TRUE,col.names = FALSE, row.names = FALSE)
   
 }
@@ -115,7 +115,7 @@ name_order = colnames(ParentDat)
 
 Config <- unique(ChildDat$Config)
 noSub <- length(Config)
-Config.Long <- c('Interal Ankle Straps','External Ankle Straps','Focus Ankle')
+Config.Long <- c('Mid Stretch','Low Stretch','High Stretch')
 ChildDat <- data.frame(Config,Config.Long)
 ChildDat$Year <- rep(Year, each = noSub)
 ChildDat$Month <- rep(Month, each = noSub)
@@ -144,8 +144,8 @@ ParentDat <- read.csv('Z:/BigData/DB_V2/MasterSubjectVisits.csv',nrows=1)
 #   rename('Subject' = ?..Subject)
 name_order = colnames(ParentDat)
 # Read in qual sheet to reference names
-ChildDat <- read_xlsx('Z:\\Testing Segments\\AgilityPerformanceData\\AS_Trail_MidfootPanelStiffness_Perf_Oct23\\Qual_AS_Trail_MidfootPanelStiffness_Perf_Oct23.xlsx',sheet = 'Sheet3')
-ChildDat <- subset(ChildDat,select = -c(FootScan,Compensation,Height))
+ChildDat <- read_xlsx('Z:\\Testing Segments\\AgilityPerformanceData\\2025_Mech_WomensPanelStiffnessI_Adidas\\AS_Court_WomensPanelStiffnessI_Mech_Jan25.xlsx',sheet = 'Sheet3')
+ChildDat <- subset(ChildDat,select = -c(FootScan,Swag,Height))
 ChildDat <- ChildDat %>% rename(Speed.run. = RunSpeed)
 noSub <- length(ChildDat$Subject)
 ChildDat$Year <- rep(Year, each = noSub)
@@ -156,6 +156,8 @@ ChildDat$Name.of.Test <- rep(TestName, each = noSub)
 ChildDat$Benefit <- rep(Benefit, each = noSub)
 ChildDat$Type <- rep(Type, each = noSub)
 ChildDat$Resistance <- rep('NA', each = noSub)
+ChildDat$Speed.run.<- rep(3, each = noSub)
+ChildDat$Sex <- rep('F', each = noSub)
 
 
 # Sort the data into the correct order
@@ -183,7 +185,7 @@ ParentDat <- read.csv('Z:/BigData/DB_V2/AgilitySpeedDB.csv',nrows=1)
 name_order = colnames(ParentDat)
 
 # Read and summarize the overground data:
-AgilityDat <- read.csv('Z:\\Testing Segments\\AgilityPerformanceData\\AS_Trail_MidfootPanelStiffness_Perf_Oct23\\Overground\\CompiledAgilityDataTest.csv') 
+AgilityDat <- read.csv('Z:\\Testing Segments\\AgilityPerformanceData\\2025_Mech_WomensPanelStiffnessI_Adidas\\Overground\\0_CompiledAgilityDataTest.csv') 
 AgilityDat$Subject <- tolower(gsub(" ", "", AgilityDat$Subject))
 Subject <- unique(AgilityDat$Subject)
 Config <- unique(AgilityDat$Config)
@@ -194,9 +196,21 @@ cmp_strings(Config,unique(AgilityDat$Config),'config')
 
 
 
+AgilityDat <- AgilityDat %>%
+  mutate(Order = replace(Order, Order == '1 - PerformanceTestData','1'))%>%
+  mutate(Order = replace(Order, Order == '2 - PerformanceTestData','2'))%>% 
+  mutate(Order = replace(Order, Order == '3 - PerformanceTestData','3'))%>%
+  mutate(Order = replace(Order, Order == '4 - PerformanceTestData','4'))%>%
+  mutate(Order = replace(Order, Order == '5 - PerformanceTestData','5'))%>%
+  mutate(Order = replace(Order, Order == '6 - PerformanceTestData','6'))
+
+
 AgilityDat <- AgilityDat %>% 
   group_by(Subject) %>%
-  filter(PeakKneeAbMoment < 250) %>%
+  filter(PeakKneeAbMoment < 250) %>% 
+  filter(CT > .1) %>% #remove values with impossible contact time
+  filter(CT < 1.5) %>% 
+  filter(peakPFmom < 500) %>%
   mutate(z_score = scale(PeakKneeAbMoment))%>%
   group_by(Config) 
 
@@ -206,7 +220,7 @@ AgilityDat<- subset(AgilityDat, AgilityDat$z_score > -2)
 
 CMJDat <- AgilityDat %>%
   filter(Movement == 'CMJ') %>%
-  group_by(Subject, Config, Movement) %>%
+  group_by(Subject, Config, Movement,Order) %>%
   summarise(ContactTime = mean(CT), PeakAnklePFMoment = mean(peakPFmom), PropForce = mean(peakGRF_Z),
             PeakAnkleInMoment = mean(peakINVmom), KneeAbAdROM = mean(kneeABDrom),PeakKneeAbMoment = mean(PeakKneeAbMoment),
             COMEccWork = mean(eccWork), COMConWork = mean(conWork)) 
@@ -215,7 +229,7 @@ CMJDat <- AgilityDat %>%
 
 SKTDat <- AgilityDat %>%
   filter(Movement == 'Skater') %>%
-  group_by(Subject, Config, Movement) %>%
+  group_by(Subject, Config, Movement, Order) %>%
   summarise(ContactTime = mean(CT), PeakAnklePFMoment = mean(peakPFmom), PropForce = mean(peakGRF_X),
             PeakAnkleInMoment = mean(peakINVmom), KneeAbAdROM = mean(kneeABDrom), PeakKneeAbMoment = mean(PeakKneeAbMoment),
             COMEccWork = mean(eccWork), COMConWork = mean(conWork))
@@ -257,7 +271,7 @@ name_order = colnames(ParentDat)
 
 ### Import Static Pressure data
 
-staticDat <- read.csv('Z:\\Testing Segments\\AgilityPerformanceData\\AS_Trail_MidfootPanelStiffness_Perf_Oct23\\Xsensor\\Static\\CompiledResults_Static.csv') 
+staticDat <- read.csv('Z:\\Testing Segments\\AgilityPerformanceData\\2025_Mech_WomensPanelStiffnessI_Adidas\\Xsensor\\Cropped\\Static\\0_CompiledResults_Static.csv') 
 staticDat$Subject <- tolower(gsub(" ", "", staticDat$Subject))
 
 #Check Names and Configs
@@ -299,20 +313,19 @@ name_order = colnames(ParentDat)
 
 ### Import Dynamic Pressure data
 
-ChildDat <- read.csv('Z:\\Testing Segments\\AgilityPerformanceData\\AS_Trail_MidfootPanelStiffness_Perf_Oct23\\Xsensor\\0_CompiledResults1.csv')
+ChildDat <- read.csv('Z:\\Testing Segments\\AgilityPerformanceData\\2025_Mech_WomensPanelStiffnessI_Adidas\\Xsensor\\Cropped\\0_CompiledResults.csv')
 
 ChildDat <- subset(ChildDat, ChildDat$Movement == ('cmj')|ChildDat$Movement == ('skater'))
 
 ChildDat <- ChildDat %>%
-  group_by(Subject, Config, Movement) %>%
+  group_by(Subject, Config, Movement, Order) %>%
   summarise_all(mean)
 
-#staticDat$Subject[stati
-ChildDat$Year <- rep(2023, dim(ChildDat)[1])
-ChildDat$Month <- rep('January', dim(ChildDat)[1])
-ChildDat$Brand <- rep('NoBull', dim(ChildDat)[1])
-ChildDat$Model <- rep('Trainer', dim(ChildDat)[1]) 
-#childDat$Subject == 'WesWebber'] <- 'WesWeber'
+
+ChildDat$Year <- rep(Year, dim(ChildDat)[1])
+ChildDat$Month <- rep(Month, dim(ChildDat)[1])
+ChildDat$Brand <- rep(Brand, dim(ChildDat)[1])
+ChildDat$Model <- rep(Model, dim(ChildDat)[1]) 
 
 ChildDat <- ChildDat[,name_order]
 
@@ -337,26 +350,26 @@ ParentDat <- read.csv('Z:\\BigData\\DB_V2\\WalkRunDB.csv',nrows=1)
 name_order = colnames(ParentDat)
 
 # Read and summarize the Pressure Data:
-PressDat <- read.csv('C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/Testing Segments/AgilityPerformanceData/AS_Trail_DorsalPressureVariationIII_PFLMech_July2023/Xsensor/0_CompiledResults_3.csv')
+PressDat <- read.csv('Z:\\Testing Segments\\AgilityPerformanceData\\2025_Mech_WomensPanelStiffnessI_Adidas\\Xsensor\\Cropped\\0_CompiledResults.csv')
 PressDat$Subject <- gsub(" ", "", PressDat$Subject) # remove spaces in names
 PressDat <- subset(PressDat, PressDat$Movement == 'run')
 
 
 PressDat <- PressDat %>%
   # filter(Side == 'Right') %>%
-  group_by(Subject, Config) %>%
-  summarize(PeakToePress = mean(maxmaxToes, na.rm = TRUE), HeelContact = mean(heelAreaP, na.rm = TRUE))
-# mutate(Subject= replace(Subject, Subject == 'Olivia','OliviaBojan'))
+  group_by(Subject, Config, Order) %>%
+  summarize(PeakToePress = mean(maxmaxToes, na.rm = TRUE), HeelContact = mean(heelAreaP, na.rm = TRUE))%>%
+  mutate(Subject= replace(Subject, Subject == 'LindsayStrurtevantWhite','LindsaySturtevantWhite'))
 
 # Read and summarize other treadmill data:
-TreadDat <- read.csv('C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/Testing Segments/AgilityPerformanceData/AS_Trail_DorsalPressureVariationIII_PFLMech_July2023/Treadmill/TreadmillOutcomes.csv')
+TreadDat <- read.csv('Z:\\Testing Segments\\AgilityPerformanceData\\2025_Mech_WomensPanelStiffnessI_Adidas\\Treadmill\\0_TreadmillOutcomes.csv')
 TreadDat[TreadDat == Inf] <- NA
 TreadDat$Slope <- as.character(TreadDat$Slope)
 
 TreadDat <- TreadDat %>%
-  group_by(Subject, Config, Speed, Slope) %>%
-  summarize(LoadingRate = mean(VALR, na.rm = TRUE), PosCOMWork = mean(COMWork_pos), NegCOMWork = mean(COMWork_neg)) 
-# mutate(Subject= replace(Subject, Subject == 'Amanda','AmandaBuchholtz'))
+  group_by(Subject, Config, Order, Speed, Slope) %>%
+  summarize(LoadingRate = mean(VALR, na.rm = TRUE), PosCOMWork = mean(COMWork_pos), NegCOMWork = mean(COMWork_neg)) %>%
+mutate(Subject= replace(Subject, Subject == 'LindsaySturtevantWhite','LindsaySturtevantWhite'))
 
 ChildDat <- list(PressDat,TreadDat) %>%
   reduce(full_join)
