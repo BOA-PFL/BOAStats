@@ -5,7 +5,10 @@ format:
     reference-doc: 'C:\\Users\\Kate.Harrison\\Boa Technology Inc\\PFL Team - General\\Testing Segments\\Report_Template.docx'
 editor: visual
 editor_options: 
-  chunk_output_type: console
+  chunk_output_type: console 
+execute:
+  error: true 
+  warning: false
 ---
 
 # CONFIDENTAL CONTENT FOR BOA EMPLOYEES ONLY. PLEASE CONTACT PFL DIRECTLY WITH ANY QUESTIONS.
@@ -73,7 +76,8 @@ H3: Improved fit and heel hold will allow for better edge control, indicated by 
 ```{r}
 #| echo: false
 #| warning: false
-#| include: false
+#| include: false 
+
 library(readxl)
 library(tidyverse)
 library(tm)
@@ -319,7 +323,7 @@ ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) +
 #| echo: false
 #| warning: false
 #| include: false
-################
+
 
 
 avgDat <- gpsDat %>% 
@@ -350,8 +354,7 @@ avgMod <- brm(data = avgDat, # Bayes model
 #| warning: false
 #| layout-ncol: 2
 
-p <- withinSubPlotAvg(avgDat, colName = 'AvgSpeed', dir = 'higher')
-p + ylab('Average Speed (kph)')
+p <- withinSubPlotAvg(avgDat, colName = 'AvgSpeed', dir = 'higher','Average Speed (kph)')
 
 extractVals(avgDat, avgMod, otherConfigs, baseline, 'AvgSpeed', 'higher') 
 ```
@@ -362,7 +365,7 @@ extractVals(avgDat, avgMod, otherConfigs, baseline, 'AvgSpeed', 'higher')
 #| echo: false
 #| warning: false
 #| include: false
-################
+
 
 
 topDat <- gpsDat %>% 
@@ -393,8 +396,7 @@ topMod <- brm(data = topDat, # Bayes model
 #| warning: false
 #| layout-ncol: 2
 
-p <- withinSubPlotAvg(topDat, colName = 'TopSpeed', dir = 'higher')
-p + ylab('Top Speed (kph)')
+p <- withinSubPlotAvg(topDat, colName = 'TopSpeed', dir = 'higher','Top Speed (kph)')
 
 extractVals(topDat, topMod, otherConfigs, baseline, 'TopSpeed', 'higher') 
 ```
@@ -407,7 +409,7 @@ Heel Turns
 #| echo: false
 #| warning: false
 #| include: false
-################
+
 
 
 heelFdat <- pressDat %>% 
@@ -425,7 +427,7 @@ ggplot(data = heelFdat, aes(x = HeelTotMaxForce, color = Config)) + geom_histogr
 # Note for trail run metrics: Warmup was reduced (from 1000 to 400)
 heelFmod <- brm(data = heelFdat, # Bayes model
               family = gaussian,
-              z_score ~ Config + (Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
                         prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
                         prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
@@ -440,8 +442,7 @@ heelFmod <- brm(data = heelFdat, # Bayes model
 #| warning: false
 #| layout-ncol: 2
 
-p <- withinSubPlotAvg(heelFdat, colName = 'HeelTotMaxForce', dir = 'higher')
-p + ylab('Heel Edge Force (N)')
+p <- withinSubPlotAvg(heelFdat, colName = 'HeelTotMaxForce', dir = 'higher','Heel Edge Force (N)')
 
 extractVals(heelFdat, heelFmod, otherConfigs, baseline, 'HeelTotMaxForce', 'higher') 
 ```
@@ -458,7 +459,6 @@ Toe edge
 toeFdat <- pressDat %>% 
   group_by(Subject) %>%
   filter(TurnDirection == 'Toe') %>%
-  filter(Subject != 'GenoVerucchi') %>%
   mutate(z_score = scale(ToeTotMaxForce)) %>% 
   group_by(Config)
 
@@ -470,7 +470,7 @@ ggplot(data = toeFdat, aes(x = ToeTotMaxForce, color = Config)) + geom_histogram
 # Note for trail run metrics: Warmup was reduced (from 1000 to 500)
 toeFmod <- brm(data = toeFdat, # Bayes model
               family = gaussian,
-              z_score ~ Config + (Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
                         prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
                         prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
@@ -486,8 +486,7 @@ toeFmod <- brm(data = toeFdat, # Bayes model
 #| layout-ncol: 2
 
 
-p <- withinSubPlotAvg(toeFdat, colName = 'ToeTotMaxForce', dir = 'higher')
-p + ylab('Toe Edge Force (N)')
+p <- withinSubPlotAvg(toeFdat, colName = 'ToeTotMaxForce', dir = 'higher','Toe Edge Force (N)')
 
 extractVals(toeFdat, toeFmod, otherConfigs, baseline, 'ToeTotMaxForce', 'higher')
 ```
@@ -514,7 +513,7 @@ heelEdat <- imuDat %>%
 
 heelEmod <- brm(data = heelEdat, 
               family = gaussian,
-              z_score ~ Config + (Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              z_score ~ Config + (1+ Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
                         prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
                         prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
@@ -529,8 +528,7 @@ heelEmod <- brm(data = heelEdat,
 #| warning: false
 #| layout-ncol: 2
 
-p <- withinSubPlotAvg(heelEdat, colName = 'BoardAngle_HeelTurns', dir = 'higher')
-p + ylab('Board Angle (deg)')
+p <- withinSubPlotAvg(heelEdat, colName = 'BoardAngle_HeelTurns', dir = 'higher', 'Board Angle (deg)')
 
 extractVals(heelEdat, heelEmod, otherConfigs, baseline, 'BoardAngle_HeelTurns', 'higher')
 ```
@@ -555,7 +553,7 @@ toeEdat <- imuDat %>%
 
 toeEmod <- brm(data = toeEdat, 
               family = gaussian,
-              z_score ~ Config + (Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
                         prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
                         prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
@@ -570,8 +568,7 @@ toeEmod <- brm(data = toeEdat,
 #| warning: false
 #| layout-ncol: 2
 
-p <- withinSubPlotAvg(toeEdat, colName = 'BoardAngle_ToeTurns', dir = 'higher')
-p + ylab('Board Angle (deg)')
+p <- withinSubPlotAvg(toeEdat, colName = 'BoardAngle_ToeTurns', dir = 'higher','Board Angle (deg)')
 
 extractVals(toeEdat, toeEmod, otherConfigs, baseline, 'BoardAngle_ToeTurns', 'higher')
 ```
@@ -600,7 +597,7 @@ ggplot(data = heelRFDdat, aes(x = RFD, color = Config)) + geom_histogram() + fac
 
 heelRFDmod <- brm(data = heelRFDdat, # Bayes model
               family = gaussian,
-              z_score ~ Config + (Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
                         prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
                         prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
@@ -615,8 +612,8 @@ heelRFDmod <- brm(data = heelRFDdat, # Bayes model
 #| warning: false
 #| layout-ncol: 2
 
-p <- withinSubPlotAvg(heelRFDdat, colName = 'RFD', dir = 'higher')
-p + ylab('RFD (N/s)')
+p <- withinSubPlotAvg(heelRFDdat, colName = 'RFD', dir = 'higher','RFD (N/s)')
+
 
 extractVals(heelRFDdat, heelRFDmod, otherConfigs, baseline, 'RFD', 'higher')
 ```
@@ -642,7 +639,7 @@ ggplot(data = toeRFDdat, aes(x = RFD, color = Config)) + geom_histogram() + face
 
 toeRFDmod <- brm(data = toeRFDdat, 
               family = gaussian,
-              z_score ~ Config + (Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
                         prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
                         prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
@@ -657,8 +654,7 @@ toeRFDmod <- brm(data = toeRFDdat,
 #| warning: false
 #| layout-ncol: 2
 
-p <- withinSubPlotAvg(toeRFDdat, colName = 'RFD', dir = 'higher')
-p + ylab('RFD (N/s)')
+withinSubPlotAvg(toeRFDdat, colName = 'RFD', dir = 'higher','Toe Turns RFD (N/s)' )
 
 extractVals(toeRFDdat, toeRFDmod, otherConfigs, baseline, 'RFD', 'higher')
 ```
@@ -686,7 +682,7 @@ ggplot(data = heeldat, aes(x = heelAreaP, color = Config)) + geom_histogram() + 
 
 heelmod <- brm(data = heeldat, 
               family = gaussian,
-              z_score ~ Config + ToeTotMaxForce + (Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              z_score ~ Config + ToeTotMaxForce + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
                         prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
                         prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
@@ -701,8 +697,7 @@ heelmod <- brm(data = heeldat,
 #| warning: false
 #| layout-ncol: 2
 
-p <- withinSubPlotAvg(heeldat, colName = 'heelAreaP', dir = 'higher')
-p + ylab('Heel Contact Area (%)')
+p <- withinSubPlotAvg(heeldat, colName = 'heelAreaP', dir = 'higher','Heel Contact Area (%)')
 
 extractVals(heeldat, heelmod, otherConfigs, baseline, 'heelAreaP', 'higher')
 ```
