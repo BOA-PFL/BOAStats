@@ -66,7 +66,11 @@ H1.a: Reduced contact time will be achieved through increased propulsive force (
 |                  |                     |                               |                              |
 |                  |                     |                               | -   Peak Ankle Force         |
 +------------------+---------------------+-------------------------------+------------------------------+
-|                  | Lateral Skater Jump | Force plates & Motion Capture |                              |
+|                  | Lateral Skater Jump | Force plates & Motion Capture | Stability & Control          |
+|                  |                     |                               |                              |
+|                  |                     |                               | -   Peak Ankle Velocity      |
+|                  |                     |                               |                              |
+|                  |                     |                               | -   Peak Knee Frontal ROM    |
 +------------------+---------------------+-------------------------------+------------------------------+
 
 ## Configurations
@@ -279,11 +283,33 @@ withinSubQualPlot <- function(inputDF) {
 ###############################
 ```
 
-**Qualitative**
+## Next Steps
+
+## Recommendations
+
+## Performance Rankings 
+
+|                             | Base | Config1 | Config2 |
+|-----------------------------|------|---------|---------|
+| Qualitative Ranking         | 90   |         |         |
+| Power Transfer              | 50   |         |         |
+| Energy Efficiency           | 50   |         |         |
+| Stability & Control         | 50   |         |         |
+| Overall Performance Ranking | 50   |         |         |
+
+## Radar Plots
+
+| Base | Config1 | Config2 |
+|------|---------|---------|
+|      |         |         |
+
+## **Qualitative**
 
 ```{r}
 #| echo: false
 #| warning: false
+#| include: false
+#| layout-ncol: 2  
 
 qualDat %>%
   pivot_longer(cols = OverallFit:Heel, 
@@ -310,14 +336,63 @@ qualDat$Location <- factor(qualDat$Location, c('Forefoot', 'Midfoot', 'Heel'))
 
 ```{r}
 #| echo: false
-#| layout-ncol: 2
+#| warning: false
+#| layout-ncol: 2 
+
+
 withinSubQualPlot(qualDat)
 ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) + 
   geom_histogram(position = 'dodge', binwidth = 1) + facet_wrap(~Location) + scale_fill_manual(values=c("#999999", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) +
   ylab('Responses') + theme(text=element_text(size=20)) + geom_vline(xintercept = 5, linewidth = 1)
 ```
 
-```         
+```{r}
+#| echo: false
+#| warning: false
+#| include: false
+
+
+# qual average plot
+withinSubQualAvg <- function(inputDF) {
+  
+  # direction can be 'lower' or higher'. It is the direction of change that is better. 
+  # For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher. 
+  # Calculate the mean for each Subject and Config, removing NA values
+  meanDat <- inputDF %>%
+    group_by(Subject, Config) %>%
+    summarize(mean = mean(OverallFit, na.rm = TRUE), .groups = 'drop')
+  
+  
+  whichConfig <- inputDF %>%
+    group_by(Subject) %>%
+    summarize(
+      BestConfig = Config[which.max(OverallFit)]
+    )
+  
+  whichConfig <- whichConfig %>%
+    rename(Config = BestConfig)
+  
+  mergeDat <- merge(meanDat, whichConfig)
+  
+  overallMean <- meanDat %>%
+    group_by(Config) %>%
+    summarize(overallMean = mean(mean, na.rm = TRUE), .groups = 'drop')
+  # Plotting with ggplot2
+  plot <- ggplot() +
+    geom_point(data = meanDat, mapping = aes(x = as.factor(Config), y = mean, group = Subject, color = 'Subject Means'), size = 3, alpha = 0.5) +
+    geom_line(data = meanDat, mapping = aes(x = as.factor(Config), y = mean, group = Subject, color = 'Subject Means'), alpha = 0.5) +
+    geom_point(data = overallMean, mapping = aes(x = as.factor(Config), y = overallMean, color = 'Overall Mean'), size = 4, shape = 17) +
+    geom_line(data = overallMean, mapping = aes(x = as.factor(Config), y = overallMean, group = 1, color = 'Overall Mean'), linewidth = 1.5) +
+    scale_color_manual(values = c('Subject Means' = 'grey', 'Overall Mean' = '#003C4C')) +
+    xlab('Configuration') + ylab('Rating') +
+    theme(text = element_text(size = 16), legend.title = element_blank()) 
+    
+  
+  print(plot)
+  
+}
+
+withinSubQualAvg(qualDat)
 ```
 
 **Dial Torque**
@@ -325,6 +400,9 @@ ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) +
 ```{r}
 #| echo: false
 #| warning: false
+#| include: false
+
+
 qualDat %>%
   group_by(Config)%>%
   summarize(
@@ -562,6 +640,8 @@ extractVals(cmjDatPPow, cmjPowerMod, otherConfigs, baseline, 'peakPower', 'highe
 #| echo: false
 #| warning: false
 #| include: false
+
+
 skaterDat <- subset(dat, dat$Movement == 'Skater')
 
 
@@ -611,6 +691,8 @@ extractVals(skaterDatCT, skateCTMod, otherConfigs, baseline, 'CT', 'lower')
 #| echo: false
 #| warning: false
 #| include: false
+
+
 ###### Skater peak propulsive force
 
 skaterDatPF <- skaterDat %>% 
@@ -655,6 +737,8 @@ extractVals(skaterDatPF, skatePFMod, otherConfigs, baseline, 'peakGRF_X', 'highe
 #| echo: false
 #| warning: false
 #| include: false
+
+
 skaterDatPow <- skaterDat %>% 
   group_by(Subject) %>%
   mutate(z_score = scale(peakPower)) %>% 
@@ -690,6 +774,98 @@ withinSubPlotAvg(skaterDatPow, 'peakPower', 'higher', 'Peak Power (W)')
 
 
 extractVals(skaterDatPow, skatePowMod, otherConfigs, baseline, 'peakPower', 'higher') 
+
+```
+
+## Stability & Control
+
+### Peak Knee Abduction Range of Motion
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: false 
+
+kneeAbdROM <- cmjDat %>% 
+  group_by(Subject) %>%
+  mutate(z_score = scale(kneeABDrom)) %>% 
+  group_by(Config)
+
+kneeAbdROM<- subset(kneeAbdROM, kneeAbdROM$z_score < 2) #removing outliers  
+kneeAbdROM<- subset(kneeAbdROM, kneeAbdROM$z_score > -2)
+
+ggplot(data = kneeAbdROM, aes(x = kneeABDrom)) + geom_histogram() + facet_wrap(~Subject) 
+
+
+kneeAbdROMMod <- brm(data = kneeAbdROM, # Bayes model
+              family = gaussian,
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| layout-ncol: 2  
+
+
+withinSubPlotAvg(kneeAbdROM, 'kneeABDrom', 'lower', 'Peak Knee Abduction Range of Motion (deg)')
+
+
+extractVals(kneeAbdROM, kneeAbdROMMod, otherConfigs, baseline, 'kneeABDrom', 'lower') 
+
+```
+
+### Peak Ankle Eversion Velocity
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: false 
+
+ankEvVel <- cmjDat %>% 
+  group_by(Subject) %>%
+  mutate(z_score = scale(peakEVvel)) %>% 
+  group_by(Config)
+
+ankEvVel<- subset(ankEvVel, ankEvVel$z_score < 2) #removing outliers  
+ankEvVel<- subset(ankEvVel, ankEvVel$z_score > -2)
+
+ggplot(data = ankEvVel, aes(x = peakEVvel)) + geom_histogram() + facet_wrap(~Subject) 
+
+
+ankEVvelMod <- brm(data = ankEvVel, # Bayes model
+              family = gaussian,
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| layout-ncol: 2  
+
+
+withinSubPlotAvg(ankEvVel, 'peakEVvel', 'lower', 'Peak Ankle Eversion Velocity  (deg/s)')
+
+
+extractVals(ankEvVel, ankEVvelMod, otherConfigs, baseline, 'peakEVvel', 'lower') 
 
 ```
 
@@ -979,7 +1155,7 @@ extractVals(avgDat, avgMod, otherConfigs, baseline, 'meanDorsalPressure', 'highe
 
 ```
 
-### Zonal
+### Zonal Dorsal Pressures
 
 ```{r}
 #| echo: false
