@@ -6,6 +6,9 @@ format:
 editor: visual
 editor_options: 
   chunk_output_type: console
+execute:
+  error: False
+  warning: false
 ---
 
 # CONFIDENTAL CONTENT FOR BOA EMPLOYEES ONLY. PLEASE CONTACT PFL DIRECTLY WITH ANY QUESTIONS.
@@ -55,7 +58,7 @@ H1.a: Reduced contact time will be achieved through increased propulsive force (
 |                  |                     |                               |                              |
 |                  |                     |                               | -   Forefoot pressure        |
 +------------------+---------------------+-------------------------------+------------------------------+
-|                  | Vertical CMJ        | In-ground force plates        | Agility:                     |
+|                  | Vertical CMJ        | In-ground force plates        | Power Transfer:              |
 |                  |                     |                               |                              |
 |                  |                     | Motion capture                | -   Time to change direction |
 |                  |                     |                               |                              |
@@ -108,35 +111,72 @@ qualDat$Config <- factor(qualDat$Config, allConfigs)
 dat <- as_tibble(dat) # creating the data frame
 dat$Config <- factor(dat$Config, allConfigs)
 
-withinSubPlot <- function(inputDF, colName, dir) {
-  
-  # direction can be 'lower' or higher'. It is the direction of change that is better. 
-  # For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher. 
+
+## Within Sub Plot Averages
+withinSubPlotAvg <- function(inputDF, colName, dir = 'lower', yLabel = NULL) {
+
+  # Validate the `dir` input
+  if(!dir %in% c('lower', 'higher')){
+    stop("The 'dir' argument must be either 'lower' or 'higher'.")
+  }
+  # Calculate the mean for each Subject and Config, removing NA values
   meanDat <- inputDF %>%
     group_by(Subject, Config) %>%
-    summarize(mean = mean(!! sym(colName)))
-  
+    summarize(mean = mean(!! sym(colName), na.rm = TRUE), .groups = 'drop')
+  cat("meanDat:\n")
+  # print(meanDat)
+  # Determine the best configuration based on the direction
   if (dir == 'lower'){
     whichConfig <- meanDat %>%
       group_by(Subject) %>%
-      summarize(
-        BestConfig = Config[which.min(mean)]
-      )
-    
+      reframe(BestConfig = Config[which.min(mean)])
   } else if (dir == 'higher') {
     whichConfig <- meanDat %>%
-      group_by(Subject) %>% 
-      summarize(
-        BestConfig = Config[which.max(mean)]
-      )
-    
-  }
+      group_by(Subject) %>%
+      reframe(BestConfig = Config[which.max(mean)])
+  } 
+
+  cat("whichConfig:\n")
+  # print(whichConfig)
   
-  whichConfig <- merge(meanDat, whichConfig)
-  
-  ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = mean, col = BestConfig, group = Subject)) + geom_point(size = 4) + 
-    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000","#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 16)) + ylab(paste0({{colName}})) 
-  
+  # Rename BestConfig to Config for merging
+  whichConfig <- whichConfig %>%
+    rename(Config = BestConfig)
+  cat("whichConfig after rename:\n")
+  # print(whichConfig)
+
+  # Calculate overall mean for each Config, removing NA values
+  overallMean <- meanDat %>%
+    group_by(Config) %>%
+    summarize(overallMean = mean(mean, na.rm = TRUE), overallSD = sd(mean, na.rm = TRUE), .groups = 'drop') %>%
+    mutate(overallMean = format(overallMean, nsmall = 2),
+           overallSD = format(overallSD, nsmall = 2))
+  cat("overallMean:\n")
+  # print(overallMean)
+     
+  # Plotting with ggplot2
+
+
+# Ensure mean and overallMean are numeric
+meanDat$mean <- as.numeric(meanDat$mean)
+overallMean$overallMean <- as.numeric(overallMean$overallMean)
+
+plot <- ggplot() +
+  geom_point(data = meanDat, mapping = aes(x = as.factor(Config), y = mean, group = Subject), color = 'grey', size = 3, alpha = 0.5) +
+  geom_line(data = meanDat, mapping = aes(x = as.factor(Config), y = mean, group = Subject), color = 'grey', alpha = 0.5) +
+  geom_line(data = overallMean, mapping = aes(x = as.factor(Config), y = overallMean, group = 1), color = '#003C4C', linewidth = 1.5) + 
+  geom_point(data = overallMean, mapping = aes(x = as.factor(Config), y = overallMean), color = '#003C4C', size = 6, shape = 18) +
+  xlab('Configuration') + 
+  theme(text = element_text(size = 16)) 
+
+# Set y-axis label
+if (!is.null(yLabel)) {
+  plot <- plot + ylab(yLabel)
+} else {
+  plot <- plot + ylab(paste0(colName))
+}
+
+print(plot)
 }
 
 
@@ -305,16 +345,38 @@ ggplot(qualDat, aes(x=Config, y = L_DialTorque1, color = Config, group= Subject)
   xlab('Config')+
   ggtitle('Left Foot')
 
+
+
+
+torqueDat <- qualDat %>%
+  group_by(Subject) %>%
+  mutate(z_score = scale(R_DialTorque1)) %>%
+  group_by(Config)
+
+
+torqueMod <- brm(data = torqueDat, # Bayes model
+              family = gaussian,
+              z_score ~  Config + (1  | Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas) 
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+
+extractVals(torqueDat , torqueMod, otherConfigs, baseline, 'R_DialTorque1', 'higher')
 ```
 
-**Contact Time**
+## Power Transfer
+
+### **Contact Time**
 
 ```{r}
 #| echo: false
 #| warning: false
-################
-
-########################################## CMJ ###############################################
+#| include: false 
 
 cmjDat <- subset(dat, dat$Movement == 'CMJ')
 
@@ -328,10 +390,11 @@ cmjDatCT <- cmjDat %>%
   mutate(z_score = scale(CT)) %>% 
   group_by(Config)
 
+cmjDatCT<- subset(cmjDatCT, cmjDatCT$z_score < 2) #removing outliers  
+cmjDatCT<- subset(cmjDatCT, cmjDatCT$z_score > -2)
 
+ggplot(data = cmjDatCT, aes(x = CT, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
 
-p <- withinSubPlot(cmjDatCT, colName = 'CT', dir = 'lower')
-p + ylab('Contact Time (s)')
 
 cmjCTMod <- brm(data = cmjDatCT, # Bayes model
               family = gaussian,
@@ -344,17 +407,27 @@ cmjCTMod <- brm(data = cmjDatCT, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-
-extractVals(cmjDatCT, cmjCTMod, otherConfigs, baseline, 'CT', 'lower') 
-
-
 ```
-
-**Peak Force**
 
 ```{r}
 #| echo: false
 #| warning: false
+#| layout-ncol: 2 
+
+
+withinSubPlotAvg(cmjDatCT, 'CT', 'lower', 'Contact Time (s)')
+
+
+extractVals(cmjDatCT, cmjCTMod, otherConfigs, baseline,  'CT', dir = 'lower') 
+```
+
+### **Peak Force**
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: false 
+
 ################
 cmjDatPF <- cmjDat %>% 
   #filter(impulse_Z < 1000) %>%
@@ -367,8 +440,6 @@ cmjDatPF <- cmjDat %>%
 
 ggplot(data = cmjDatPF, aes(x = peakGRF_Z, color = Config)) + geom_histogram() + facet_wrap(~Subject) 
 
-p <- withinSubPlot(cmjDat, colName = 'peakGRF_Z', dir = 'higher')
-p + ylab('Peak Propulsive Force (N)')
 
 cmjPFMod <- brm(data = cmjDatPF, # Bayes model
               family = gaussian,
@@ -380,16 +451,27 @@ cmjPFMod <- brm(data = cmjDatPF, # Bayes model
               iter = 2000, warmup = 1000, chains = 4, cores = 4,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
-
-
-extractVals(cmjDatPF, cmjPFMod, otherConfigs, baseline, 'peakGRF_Z', 'higher') 
 ```
-
-**Peak Plantarflexion Moment**
 
 ```{r}
 #| echo: false
 #| warning: false
+#| layout-ncol: 2 
+
+
+withinSubPlotAvg(cmjDatPF, 'peakGRF_Z', 'higher', 'Peak Propulsive Force (N)')
+
+
+extractVals(cmjDatPF, cmjPFMod, otherConfigs, baseline, 'peakGRF_Z', 'higher')
+```
+
+### **Peak Plantarflexion Moment**
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: false
+
 ################
 cmjDatPP <- cmjDat %>% 
   filter(peakPFmom < 500) %>%
@@ -402,9 +484,6 @@ cmjDatPP <- cmjDat %>%
 
 ggplot(data = cmjDatPP, aes(x = peakPFmom, color = Config)) + geom_histogram() + facet_wrap(~Subject) 
 
-p <- withinSubPlot(cmjDatPP, colName = 'peakPFmom', dir = 'higher')
-
-p + ylab('Peak Plantarflexion Moment (Nm)')
 
 cmjPPMod <- brm(data = cmjDatPP, # Bayes model
               family = gaussian,
@@ -417,17 +496,72 @@ cmjPPMod <- brm(data = cmjDatPP, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-
-extractVals(cmjDatPP, cmjPPMod, otherConfigs, baseline, 'peakPFmom', 'higher') 
-
-
 ```
-
-**Skater Contact Time**
 
 ```{r}
 #| echo: false
 #| warning: false
+#| layout-ncol: 2 
+
+
+withinSubPlotAvg(cmjDatPP, 'peakPFmom', 'higher', 'Peak Plantar Flexion Moment (Nm)')
+
+
+extractVals(cmjDatPP, cmjPPMod, otherConfigs, baseline, 'peakPFmom', 'higher')
+```
+
+### Peak Power
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: false
+
+
+################
+cmjDatPPow <- cmjDat %>% 
+  filter(peakPFmom < 500) %>%
+  group_by(Subject) %>%
+  mutate(z_score = scale(peakPower)) %>% 
+  group_by(Config)
+
+cmjDatPPow<- subset(cmjDatPPow, cmjDatPPow$z_score < 2) #removing outliers  
+cmjDatPPow<- subset(cmjDatPPow, cmjDatPPow$z_score > -2)
+
+ggplot(data = cmjDatPPow, aes(x = peakPower, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
+
+
+cmjPowerMod <- brm(data = cmjDatPPow, # Bayes model
+              family = gaussian,
+              z_score ~ Config + Order + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| layout-ncol: 2 
+
+
+withinSubPlotAvg(cmjDatPPow, 'peakPower', 'higher', 'Peak Power(W)')
+
+
+extractVals(cmjDatPPow, cmjPowerMod, otherConfigs, baseline, 'peakPower', 'higher')
+
+```
+
+### **Skater Contact Time**
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: false
 skaterDat <- subset(dat, dat$Movement == 'Skater')
 
 
@@ -445,8 +579,6 @@ skaterDatCT <- skaterDat %>%
 
 ggplot(data = skaterDatCT, aes(x = CT, color = Config)) + geom_histogram() + facet_wrap(~Subject) ## Check for normalish distribution/outliers
 
-p<-withinSubPlot(skaterDatCT, colName = 'CT', dir = 'lower')
-p + ylab('Contact Time (s)')
 
 skateCTMod <- brm(data = skaterDatCT, # Bayes model
               family = gaussian,
@@ -459,16 +591,26 @@ skateCTMod <- brm(data = skaterDatCT, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-
-extractVals(skaterDatCT, skateCTMod, otherConfigs, baseline, 'CT', 'lower') 
-
 ```
-
-**Skater Propulsive Force**
 
 ```{r}
 #| echo: false
 #| warning: false
+#| layout-ncol: 2 
+
+
+withinSubPlotAvg(skaterDatCT, 'CT', 'lower', 'Contact Time (s)')
+
+
+extractVals(skaterDatCT, skateCTMod, otherConfigs, baseline, 'CT', 'lower') 
+```
+
+### **Skater Propulsive Force**
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: false
 ###### Skater peak propulsive force
 
 skaterDatPF <- skaterDat %>% 
@@ -479,10 +621,7 @@ skaterDatPF <- skaterDat %>%
 #skaterDat<- subset(skaterDat, dat$z_score < 2) #removing outliers  
 #skaterDat<- subset(skaterDat, dat$z_score > -2)
 
-suppressWarnings(ggplot(data = skaterDatPF, aes(x = peakGRF_X, color = Config)) + geom_histogram() + facet_wrap(~Subject)) 
-
-p<-withinSubPlot(skaterDatPF, colName = 'peakGRF_X', dir = 'higher')
-p + ylab('Peak Propulsive Force (N)')
+ggplot(data = skaterDatPF, aes(x = peakGRF_X, color = Config)) + geom_histogram() + facet_wrap(~Subject)
 
 
 skatePFMod <- brm(data = skaterDatPF, # Bayes model
@@ -496,16 +635,26 @@ skatePFMod <- brm(data = skaterDatPF, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-
-extractVals(skaterDatPF, skatePFMod, otherConfigs, baseline, 'peakGRF_X', 'higher') 
-
 ```
-
-**Skater Power**
 
 ```{r}
 #| echo: false
 #| warning: false
+#| layout-ncol: 2 
+
+
+
+withinSubPlotAvg(skaterDatPF, 'peakGRF_X', 'higher', 'Peak Propulsive Force (N)')
+
+extractVals(skaterDatPF, skatePFMod, otherConfigs, baseline, 'peakGRF_X', 'higher')
+```
+
+### **Skater Power**
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: false
 skaterDatPow <- skaterDat %>% 
   group_by(Subject) %>%
   mutate(z_score = scale(peakPower)) %>% 
@@ -515,9 +664,6 @@ skaterDatPow<- subset(skaterDatPow, skaterDatPow$z_score < 2) #removing outliers
 skaterDatPow<- subset(skaterDatPow, skaterDatPow$z_score > -2)
 
 ggplot(data = skaterDatPow, aes(x = peakPower)) + geom_histogram() + facet_wrap(~Subject) 
-
-p<-withinSubPlot(skaterDatPow, colName = 'peakPower', dir = 'higher')
-p + ylab('Peak Power (W)')
 
 
 skatePowMod <- brm(data = skaterDatPow, # Bayes model
@@ -531,7 +677,425 @@ skatePowMod <- brm(data = skaterDatPow, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| layout-ncol: 2  
+
+
+
+withinSubPlotAvg(skaterDatPow, 'peakPower', 'higher', 'Peak Power (W)')
+
+
 extractVals(skaterDatPow, skatePowMod, otherConfigs, baseline, 'peakPower', 'higher') 
+
+```
+
+## Energy Efficiency
+
+### Positive Center of Mass Work - Running
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: false 
+
+
+COMp <- treadmill %>%
+  group_by(Subject)%>%
+  mutate(z_score = scale(COMWork_pos)) %>% 
+  group_by(Config)
+
+COMp<- subset(COMp, COMp$z_score < 2) #removing outliers  
+COMp<- subset(COMp, COMp$z_score > -2)
+
+
+ggplot(data = COMp, aes(x = COMWork_pos, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
+
+
+COMwMod <- brm(data = COMp, # Bayes model
+              family = gaussian,
+              z_score ~ Config + Order + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| layout-ncol: 2  
+
+
+
+withinSubPlotAvg(COMp, 'COMWork_pos', 'lower', 'Positive Center of Mass Work (J)')
+
+
+extractVals(COMp, COMwMod, otherConfigs, baseline, 'COMWork_pos', 'lower') 
+```
+
+### Negative Center of Mass Work - Running
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: false 
+
+
+COMn <- treadmill %>%
+  group_by(Subject)%>%
+  mutate(z_score = scale(COMWork_neg)) %>% 
+  group_by(Config)
+
+COMn<- subset(COMn, COMn$z_score < 2) #removing outliers  
+COMn<- subset(COMn, COMn$z_score > -2)
+
+ggplot(data = COMn, aes(x = COMWork_neg, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
+
+
+NCOMwMod <- brm(data = COMn, # Bayes model
+              family = gaussian,
+              z_score ~ Config + Order + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| layout-ncol: 2
+
+
+withinSubPlotAvg(COMn, 'COMWork_neg', 'higher', 'Negative Center of Mass Work (J)')
+
+
+
+extractVals(COMn, NCOMwMod, otherConfigs, baseline, 'COMWork_neg', 'higher') 
+```
+
+### Heel Contact Area - Running
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: false 
+
+
+dialTorque<- read_xlsx('C:\\Users\\bethany.kilpatrick\\BOA Technology Inc\\PFL Team - General\\Testing Segments\\AgilityPerformanceData\\2025_Performance_HeadEnduroPerformance_Head\\DialTorque.xlsx')
+
+dialTorque$Config <- factor(dialTorque$Config, allConfigs)
+
+torqPress <- list(Press,dialTorque) %>%
+  reduce(full_join)%>% 
+  filter(Config != 'Lace')
+
+
+###### Heel Contact
+
+HeelCondat <- torqPress %>% 
+  group_by(Subject) %>%
+  filter(Movement == 'run' )%>%
+  mutate(z_score = scale(heelAreaP)) %>% 
+  group_by(Config)
+
+HeelCondat<- subset(HeelCondat, HeelCondat$z_score < 2) #removing outliers  
+HeelCondat<- subset(HeelCondat, HeelCondat$z_score > -2)
+
+ggplot(data = HeelCondat, aes(x = ProxDial, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
+
+
+
+HeelMod <- brm(data = HeelCondat, # Bayes model
+              family = gaussian,
+              z_score ~ Config + ProxDial + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| layout-ncol: 2
+
+
+withinSubPlotAvg(HeelCondat, 'heelAreaP', 'higher', 'Heel Contact Area (%)')
+
+
+
+
+extractVals(HeelCondat, HeelMod, otherConfigs, baseline, 'heelAreaP', 'higher')
+```
+
+### Peak Toe Pressure - Running
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: false 
+
+#Peak toe press
+Toedat <- Press %>% 
+  group_by(Subject) %>%
+  filter(Movement == 'run' )%>%
+  mutate(z_score = scale(maxmaxToes)) %>% 
+  group_by(Config)
+
+Toedat<- subset(Toedat, Toedat$z_score < 2) #removing outliers  
+Toedat<- subset(Toedat, Toedat$z_score > -2)
+
+ggplot(data = Toedat, aes(x = maxmaxToes, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
+
+# Note for trail run metrics: Warmup was reduced (from 1000 to 500)
+ToeMod <- brm(data = Toedat, # Bayes model
+              family = gaussian,
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 500, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| layout-ncol: 2  
+
+
+
+withinSubPlotAvg(Toedat, 'maxmaxToes', 'lower', 'Peak Toe Pressure (kPa)')
+
+
+
+extractVals(Toedat, ToeMod, otherConfigs, baseline, 'maxmaxToes', 'lower')
+```
+
+## Static Pressures
+
+### **Static Peak Dorsal Pressure (lower is better)**
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: false 
+
+#Peak dorsal pressure
+pkDat <- static %>% 
+  group_by(Subject) %>%
+  mutate(z_score = scale(maxDorsalPressure)) %>% 
+  group_by(Config)
+
+pkDat<- subset(pkDat, pkDat$z_score < 2) #removing outliers  
+pkDat<- subset(pkDat, pkDat$z_score > -2)
+
+# ggplot(data = pkDat, aes(x = maxDorsalPressure, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
+
+# Note for trail run metrics: Warmup was reduced (from 1000 to 500)
+pkMod <- brm(data = pkDat, # Bayes model
+              family = gaussian,
+              z_score ~ Config +  (1| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 500, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| layout-ncol: 2 
+
+withinSubPlotAvg(pkDat, 'maxDorsalPressure', 'lower', 'Peak Dorsal Pressure (kPa)')
+
+
+extractVals(pkDat, pkMod, otherConfigs, baseline, 'maxDorsalPressure', 'lower')
+```
+
+### Static Average Dorsal Pressure (higher is better)
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: false 
+
+#average dorsal pressure
+avgDat <- static %>% 
+  group_by(Subject) %>%
+  mutate(z_score = scale(meanDorsalPressure)) %>% 
+  group_by(Config)
+
+avgDat<- subset(avgDat, avgDat$z_score < 2) #removing outliers  
+avgDat<- subset(avgDat, avgDat$z_score > -2)
+
+# ggplot(data = avgDat, aes(x = meanDorsalPressure, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
+
+# Note for trail run metrics: Warmup was reduced (from 1000 to 500)
+avgMod <- brm(data = avgDat, # Bayes model
+              family = gaussian,
+              z_score ~ Config +  (1| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 500, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| layout-ncol: 2 
+
+
+withinSubPlotAvg(avgDat, 'meanDorsalPressure', 'higher', 'Average Dorsal Pressure (kPa)')
+
+
+
+extractVals(avgDat, avgMod, otherConfigs, baseline, 'meanDorsalPressure', 'higher')
+
+```
+
+### Zonal
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: false 
+
+
+#average Forefoot pressure
+ffDat <- static %>% 
+  group_by(Subject) %>%
+  mutate(z_score = scale(ffDorsalPressure)) %>% 
+  group_by(Config)
+
+
+
+
+ggplot(data = ffDat, aes(x = ffDorsalPressure, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
+
+# Note for trail run metrics: Warmup was reduced (from 1000 to 500)
+ffDatMod <- brm(data = ffDat, # Bayes model
+              family = gaussian,
+              z_score ~ Config +  (1| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained
+              iter = 2000, warmup = 500, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+
+
+
+
+
+withinSubPlotAvg(ffDat, 'ffDorsalPressure', 'higher', 'Average Forefoot Pressure (kPa)')
+
+
+
+extractVals(ffDat, ffDatMod, otherConfigs, baseline, 'ffDorsalPressure', 'higher') 
+
+
+#############
+
+#average Midfoot pressure
+
+mfDat <- static %>% 
+  group_by(Subject) %>%
+  mutate(z_score = scale(mfDorsalPressure)) %>% 
+  group_by(Config)
+
+
+
+
+ggplot(data = ffDat, aes(x = ffDorsalPressure, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
+
+# Note for trail run metrics: Warmup was reduced (from 1000 to 500)
+mfDatMod <- brm(data = mfDat, # Bayes model
+              family = gaussian,
+              z_score ~ Config +  (1| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained
+              iter = 2000, warmup = 500, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+
+
+
+
+
+withinSubPlotAvg(mfDat, 'mfDorsalPressure', 'higher', 'Average Midfoot Pressure (kPa)')
+
+
+
+extractVals(mfDat, mfDatMod, otherConfigs, baseline, 'mfDorsalPressure', 'higher') 
+
+
+
+
+
+insDat <- static %>% 
+  group_by(Subject) %>%
+  mutate(z_score = scale(instepDorsalPressure)) %>% 
+  group_by(Config)
+
+
+
+
+ggplot(data = insDat, aes(x = instepDorsalPressure, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
+
+# Note for trail run metrics: Warmup was reduced (from 1000 to 500)
+insDatMod <- brm(data = insDat, # Bayes model
+              family = gaussian,
+              z_score ~ Config +  (1| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained
+              iter = 2000, warmup = 500, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+
+
+
+
+
+withinSubPlotAvg(insDat, 'instepDorsalPressure', 'higher', 'Average Instep Pressure (kPa)')
+
+
+
+extractVals(insDat, insDatMod , otherConfigs, baseline, 'instepDorsalPressure', 'higher') 
+
 
 ```
 
