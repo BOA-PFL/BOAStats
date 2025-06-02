@@ -7,29 +7,29 @@ editor: visual
 editor_options: 
   chunk_output_type: console
 execute:
-  error: False
-  warning: false
+  error: True
+  warning: False
 ---
 
 # CONFIDENTAL CONTENT FOR BOA EMPLOYEES ONLY. PLEASE CONTACT PFL DIRECTLY WITH ANY QUESTIONS.
 
-+--------------------+-------------------------------------+
-| Test Name          | AS_Trail_HeelLockAgility_Perf_Apr23 |
-+====================+=====================================+
-| **Benefit:**       | Agility & Speed                     |
-+--------------------+-------------------------------------+
-| **Date:**          | 4/2023                              |
-+--------------------+-------------------------------------+
-| **Test Type:**     | Performance                         |
-+--------------------+-------------------------------------+
-| **Configurations** | Baseline: SD (Single Dial)          |
-|                    |                                     |
-|                    | Test configurations:                |
-|                    |                                     |
-|                    | -   SDHL (Single Dial Heel-Lock)    |
-|                    |                                     |
-|                    | -   DDHL (Dual Dial Heel-Lock)      |
-+--------------------+-------------------------------------+
++--------------------+------------------------------------------------+
+| Test Name          | 2025_Mechanistic_WomensPanelStiffnessII_Adidas |
++====================+================================================+
+| **Benefit:**       | Agility & Speed                                |
++--------------------+------------------------------------------------+
+| **Date:**          | 4/2023                                         |
++--------------------+------------------------------------------------+
+| **Test Type:**     | Performance                                    |
++--------------------+------------------------------------------------+
+| **Configurations** | Baseline: SD (Single Dial)                     |
+|                    |                                                |
+|                    | Test configurations:                           |
+|                    |                                                |
+|                    | -   SDHL (Single Dial Heel-Lock)               |
+|                    |                                                |
+|                    | -   DDHL (Dual Dial Heel-Lock)                 |
++--------------------+------------------------------------------------+
 
 ## Purpose & Background
 
@@ -54,33 +54,43 @@ H1.a: Reduced contact time will be achieved through increased propulsive force (
 |                  |                     |                               |                              |
 |                  |                     |                               | -   Heel contact area        |
 |                  |                     |                               |                              |
-|                  |                     |                               | -   Forefoot contact area    |
-|                  |                     |                               |                              |
-|                  |                     |                               | -   Forefoot pressure        |
+|                  |                     |                               | -   Peak Toe Pressure        |
 +------------------+---------------------+-------------------------------+------------------------------+
-|                  | Vertical CMJ        | In-ground force plates        | Power Transfer:              |
+|                  | Vertical CMJ        | Force plates &                | Power Transfer:              |
 |                  |                     |                               |                              |
-|                  |                     | Motion capture                | -   Time to change direction |
+|                  |                     | Motion Capture                | -   Time to change direction |
 |                  |                     |                               |                              |
 |                  |                     |                               | -   Peak Power               |
 |                  |                     |                               |                              |
 |                  |                     |                               | -   Peak Ankle Force         |
-+------------------+---------------------+-------------------------------+------------------------------+
-|                  | Lateral Skater Jump | Force plates & Motion Capture | Stability & Control          |
+|                  |                     |                               |                              |
+|                  |                     |                               | Stability & Control          |
 |                  |                     |                               |                              |
 |                  |                     |                               | -   Peak Ankle Velocity      |
 |                  |                     |                               |                              |
 |                  |                     |                               | -   Peak Knee Frontal ROM    |
 +------------------+---------------------+-------------------------------+------------------------------+
+|                  | Lateral Skater Jump | Force plates & Motion Capture | Power Transfer               |
+|                  |                     |                               |                              |
+|                  |                     |                               | -   Time to change direction |
+|                  |                     |                               |                              |
+|                  |                     |                               | -   Peak Power               |
+|                  |                     |                               |                              |
+|                  |                     |                               | -   Peak Ankle Force         |
++------------------+---------------------+-------------------------------+------------------------------+
 
 ## Configurations
 
-![](configs.PNG)
+| Baseline | Config1 | Config2 |
+|----------|---------|---------|
+|          |         |         |
 
 ```{r}
 #| echo: false
 #| warning: false
 #| include: false
+
+
 library(readxl)
 library(tidyverse)
 library(tm)
@@ -98,22 +108,44 @@ rm(list=ls())
 
 ```{r}
 #| echo: false
+#| warning: false
 #| include: false
 
 # Load in overground agility data
-dat <- read.csv(file.choose())
+dat <- read.csv('C:\\Users\\milena.singletary\\OneDrive - BOA Technology Inc\\General - PFL Team\\Testing Segments\\AgilityPerformanceData\\2025_Mechanistic_WomensPanelStiffnessII_Adidas\\Overground\\0_CompiledAgilityData.csv')
 
 #Load in Compiled Qualitative Sheet
-qualDat <- read_xlsx(file.choose())
+# qualDat <- read_xlsx(file.choose())
+qualDat <- read_xlsx('C:\\Users\\milena.singletary\\OneDrive - BOA Technology Inc\\General - PFL Team\\Testing Segments\\AgilityPerformanceData\\2025_Mechanistic_WomensPanelStiffnessII_Adidas\\2025_Mech_WomensPanelStiffnessII_Adidas.xlsx')
+
+#Load in Treadmill data
+treadmill <- read.csv('C:\\Users\\milena.singletary\\OneDrive - BOA Technology Inc\\General - PFL Team\\Testing Segments\\AgilityPerformanceData\\2025_Mechanistic_WomensPanelStiffnessII_Adidas\\Treadmill\\TreadmillOutcomes.csv')
 
 
-baseline <- 'SD' # baseline configuration
+#Load in Pressure data from running
+pressure <- read.csv('C:\\Users\\milena.singletary\\OneDrive - BOA Technology Inc\\General - PFL Team\\Testing Segments\\AgilityPerformanceData\\2025_Mechanistic_WomensPanelStiffnessII_Adidas\\Xsensor\\cropped\\0_CompiledResults.csv')
 
-otherConfigs <- c('SDHL', 'DDHL') # other configurations tested against base
+#Load in Static pressure data
+static <- read.csv('C:\\Users\\milena.singletary\\OneDrive - BOA Technology Inc\\General - PFL Team\\Testing Segments\\AgilityPerformanceData\\2025_Mechanistic_WomensPanelStiffnessII_Adidas\\Xsensor\\static\\0_CompiledResults_Static.csv')
+
+
+baseline <- 'MSE' # baseline configuration
+
+otherConfigs <- c('MSI', 'HSE', 'HSI') # other configurations tested against base
 allConfigs <- c(baseline, otherConfigs)
 qualDat$Config <- factor(qualDat$Config, allConfigs)
 dat <- as_tibble(dat) # creating the data frame
 dat$Config <- factor(dat$Config, allConfigs)
+
+treadmill <- as_tibble(treadmill)
+treadmill$Config <- factor(treadmill$Config, allConfigs)
+
+Press <- as_tibble(pressure)
+Press$Config <- factor(Press$Config, allConfigs)
+
+static <- as_tibble(static)
+static$Config <- factor(static$Config, allConfigs)
+
 
 
 ## Within Sub Plot Averages
@@ -261,33 +293,19 @@ extractVals <- function(dat, mod, configNames, baseConfig, var, dir) {
   return()
 }
 
-# Setting up  "Best Of" line plots 
-withinSubQualPlot <- function(inputDF) {
-  
-  # direction can be 'lower' or higher'. It is the direction of change that is better. 
-  # For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher. 
-  
-  whichConfig <- inputDF %>%
-    group_by(Subject) %>%
-    summarize(
-      BestConfig = Config[which.max(OverallFit)]
-    )
-  
-  whichConfig <- merge(inputDF, whichConfig)
-  
-  ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = OverallFit, col = BestConfig, group = Subject)) + geom_point(size = 4) + 
-    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + ylab('Rating') + theme(text = element_text(size = 16))
-  
-}
 
 ###############################
 ```
 
 ## Next Steps
 
+-   
+
 ## Recommendations
 
-## Performance Rankings 
+-   
+
+## Performance Rankings
 
 |                             | Base | Config1 | Config2 |
 |-----------------------------|------|---------|---------|
@@ -295,6 +313,7 @@ withinSubQualPlot <- function(inputDF) {
 | Power Transfer              | 50   |         |         |
 | Energy Efficiency           | 50   |         |         |
 | Stability & Control         | 50   |         |         |
+| Quantitative Fit            | 50   |         |         |
 | Overall Performance Ranking | 50   |         |         |
 
 ## Radar Plots
@@ -309,7 +328,7 @@ withinSubQualPlot <- function(inputDF) {
 #| echo: false
 #| warning: false
 #| include: false
-#| layout-ncol: 2  
+
 
 qualDat %>%
   pivot_longer(cols = OverallFit:Heel, 
@@ -881,6 +900,7 @@ extractVals(ankEvVel, ankEVvelMod, otherConfigs, baseline, 'peakEVvel', 'lower')
 
 COMp <- treadmill %>%
   group_by(Subject)%>%
+  sample_n(75) %>% # select 75 random pts for faster model 
   mutate(z_score = scale(COMWork_pos)) %>% 
   group_by(Config)
 
@@ -927,6 +947,7 @@ extractVals(COMp, COMwMod, otherConfigs, baseline, 'COMWork_pos', 'lower')
 
 COMn <- treadmill %>%
   group_by(Subject)%>%
+  sample_n(75) %>% # select 75 random pts for faster model 
   mutate(z_score = scale(COMWork_neg)) %>% 
   group_by(Config)
 
@@ -969,13 +990,14 @@ extractVals(COMn, NCOMwMod, otherConfigs, baseline, 'COMWork_neg', 'higher')
 #| include: false 
 
 
-dialTorque<- read_xlsx('C:\\Users\\bethany.kilpatrick\\BOA Technology Inc\\PFL Team - General\\Testing Segments\\AgilityPerformanceData\\2025_Performance_HeadEnduroPerformance_Head\\DialTorque.xlsx')
+dialTorque <- read_xlsx('C:\\Users\\milena.singletary\\OneDrive - BOA Technology Inc\\General - PFL Team\\Testing Segments\\AgilityPerformanceData\\2025_Mechanistic_WomensPanelStiffnessII_Adidas\\2025_Mech_WomensPanelStiffnessII_Adidas.xlsx')
+
+dialTorque <- dialTorque%>%
+  select(Subject, Config, R_DialTorque1)
 
 dialTorque$Config <- factor(dialTorque$Config, allConfigs)
 
-torqPress <- list(Press,dialTorque) %>%
-  reduce(full_join)%>% 
-  filter(Config != 'Lace')
+torqPress <- merge(Press, dialTorque, by = c('Subject', 'Config'))
 
 
 ###### Heel Contact
@@ -1078,6 +1100,7 @@ extractVals(Toedat, ToeMod, otherConfigs, baseline, 'maxmaxToes', 'lower')
 #Peak dorsal pressure
 pkDat <- static %>% 
   group_by(Subject) %>%
+  filter(Movement == 'Standing')%>%
   mutate(z_score = scale(maxDorsalPressure)) %>% 
   group_by(Config)
 
@@ -1120,6 +1143,7 @@ extractVals(pkDat, pkMod, otherConfigs, baseline, 'maxDorsalPressure', 'lower')
 #average dorsal pressure
 avgDat <- static %>% 
   group_by(Subject) %>%
+  filter(Movement == 'Standing')%>%
   mutate(z_score = scale(meanDorsalPressure)) %>% 
   group_by(Config)
 
@@ -1166,6 +1190,7 @@ extractVals(avgDat, avgMod, otherConfigs, baseline, 'meanDorsalPressure', 'highe
 #average Forefoot pressure
 ffDat <- static %>% 
   group_by(Subject) %>%
+  filter(Movement == 'Standing')%>%
   mutate(z_score = scale(ffDorsalPressure)) %>% 
   group_by(Config)
 
@@ -1204,6 +1229,7 @@ extractVals(ffDat, ffDatMod, otherConfigs, baseline, 'ffDorsalPressure', 'higher
 
 mfDat <- static %>% 
   group_by(Subject) %>%
+  filter(Movement == 'Standing')%>%
   mutate(z_score = scale(mfDorsalPressure)) %>% 
   group_by(Config)
 
@@ -1241,6 +1267,7 @@ extractVals(mfDat, mfDatMod, otherConfigs, baseline, 'mfDorsalPressure', 'higher
 
 insDat <- static %>% 
   group_by(Subject) %>%
+  filter(Movement == 'Standing')%>%
   mutate(z_score = scale(instepDorsalPressure)) %>% 
   group_by(Config)
 
@@ -1275,10 +1302,10 @@ extractVals(insDat, insDatMod , otherConfigs, baseline, 'instepDorsalPressure', 
 
 ```
 
-Radar Plots
-
 ```{r}
 #| echo: false
+#| warning: false
+#| include: false 
 
 ###### For agility run combo
 # LateralAgility <- 52
