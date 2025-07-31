@@ -156,55 +156,7 @@ if (a == 'YES'){
 }
 rm(ParentDat,ChildDat,noSub,name_order,a)
 ################################################################################
-# ### Overground Landing ###
-# # Read the existing database: Only to get column name order
-# ParentDat <- read.csv("Z:\\BigData\\DB_V2\\LandingDB.csv",nrows=1)
-# # ParentDat <- ParentDat %>%
-# #   rename('Subject' = ?..Subject)
-# name_order = colnames(ParentDat)
-# 
-# # Read and summarize the overground data:
-# LandingDat <- read.csv('Z:\\Testing Segments\\WorkWear_Performance\\2025_Performance_HighCutPFSWorkwearI_TimberlandPro\\Overground\\0_OGStabilization.csv')
-# 
-# LandingDat$Subject <- tolower(gsub(" ", "", LandingDat$Subject))
-# # Set Up 2 Checks here: Config Names and Subject Names 
-# cmp_strings(Subject,unique(LandingDat$Subject),'subject')
-# cmp_strings(Config,unique(LandingDat$Config),'config')
-# 
-# # Adjust names as necessary
-# LandingDat <- LandingDat %>%
-#   filter(Subject != 'walterbourque')
-# 
-# # Single Leg Landing (SLL) data only: Make sure to apply correct data filters
-# ChildDat <- LandingDat %>%
-#   filter(StabTime != 'NA') %>%
-#   group_by(Subject, Config, Movement) %>%
-#   summarize(Time2Stabilize = mean(StabTime, na.rm = TRUE))
-# 
-# ChildDat <- left_join(ChildDat,LandingDat %>%
-#                         filter(RkneeABDMom > -200) %>%
-#                         group_by(Subject, Config,Order, Movement) %>%
-#                         summarize(PeakKneeAbMoment = mean(RkneeABDMom, na.rm = TRUE), KneeAbAdROM = mean(RKneeABDROM, na.rm = TRUE)), by = c('Subject','Config','Movement'))
-# 
-# ChildDat$Year <- rep(Year, dim(ChildDat)[1])
-# ChildDat$Month <- rep(Month, dim(ChildDat)[1])
-# ChildDat$Brand <- rep(Brand, dim(ChildDat)[1])
-# ChildDat$Model <- rep(Model, dim(ChildDat)[1])
-#_______________________________________________________________________________
-# Place NaNs for missing data
-# ChildDat$KneeAbAdROM <- rep('NA', dim(ChildDat)[1])
-# ChildDat$PeakKneeAbMoment <- rep('NA', dim(ChildDat)[1])
-#_______________________________________________________________________________
-# Sort the DataFrame columns into the right order (from the Parent)
-# ChildDat <- ChildDat[,name_order]
-# 
-# a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?')
-# if (a == 'YES'){
-#   write.table(ChildDat, "\\\\boa-srv10\\PFL-DATA\\BigData\\DB_V2\\LandingDB.csv", sep=',', 
-#               append = TRUE,col.names = FALSE, row.names = FALSE)
-# }
-# rm(ParentDat,ChildDat,LandingDat,name_order,a)
-
+# ### Overground Landing ### weighted SLL no longer in protocol 
 
 ################################################################################
 ### Uneven terrain landing ###
