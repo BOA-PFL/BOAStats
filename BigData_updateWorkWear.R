@@ -293,12 +293,14 @@ rm(ParentDat,ChildDat,IMUDat,PressDat,name_order,a)
 ParentDat <- read.csv('Z:\\BigData\\DB_V2\\WalkRunDB.csv',nrows=1)
 name_order = colnames(ParentDat)
 
-TreadDat <- read.csv('C:\\Users\\milena.singletary\\OneDrive - BOA Technology Inc\\General - PFL Team\\Testing Segments\\WorkWear_Performance\\2025_Performance_HighCutPFSWorwearII_TimberlandPro\\treadmill\\0_TreadmillOutcomes_1.csv')
+TreadDat <- read.csv('Z:\\Testing Segments\\WorkWear_Performance\\2025_Performance_HighCutPFSWorkwearI_TimberlandPro\\Treadmill\\0_TreadmillOutcomes.csv')
+TreadDat$Subject <- tolower(gsub(" ", "", TreadDat$Subject))
 
-
-PressDat <- read.csv('C:\\Users\\milena.singletary\\OneDrive - BOA Technology Inc\\General - PFL Team\\Testing Segments\\WorkWear_Performance\\2025_Performance_HighCutPFSWorwearII_TimberlandPro\\Xsensor\\cropped\\1_CompiledResults.csv')
+PressDat <- read.csv('Z:\\Testing Segments\\WorkWear_Performance\\2025_Performance_HighCutPFSWorkwearI_TimberlandPro\\Xsensor\\cropped\\0_CompiledResults_allwalk2.csv')
 PressDat <- PressDat %>%
-  filter(Movement == 'trail'| Movement == 'trailwalk')
+  filter(Movement == 'uh'| Movement == 'dh')%>%
+  rename( Slope  = 'Movement')%>%
+  mutate( Slope = case_when(Slope == 'dh'~ -10, Slope == 'uh' ~ 10))
 
 PressDat$Subject <- tolower(gsub(" ", "", PressDat$Subject))
 
@@ -307,13 +309,23 @@ cmp_strings(Subject,unique(PressDat$Subject),'subject')
 cmp_strings(Config,unique(PressDat$Config),'config')
 
 # Summarize all metrics: Make sure to use correct data filters
-ChildDat <- left_join(TreadDat,PressDat %>%
-                        group_by(Subject, Config, Order) %>%
-                        summarize(HeelContact = mean(heelAreaP)), by = c('Subject','Config','Order'))
-ChildDat <- left_join(TreadDat,PressDat %>%
-                        group_by(Subject, Config, Order) %>%
-                        summarize(PeakToePress = mean(maxmaxToes)), by = c('Subject','Config','Order'))
 
+TreadDat <- TreadDat%>%
+            group_by(Subject, Config, Order, Speed, Slope) %>%
+            summarize(PosCOMWork = mean(COMWork_pos), NegCOMWork = mean(COMWork_neg), 
+                      LoadingRate = mean(VALR))
+
+ChildDat <- left_join(TreadDat,PressDat %>%
+                        group_by(Subject, Config, Order, Slope) %>%
+                        summarize(HeelContact = mean(heelAreaP), PeakToePress = mean(maxmaxToes)), by = c('Subject','Config','Order', 'Slope'))
+
+ChildDat$Year <- rep(Year, dim(ChildDat)[1])
+ChildDat$Month <- rep(Month, dim(ChildDat)[1])
+ChildDat$Brand <- rep(Brand, dim(ChildDat)[1])
+ChildDat$Model <- rep(Model, dim(ChildDat)[1])
+ChildDat$NegFootWork <- rep(NA, dim(ChildDat)[1])
+ChildDat$PosAnkleWork <- rep(NA, dim(ChildDat)[1])
+ChildDat$PeakAnkleEvVel <- rep(NA, dim(ChildDat)[1])
 
 ChildDat <- ChildDat[,name_order]
 
