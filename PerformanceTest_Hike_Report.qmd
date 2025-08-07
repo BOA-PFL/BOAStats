@@ -5,7 +5,10 @@ format:
     reference-doc: 'C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/Testing Segments/Report_Template.docx'
 editor: visual
 editor_options: 
-  chunk_output_type: console
+  chunk_output_type: console 
+execute: 
+  error: true
+  warning: false
 ---
 
 # CONFIDENTAL CONTENT FOR BOA EMPLOYEES ONLY. PLEASE CONTACT PFL DIRECTLY WITH ANY QUESTIONS.
@@ -89,6 +92,8 @@ H3: Similarly, the medial wrap will provide better balance with faster stabilizi
 #| echo: false
 #| warning: false
 #| include: false
+
+
 library(readxl)
 library(tidyverse)
 library(tm)
@@ -416,6 +421,7 @@ qualDat$Location <- factor(qualDat$Location, c('Forefoot', 'Midfoot', 'Heel', 'C
 
 ```{r}
 #| echo: false
+
 withinSubQualPlot(qualDat)
 ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) + 
   geom_histogram(position = 'dodge', binwidth = 1) + facet_wrap(~Location) + scale_fill_manual(values=c("#999999", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) +
@@ -424,6 +430,7 @@ ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) +
 
 ```{r}
 #| echo: false
+
 #| # average qual within plot
 
 withinSubQualAvg(qualDat)
@@ -434,6 +441,8 @@ withinSubQualAvg(qualDat)
 ```{r}
 #| echo: false
 #| warning: false
+
+
 qualDat %>%
   group_by(Config)%>%
   summarize(
@@ -487,7 +496,9 @@ extractVals(torqueDat , torqueMod, otherConfigs, baseline, 'R_DialTorque1', 'hig
 ### Positive Center of Mass Work- Uphill walking (lower is better)
 
 ```{r}
-
+#| echo: false
+#| warning: false
+#| include: false
 
 treadmill_UH <- subset(treadmill , treadmill$Slope == '10')
 # Level
@@ -522,7 +533,9 @@ psCOM_UH_mod <- brm(data = psCOM_UH,
 ```
 
 ```{r}
-
+#| echo: false
+#| warning: false
+#| layout-ncol: 2 
 
 
 p <- withinSubPlotAvg(psCOM_UH, colName = 'COMWork_pos', dir = 'lower')
@@ -535,6 +548,12 @@ extractVals(psCOM_UH, psCOM_UH_mod, otherConfigs, baseline, 'COMWork_pos', 'lowe
 ### Negative Center of Mass - Downhill (Higher is better)
 
 ```{r}
+#| echo: false
+#| warning: false
+#| include: false
+
+
+
 treadmill_DH <- subset(treadmill, treadmill$Slope == '-10')
 # Level
 #organizing data - grouping by subject and config by the variable being observed
@@ -566,7 +585,9 @@ ngCOM_DH_mod <- brm(data = ngCOM_DH ,
 ```
 
 ```{r}
-
+#| echo: false
+#| warning: false
+#| layout-ncol: 2 
 
 p <- withinSubPlotAvg(ngCOM_DH, colName = 'COMWork_neg', dir = 'higher')
 p + ylab('Negative COM - Downhill (J)')
@@ -581,6 +602,8 @@ extractVals(ngCOM_DH, ngCOM_DH_mod, otherConfigs, baseline, 'COMWork_neg', 'high
 #| echo: false
 #| warning: false
 #| include: false
+
+
 ################
 
 ###### Walking Speed
@@ -636,6 +659,8 @@ extractVals(Speeddat, SpeeddatMod, otherConfigs, baseline, 'imuSpeed', 'higher')
 #| echo: false
 #| warning: false
 #| include: false
+
+
 ################
 
 ###### Peak Toe Pressure Walking
@@ -738,6 +763,8 @@ extractVals(Everdat, EverdatMod, otherConfigs, baseline, 'pIEgyro', 'lower')
 #| echo: false
 #| warning: false
 #| include: false 
+
+
 ################
 
 ### SLL Knee Abduction Moment
@@ -796,6 +823,9 @@ extractVals(KABDOGLandDat, KABDOGLandDatMod, otherConfigs, baseline, 'RkneeABDMo
 ### **Stability (faster is better) - Landing on Uneven Terrain**
 
 ```{r}
+#| echo: false
+#| warning: false
+#| include: false 
 
 
 TimeUnLandDat <- UnLandDat %>% 
@@ -892,6 +922,8 @@ HeelCondatMod <- brm(data = HeelCondat, # Bayes model
 #| echo: false
 #| warning: false
 #| layout-ncol: 2  
+
+
 p <- withinSubPlot(HeelCondat, colName = 'heelAreaP', dir = 'higher')
 p + ylab('Heel Contact (%)') 
 
@@ -904,6 +936,8 @@ extractVals(HeelCondat, HeelCondatMod, otherConfigs, baseline, 'heelAreaP', 'hig
 #| echo: false
 #| warning: false
 #| include: false 
+
+
 ################
 ###### peak dorsal pressure 
 
@@ -958,6 +992,8 @@ extractVals(peakDorsal, DorsalMaxMod, otherConfigs, baseline, 'maxDorsalPressure
 #| echo: false
 #| warning: false
 #| include: false 
+
+
 ################
 ###### peak dorsal pressure 
 
@@ -1008,6 +1044,8 @@ extractVals(avgDorsal, DorsalMeanMod, otherConfigs, baseline, 'meanDorsalPressur
 
 ```{r}
 #| echo: false
+#| warning: false
+#| include: false 
 
 ### radar for MED config
 
