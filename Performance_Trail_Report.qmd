@@ -6,6 +6,9 @@ format:
 editor: visual
 editor_options: 
   chunk_output_type: console
+execute: 
+  error: true
+  warning: false
 ---
 
 # CONFIDENTAL CONTENT FOR BOA EMPLOYEES ONLY. PLEASE CONTACT PFL DIRECTLY WITH ANY QUESTIONS.
@@ -68,9 +71,11 @@ H3: The heel lock will improve running speed with no change in heart rate. The d
 
 ## Configurations
 
++-----------------------------+------------------------------+-----------------------------+
 | Baseline: Single Dial (SD)  | Single Dial Heel Lock (SDHL) | Dual Dial Heel Lock (DDHL)  |
-|-----------------------------|------------------------------|-----------------------------|
++=============================+==============================+=============================+
 | ![](images/config1_LAT.png) | ![](images/config2_LAT.png)  | ![](images/config3_LAT.png) |
++-----------------------------+------------------------------+-----------------------------+
 
 ## Summary of Findings
 
@@ -78,6 +83,7 @@ H3: The heel lock will improve running speed with no change in heart rate. The d
 #| echo: false
 #| warning: false
 #| include: false
+
 library(readxl)
 library(tidyverse)
 library(tm)
@@ -95,6 +101,7 @@ rm(list=ls())
 
 ```{r}
 #| echo: false
+#| warning: false
 #| include: false
 
 #Load in Compiled Qualitative Sheet
@@ -128,35 +135,52 @@ IMUdat$Config <- factor(IMUdat$Config, allConfigs)
 Pressdat <- as_tibble(Pressdat) # creating the data frame
 Pressdat$Config <- factor(Pressdat$Config, allConfigs)
 
-withinSubPlot <- function(inputDF, colName, dir) {
-  
-  # direction can be 'lower' or higher'. It is the direction of change that is better. 
-  # For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher. 
+
+# updated withinAvg plot 
+withinSubPlotAvg <- function(inputDF, colName, dir = 'lower', yLabel = NULL) {
+  # Validate the `dir` input
+  if(!dir %in% c('lower', 'higher')){
+    stop("The 'dir' argument must be either 'lower' or 'higher'.")
+  }
+  # Calculate the mean for each Subject and Config, removing NA values
   meanDat <- inputDF %>%
     group_by(Subject, Config) %>%
-    summarize(mean = mean(!! sym(colName)))
-  
+    summarize(mean = mean(!! sym(colName), na.rm = TRUE), .groups = 'drop')
+  # Determine the best configuration based on the direction
   if (dir == 'lower'){
     whichConfig <- meanDat %>%
       group_by(Subject) %>%
-      summarize(
-        BestConfig = Config[which.min(mean)]
-      )
-    
+      reframe(BestConfig = Config[which.min(mean)])
   } else if (dir == 'higher') {
     whichConfig <- meanDat %>%
-      group_by(Subject) %>% 
-      summarize(
-        BestConfig = Config[which.max(mean)]
-      )
-    
+      group_by(Subject) %>%
+      reframe(BestConfig = Config[which.max(mean)])
   }
-  
-  whichConfig <- merge(meanDat, whichConfig)
-  
-  ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = mean, col = BestConfig, group = Subject)) + geom_point(size = 4) + 
-    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000","#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 16)) + ylab(paste0({{colName}})) 
-  
+  # Rename BestConfig to Config for merging
+  whichConfig <- whichConfig %>%
+    rename(Config = BestConfig)
+  # Merge the best configuration back to the mean data
+  mergedData <- merge(meanDat, whichConfig, by = c("Subject", "Config"))
+  # Calculate overall mean for each Config, removing NA values
+  overallMean <- meanDat %>%
+    group_by(Config) %>%
+    summarize(overallMean = mean(mean, na.rm = TRUE), .groups = 'drop')
+  # Plotting with ggplot2
+  plot <- ggplot() +
+    geom_point(data = meanDat, mapping = aes(x = as.factor(Config), y = mean, group = Subject, color = 'Subject Means'), size = 3, alpha = 0.5) +
+    geom_line(data = meanDat, mapping = aes(x = as.factor(Config), y = mean, group = Subject, color = 'Subject Means'), alpha = 0.5) +
+    geom_point(data = overallMean, mapping = aes(x = as.factor(Config), y = overallMean, color = 'Overall Mean'), size = 4, shape = 17) +
+    geom_line(data = overallMean, mapping = aes(x = as.factor(Config), y = overallMean, group = 1, color = 'Overall Mean'), size = 1.5) +
+    scale_color_manual(values = c('Subject Means' = 'grey', 'Overall Mean' = '#003C4C')) +
+    xlab('Configuration') +
+    theme(text = element_text(size = 16), legend.title = element_blank())
+  # Set y-axis label
+  if (!is.null(yLabel)) {
+    plot <- plot + ylab(yLabel)
+  } else {
+    plot <- plot + ylab(paste0(colName))
+  }
+  print(plot)
 }
 
 
@@ -237,11 +261,18 @@ extractVals <- function(dat, mod, configNames, baseConfig, var, dir) {
   return()
 }
 
-# Setting up  "Best Of" line plots 
-withinSubQualPlot <- function(inputDF) {
+
+
+# qual average plot
+withinSubQualAvg <- function(inputDF) {
   
   # direction can be 'lower' or higher'. It is the direction of change that is better. 
   # For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher. 
+  # Calculate the mean for each Subject and Config, removing NA values
+  meanDat <- inputDF %>%
+    group_by(Subject, Config) %>%
+    summarize(mean = mean(OverallFit, na.rm = TRUE), .groups = 'drop')
+  
   
   whichConfig <- inputDF %>%
     group_by(Subject) %>%
@@ -249,21 +280,66 @@ withinSubQualPlot <- function(inputDF) {
       BestConfig = Config[which.max(OverallFit)]
     )
   
-  whichConfig <- merge(inputDF, whichConfig)
+  whichConfig <- whichConfig %>%
+    rename(Config = BestConfig)
   
-  ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = OverallFit, col = BestConfig, group = Subject)) + geom_point(size = 4) + 
-    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) + ylab('Rating') + theme(text = element_text(size = 16))
+  mergeDat <- merge(meanDat, whichConfig)
+  
+  overallMean <- meanDat %>%
+    group_by(Config) %>%
+    summarize(overallMean = mean(mean, na.rm = TRUE), .groups = 'drop')
+  # Plotting with ggplot2
+  plot <- ggplot() +
+    geom_point(data = meanDat, mapping = aes(x = as.factor(Config), y = mean, group = Subject, color = 'Subject Means'), size = 3, alpha = 0.5) +
+    geom_line(data = meanDat, mapping = aes(x = as.factor(Config), y = mean, group = Subject, color = 'Subject Means'), alpha = 0.5) +
+    geom_point(data = overallMean, mapping = aes(x = as.factor(Config), y = overallMean, color = 'Overall Mean'), size = 4, shape = 17) +
+    geom_line(data = overallMean, mapping = aes(x = as.factor(Config), y = overallMean, group = 1, color = 'Overall Mean'), linewidth = 1.5) +
+    scale_color_manual(values = c('Subject Means' = 'grey', 'Overall Mean' = '#003C4C')) +
+    xlab('Configuration') + ylab('Rating') +
+    theme(text = element_text(size = 16), legend.title = element_blank()) 
+    
+  
+  print(plot)
   
 }
 
-###############################
+withinSubQualAvg(qualDat)
 ```
+
+## Next Steps
+
+## Recommendations
+
+## Performance Rankings
+
++-----------------------------+----------------+----------------+----------------+
+|                             | Baseline       | Config1        | Config2        |
++-----------------------------+----------------+----------------+----------------+
+| Qualitative Fit             | 50             |                |                |
++-----------------------------+----------------+----------------+----------------+
+| Energy Efficiency           | 50             |                |                |
++-----------------------------+----------------+----------------+----------------+
+| Stability & Control         | 50             |                |                |
++-----------------------------+----------------+----------------+----------------+
+| Fit                         | 50             |                |                |
++-----------------------------+----------------+----------------+----------------+
+| Overall Performance Ranking | 50             |                |                |
++-----------------------------+----------------+----------------+----------------+
+
+## Radar Plots
+
+|          |         |
+|----------|---------|
+| Baseline | Config1 |
+|          |         |
 
 **Qualitative**
 
 ```{r}
 #| echo: false
 #| warning: false
+#| include: true 
+#| layout-ncol: 2  
 
 qualDat %>%
   pivot_longer(cols = OverallFit:Heel, 
@@ -290,7 +366,10 @@ qualDat$Location <- factor(qualDat$Location, c('Forefoot', 'Midfoot', 'Heel'))
 
 ```{r}
 #| echo: false
-withinSubQualPlot(qualDat)
+#| warning: false
+#| include: true
+
+withinSubQualAvg(qualDat)
 ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) + 
   geom_histogram(position = 'dodge', binwidth = 1) + facet_wrap(~Location) + scale_fill_manual(values=c("#999999", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) +
   ylab('Responses') + theme(text=element_text(size=20)) + geom_vline(xintercept = 5, linewidth = 1)
@@ -301,6 +380,8 @@ ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) +
 ```{r}
 #| echo: false
 #| warning: false
+#| include: false
+
 qualDat %>%
   group_by(Config)%>%
   summarize(
@@ -323,6 +404,32 @@ ggplot(qualDat, aes(x=Config, y = L_DialTorque1, color = Config, group= Subject)
 
 ```
 
+```{r}
+#| echo: false
+#| warning: false
+#| include: true 
+
+torqueDat <- qualDat %>%
+  group_by(Subject) %>%
+  mutate(z_score = scale(L_DialTorque1)) %>%
+  group_by(Config)
+
+
+torqueMod <- brm(data = torqueDat, # Bayes model
+              family = gaussian,
+              z_score ~  Config + (1  | Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+
+extractVals(torqueDat , torqueMod, otherConfigs, baseline, 'L_DialTorque1', 'higher')
+```
+
 ## Endurance
 
 **Heart Rate: Lower is better**
@@ -330,6 +437,9 @@ ggplot(qualDat, aes(x=Config, y = L_DialTorque1, color = Config, group= Subject)
 ```{r}
 #| echo: false
 #| warning: false
+#| include: false
+
+
 ################
 
 ###### Heart Rate
@@ -362,7 +472,7 @@ HRdat1Mod <- brm(data = HRdat1, # Bayes model
               seed = 190831)
 
 
-extractVals(HRdat1, HRdat1Mod, otherConfigs, baseline, 'AvgHRS1', 'lower') 
+
 
 HRdat2Mod <- brm(data = HRdat2, # Bayes model
               family = gaussian,
@@ -376,7 +486,7 @@ HRdat2Mod <- brm(data = HRdat2, # Bayes model
               seed = 190831)
 
 
-extractVals(HRdat2, HRdat2Mod, otherConfigs, baseline, 'AvgHRS2', 'lower') 
+
 
 HRdat3Mod <- brm(data = HRdat3, # Bayes model
               family = gaussian,
@@ -390,17 +500,31 @@ HRdat3Mod <- brm(data = HRdat3, # Bayes model
               seed = 190831)
 
 
+
+
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: true
+#| layout-ncol: 2 
+
+
+extractVals(HRdat1, HRdat1Mod, otherConfigs, baseline, 'AvgHRS1', 'lower') 
+
+extractVals(HRdat2, HRdat2Mod, otherConfigs, baseline, 'AvgHRS2', 'lower') 
+
 extractVals(HRdat3, HRdat3Mod, otherConfigs, baseline, 'AvgHRS3', 'lower')
 
-# p <- withinSubPlot(HRdat1, colName = 'AvgHRS1', dir = 'lower')
-# p + ylab('Uphill Heart Rate (bpm)')
-# 
-p <- withinSubPlot(HRdat2, colName = 'AvgHRS2', dir = 'lower')
+p <- withinSubPlotAvg(HRdat1, colName = 'AvgHRS1', dir = 'lower')
+p + ylab('Uphill Heart Rate (bpm)')
+
+p <- withinSubPlotAvg(HRdat2, colName = 'AvgHRS2', dir = 'lower')
 p + ylab('Technical Top Heart Rate (bpm)')
 
-p <- withinSubPlot(HRdat3, colName = 'AvgHRS3', dir = 'lower')
+p <- withinSubPlotAvg(HRdat3, colName = 'AvgHRS3', dir = 'lower')
 p + ylab('Downhill Heart Rate (bpm)')
-
 
 ```
 
@@ -409,6 +533,9 @@ p + ylab('Downhill Heart Rate (bpm)')
 ```{r}
 #| echo: false
 #| warning: false
+#| include: false
+
+
 ################
 
 ###### Running Speed
@@ -453,7 +580,6 @@ Speeddat1Mod <- brm(data = Speeddat1, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-extractVals(Speeddat1, Speeddat1Mod, otherConfigs, baseline, 'imuSpeed', 'higher') 
 
 
 
@@ -469,7 +595,7 @@ Speeddat2Mod <- brm(data = Speeddat2, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-extractVals(Speeddat2, Speeddat2Mod, otherConfigs, baseline, 'imuSpeed', 'higher')  
+ 
 
 # Note for trail run metrics: Warmup was reduced (from 1000 to 400)
 Speeddat3Mod <- brm(data = Speeddat3, # Bayes model
@@ -483,18 +609,31 @@ Speeddat3Mod <- brm(data = Speeddat3, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
+
+
+
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: true
+#| layout-ncol: 2 
+
+extractVals(Speeddat1, Speeddat1Mod, otherConfigs, baseline, 'imuSpeed', 'higher') 
+
+extractVals(Speeddat2, Speeddat2Mod, otherConfigs, baseline, 'imuSpeed', 'higher') 
+
 extractVals(Speeddat3, Speeddat3Mod, otherConfigs, baseline, 'imuSpeed', 'higher') 
 
-p <- withinSubPlot(Speeddat1, colName = 'imuSpeed', dir = 'higher')
+p <- withinSubPlotAvg(Speeddat1, colName = 'imuSpeed', dir = 'higher')
 p + ylab('Uphill Speed (m/s)')
 
-p <- withinSubPlot(Speeddat2, colName = 'imuSpeed', dir = 'lower')
+p <- withinSubPlotAvg(Speeddat2, colName = 'imuSpeed', dir = 'higher')
 p + ylab('Technical Top Speed (m/s)')
 
-p <- withinSubPlot(Speeddat3, colName = 'imuSpeed', dir = 'lower')
+p <- withinSubPlotAvg(Speeddat3, colName = 'imuSpeed', dir = 'higher')
 p + ylab('Downhill Speed (m/s)')
-
-
 ```
 
 ## Health
@@ -504,6 +643,9 @@ p + ylab('Downhill Speed (m/s)')
 ```{r}
 #| echo: false
 #| warning: false
+#| include: false
+
+
 ################
 
 ###### Peak eversion velocity
@@ -548,7 +690,7 @@ Everdat1Mod <- brm(data = Everdat1, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-extractVals(Everdat1, Everdat1Mod, otherConfigs, baseline, 'pIEgyro', 'lower')
+
 
 # Note for trail run metrics: Warmup was reduced (from 1000 to 500)
 Everdat2Mod <- brm(data = Everdat2, # Bayes model
@@ -562,7 +704,6 @@ Everdat2Mod <- brm(data = Everdat2, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-extractVals(Everdat2, Everdat2Mod, otherConfigs, baseline, 'pIEgyro', 'lower')
 
 # Note for trail run metrics: Warmup was reduced (from 1000 to 500)
 Everdat3Mod <- brm(data = Everdat3, # Bayes model
@@ -576,15 +717,29 @@ Everdat3Mod <- brm(data = Everdat3, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
+
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: true
+#| layout-ncol: 2 
+
+
+extractVals(Everdat1, Everdat1Mod, otherConfigs, baseline, 'pIEgyro', 'lower')
+
+extractVals(Everdat2, Everdat2Mod, otherConfigs, baseline, 'pIEgyro', 'lower')
+
 extractVals(Everdat3, Everdat3Mod, otherConfigs, baseline, 'pIEgyro', 'lower')
 
-p <- withinSubPlot(Everdat1, colName = 'pIEgyro', dir = 'lower')
+p <- withinSubPlotAvg(Everdat1, colName = 'pIEgyro', dir = 'lower')
 p + ylab('Uphill Eversion Velcity (deg/s)')
 
-p <- withinSubPlot(Everdat2, colName = 'pIEgyro', dir = 'lower')
+p <- withinSubPlotAvg(Everdat2, colName = 'pIEgyro', dir = 'lower')
 p + ylab('Technical Top Eversion Velcity (deg/s)')
 
-p <- withinSubPlot(Everdat3, colName = 'pIEgyro', dir = 'lower')
+p <- withinSubPlotAvg(Everdat3, colName = 'pIEgyro', dir = 'lower')
 p + ylab('Downhill Eversion Velcity (deg/s)')
 
 ```
@@ -596,6 +751,9 @@ p + ylab('Downhill Eversion Velcity (deg/s)')
 ```{r}
 #| echo: false
 #| warning: false
+#| include: false
+
+
 ################
 
 ###### Heel Contact
@@ -644,7 +802,7 @@ HeelCondat1Mod <- brm(data = HeelCondat1, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-extractVals(HeelCondat1, HeelCondat1Mod, otherConfigs, baseline, 'HeelCon', 'higher')
+
 
 HeelCondat2Mod <- brm(data = HeelCondat2, # Bayes model
               family = gaussian,
@@ -657,7 +815,7 @@ HeelCondat2Mod <- brm(data = HeelCondat2, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-extractVals(HeelCondat2, HeelCondat2Mod, otherConfigs, baseline, 'HeelCon', 'higher')
+
 
 HeelCondat3Mod <- brm(data = HeelCondat3, # Bayes model
               family = gaussian,
@@ -670,17 +828,32 @@ HeelCondat3Mod <- brm(data = HeelCondat3, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
+
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: true
+#| layout-ncol: 2 
+
+
+extractVals(HeelCondat1, HeelCondat1Mod, otherConfigs, baseline, 'HeelCon', 'higher')
+
+extractVals(HeelCondat2, HeelCondat2Mod, otherConfigs, baseline, 'HeelCon', 'higher')
+
 extractVals(HeelCondat3, HeelCondat3Mod, otherConfigs, baseline, 'HeelCon', 'higher')
 
 
-p <- withinSubPlot(HeelCondat1, colName = 'HeelCon', dir = 'higher')
+p <- withinSubPlotAvg(HeelCondat1, colName = 'HeelCon', dir = 'higher')
 p + ylab('Uphill Heel Contact (%)')
 
-p <- withinSubPlot(HeelCondat2, colName = 'HeelCon', dir = 'higher')
+p <- withinSubPlotAvg(HeelCondat2, colName = 'HeelCon', dir = 'higher')
 p + ylab('Technical Top Heel Contact (%)')
 
-p <- withinSubPlot(HeelCondat3, colName = 'HeelCon', dir = 'higher')
+p <- withinSubPlotAvg(HeelCondat3, colName = 'HeelCon', dir = 'higher')
 p + ylab('Downhill Heel Contact (%)')
+
 ```
 
 **Forefoot contact area (heel hold): Higher is better**
@@ -688,6 +861,8 @@ p + ylab('Downhill Heel Contact (%)')
 ```{r}
 #| echo: false
 #| warning: false
+#| include: false
+
 ################
 
 ###### Forefoot Contact
@@ -731,7 +906,6 @@ ForeCondat1Mod <- brm(data = ForeCondat1, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-extractVals(ForeCondat1, ForeCondat1Mod, otherConfigs, baseline, 'MetCon', 'higher')
 
 # Note for trail run metrics: Warmup was reduced (from 1000 to 500)
 ForeCondat2Mod <- brm(data = ForeCondat2, # Bayes model
@@ -745,7 +919,6 @@ ForeCondat2Mod <- brm(data = ForeCondat2, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-extractVals(ForeCondat2, ForeCondat2Mod, otherConfigs, baseline, 'MetCon', 'higher')
 
 # Note for trail run metrics: Warmup was reduced (from 1000 to 500)
 ForeCondat3Mod <- brm(data = ForeCondat3, # Bayes model
@@ -759,16 +932,30 @@ ForeCondat3Mod <- brm(data = ForeCondat3, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
+
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: true
+#| layout-ncol: 2 
+
+extractVals(ForeCondat1, ForeCondat1Mod, otherConfigs, baseline, 'MetCon', 'higher')
+
+extractVals(ForeCondat2, ForeCondat2Mod, otherConfigs, baseline, 'MetCon', 'higher')
+
 extractVals(ForeCondat3, ForeCondat3Mod, otherConfigs, baseline, 'MetCon', 'higher')
 
-p <- withinSubPlot(ForeCondat1, colName = 'MetCon', dir = 'higher')
+p <- withinSubPlotAvg(ForeCondat1, colName = 'MetCon', dir = 'higher')
 p + ylab('Uphill Forefoot Contact (%)')
 
-p <- withinSubPlot(ForeCondat2, colName = 'MetCon', dir = 'higher')
+p <- withinSubPlotAvg(ForeCondat2, colName = 'MetCon', dir = 'higher')
 p + ylab('Technical Top Forefoot Contact (%)')
 
-p <- withinSubPlot(ForeCondat3, colName = 'MetCon', dir = 'higher')
+p <- withinSubPlotAvg(ForeCondat3, colName = 'MetCon', dir = 'higher')
 p + ylab('Downhill Forefoot Contact (%)')
+
 ```
 
 Radar Plots
