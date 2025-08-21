@@ -2,83 +2,85 @@
 title: "PFL DATA REPORT"
 format: 
   docx:
-    reference-doc: 'C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/Testing Segments/Report_Template.docx'
+    reference-doc: 'C:/Users/milena.singletary/OneDrive - BOA Technology Inc/General - PFL Team/Testing Segments/Report_Template.docx'
 editor: visual
 editor_options: 
   chunk_output_type: console
+execute: 
+  error: true
+  warning: false
 ---
 
 # CONFIDENTAL CONTENT FOR BOA EMPLOYEES ONLY. PLEASE CONTACT PFL DIRECTLY WITH ANY QUESTIONS.
 
-+--------------------+---------------------------------------------+
-| Test Name          | EH_Workwear_MidCutStabilityI_CPDMech_June23 |
-+====================+=============================================+
-| **Benefit:**       | Endurance & Health                          |
-+--------------------+---------------------------------------------+
-| **Date:**          | 6/2023                                      |
-+--------------------+---------------------------------------------+
-| **Test Type:**     | CPD Mechanistic                             |
-+--------------------+---------------------------------------------+
-| **Configurations** | Baseline: FA (Focused Ankle)                |
-|                    |                                             |
-|                    | Test configurations:                        |
-|                    |                                             |
-|                    | -   DPZ (Dual Power Zone - Upper and Lower) |
-|                    |                                             |
-|                    | -   SPZ (Single Upper Power Zone)           |
-+--------------------+---------------------------------------------+
++--------------------+-----------------------------------------------------+
+| Test Name          | 2025_Performance_HighCutPFSWorkwearII_TimberlandPro |
++====================+=====================================================+
+| **Benefit:**       | Endurance & Health                                  |
++--------------------+-----------------------------------------------------+
+| **Date:**          | June 2025                                           |
++--------------------+-----------------------------------------------------+
+| **Test Type:**     | Mechanistic                                         |
++--------------------+-----------------------------------------------------+
+| **Configurations** | Baseline: CFS (Classic Fit Solution)                |
+|                    |                                                     |
+|                    | Test configurations:                                |
+|                    |                                                     |
+|                    | -   PFS                                             |
+|                    |                                                     |
+|                    | -   PFSDZ (PFS Dual Zone)                           |
++--------------------+-----------------------------------------------------+
 
 ## Purpose & Background
 
--   Previous cycling performance tests (Cycling_DDRoad_Performance_Feb22) showed improvements due to a heel lock guide providing immediate lace pull toward the heel cut.
+-   Previous learning's have showed imporved heel hold and ankle stability when testing zonal fit of midcut boots.
 
--   In-lab testing demonstrated that the single-dial heel lock improved quantitative fit; but neither heel lock configuration improved agility performance
+-   With more robust uppers in workwear and more so in high cut work boots, do these learning still hold true?
 
--   The purpose of this test was to evaluate how a heel lock guide affects endurance and health performance in a single dial and dual dial configuration on trail.
+-   The purpose of this test was to evaluate the effects of zonal PFS on a high cut boot with a robust upper.
 
 ## Hypothesis
 
-H1: The heel lock will improve heel hold and the dual dial heel lock will provide the best fit. Heel hold will be measured as contact area between the heel and the midsole during trail running. The heel hold will be evaluated during uphill, technical, and downhill running
+H1: PFSL will improve heel hold by wrapping the midfoot best. Heel hold will be measured as contact area between the heel and the midsole during walking. The heel hold will be evaluated during indoor trail walking and uphill, and downhill treadmill walking.
 
-H2: The heel lock will improve ankle stability with dual dial heel lock providing the most stability. Ankle stability will be measured as the peak eversion velocity. The
+H2: The PFSC will improve ankle stability by providing improved fit around the ankle. Ankle stability will be measured as the peak eversion velocity during trail walking and peak eversion ankle moment during weighted lunges.
 
 H3: The heel lock will improve running speed with no change in heart rate. The dual dial will provide the most improvement.
 
 ## Methods
 
-+--------------+-------------------------+---------------------------------------+----------------------------------+
-| Subjects     | Movements               | Equipment                             | Measurements                     |
-+==============+=========================+=======================================+==================================+
-| 10 Athletes  | Uneven terrain walking  | -   Pressure insoles                  | Endurance:                       |
-|              |                         |                                       |                                  |
-| -   8 Male   |                         | -   Inertial Measurement Units (IMUs) | -   Peak toe pressure            |
-|              |                         |                                       |                                  |
-| -   2 Female |                         |                                       | Health:                          |
-|              |                         |                                       |                                  |
-|              |                         |                                       | -   Peak eversion velocity       |
-|              |                         |                                       |                                  |
-|              |                         |                                       | Fit:                             |
-|              |                         |                                       |                                  |
-|              |                         |                                       | -   Heel contact area            |
-+--------------+-------------------------+---------------------------------------+----------------------------------+
-|              | Single Leg Landings     | -   In-ground force plates            | Health:                          |
-|              |                         |                                       |                                  |
-|              | -   Weighted Level      | -   Motion Capture cameras            | -   Time-to-stabilize            |
-|              |                         |                                       |                                  |
-|              | -   On Trail            |                                       | -   Knee abduction moment        |
-+--------------+-------------------------+---------------------------------------+----------------------------------+
-|              | Weighted Lunge to Stand |                                       | Endurance:                       |
-|              |                         |                                       |                                  |
-|              |                         |                                       | -   Rate of force development    |
-|              |                         |                                       |                                  |
-|              |                         |                                       | -   Center-of-pressure excursion |
-+--------------+-------------------------+---------------------------------------+----------------------------------+
++--------------+---------------------------------------+---------------------------------------+----------------------------+
+| Subjects     | Movements                             | Equipment                             | Measurements               |
++==============+=======================================+=======================================+============================+
+| 11 Athletes  | Uneven terrain walking                | -   Pressure insoles                  | Enduundefinedrance:        |
+|              |                                       |                                       |                            |
+| -   10 Male  |                                       | -   Inertial Measurement Units (IMUs) | -   Walking Speed          |
+|              |                                       |                                       | -   Peak Toe Pressure      |
+| -   1 Female |                                       |                                       | -   Center of Mass Work    |
+|              |                                       |                                       |                            |
+|              |                                       |                                       | Fit:                       |
+|              |                                       |                                       |                            |
+|              |                                       |                                       | -   Heel contact area      |
+|              |                                       |                                       | -   Peak eversion velocity |
++--------------+---------------------------------------+---------------------------------------+----------------------------+
+|              | Single Leg Landings on uneven terrain | -   Pressure insoles                  | Stability & Control:       |
+|              |                                       |                                       |                            |
+|              |                                       |                                       | -   Time-to-stabilize      |
++--------------+---------------------------------------+---------------------------------------+----------------------------+
+|              | Weighted Lunge to Stand               | -   In-ground force plates            | Endurance:                 |
+|              |                                       |                                       |                            |
+|              |                                       | -   Motion Capture cameras            | -   Ankle eversion moment  |
+|              |                                       |                                       |                            |
+|              |                                       |                                       | -   Knee abduction moment  |
++--------------+---------------------------------------+---------------------------------------+----------------------------+
 
 ## Configurations
 
-| Baseline: Focused Ankle (FA) | Dual Power Zone (DPZ) | Single Power Zone (SPZ) |
-|------------------------------|-----------------------|-------------------------|
-|                              |                       |                         |
++--------------------------------------+---------------+-----------------------+
+| Baseline: Classic Fit Solution (CFS) | PFS (PFS)     | PFS Dual Zone (PFSDZ) |
++======================================+===============+=======================+
+|                                      |               |                       |
++--------------------------------------+---------------+-----------------------+
 
 ## Summary of Findings
 
@@ -86,6 +88,8 @@ H3: The heel lock will improve running speed with no change in heart rate. The d
 #| echo: false
 #| warning: false
 #| include: false
+
+
 library(readxl)
 library(tidyverse)
 library(tm)
@@ -103,45 +107,36 @@ rm(list=ls())
 
 ```{r}
 #| echo: false
-#| include: false
+#| warning: false
 
 #Load in Compiled Qualitative Sheet
-qualDat <- read_xlsx('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/Testing Segments/WorkWear_Performance/EH_Workwear_MidCutStabilityI_CPDMech_June23/CompiledQualData_MidCutStabilityI.xlsx')
+qualDat <- read_xlsx('C:\\Users\\milena.singletary\\OneDrive - BOA Technology Inc\\General - PFL Team\\Testing Segments\\WorkWear_Performance\\2025_Performance_HighCutPFSWorwearII_TimberlandPro\\CompiledQualData_HighCutWWII.xlsx')
 
-# Load in the overground landing data
-OGLandDat <- read.csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/Testing Segments/WorkWear_Performance/EH_Workwear_MidCutStabilityI_CPDMech_June23/Overground/OGStabilization.csv')
-
-# Pressure from overground landing
-PressLandDat <- read.csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/Testing Segments/WorkWear_Performance/EH_Workwear_MidCutStabilityI_CPDMech_June23/Pressure/1_CompiledResults_SLL.csv')
 
 # Pressure from Trail Walking
-PressWalkDat <- read.csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/Testing Segments/WorkWear_Performance/EH_Workwear_MidCutStabilityI_CPDMech_June23/Pressure/0_CompiledResults1.csv')
+PressWalkDat <- read.csv('Z:\\Testing Segments\\WorkWear_Performance\\2025_Performance_HighCutPFSWorkwearII_TimberlandPro\\Xsensor\\cropped\\1_CompiledResults.csv')
 
 # Load in the overground lunge data
-SUDat <- read.csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/Testing Segments/WorkWear_Performance/EH_Workwear_MidCutStabilityI_CPDMech_June23/Overground/StandUp.csv')
+SUDat <- read.csv('Z:\\Testing Segments\\WorkWear_Performance\\2025_Performance_HighCutPFSWorkwearII_TimberlandPro\\overground\\1_StandUp.csv')
 
 # Load in the trail landing data
-UnLandDat <- read.csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/Testing Segments/WorkWear_Performance/EH_Workwear_MidCutStabilityI_CPDMech_June23/IMU/TrailStabilize.csv')
+UnLandDat <- read.csv('Z:\\Testing Segments\\WorkWear_Performance\\2025_Performance_HighCutPFSWorkwearII_TimberlandPro\\Xsensor\\cropped\\1_CompiledResults_SLL.csv')
 
 # Load in the IMU data
-IMUdat <- read.csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/Testing Segments/WorkWear_Performance/EH_Workwear_MidCutStabilityI_CPDMech_June23/IMU/CompIMUmetrics.csv')
-
-# Load in the insole data
-# Pressdat <- read.csv('C:/Users/eric.honert/Boa Technology Inc/PFL Team - General/Testing Segments/EndurancePerformance/EH_Trail_HeelLockTrail_Perf_May23/Xsensor/PressureOutcomes.csv')
+IMUdat <- read.csv('Z:\\Testing Segments\\WorkWear_Performance\\2025_Performance_HighCutPFSWorkwearII_TimberlandPro\\IMU\\0_Trail_CompIMUmetrics.csv')
 
 
-baseline <- 'FA' # baseline configuration
+TreadDat <-  read.csv('Z:\\Testing Segments\\WorkWear_Performance\\2025_Performance_HighCutPFSWorkwearII_TimberlandPro\\treadmill\\0_TreadmillOutcomes_1.csv')
+  
+staticPress <- read.csv('Z:\\Testing Segments\\WorkWear_Performance\\2025_Performance_HighCutPFSWorkwearII_TimberlandPro\\Xsensor\\static\\1_CompiledResults_Static.csv')
 
-otherConfigs <- c('DPZ', 'SPZ') # other configurations tested against base
+
+baseline <- 'CFS' # baseline configuration
+
+otherConfigs <- c('PFS', 'PFSDZ') # other configurations tested against base
 allConfigs <- c(baseline, otherConfigs)
 
 qualDat$Config <- factor(qualDat$Config, allConfigs)
-
-OGLandDat <- as_tibble(OGLandDat) # creating the data frame
-OGLandDat$Config <- factor(OGLandDat$Config, allConfigs)
-
-PressLandDat <- as_tibble(PressLandDat) # creating the data frame
-PressLandDat$Config <- factor(PressLandDat$Config, allConfigs)
 
 PressWalkDat <- as_tibble(PressWalkDat) # creating the data frame
 PressWalkDat$Config <- factor(PressWalkDat$Config, allConfigs)
@@ -155,40 +150,60 @@ UnLandDat$Config <- factor(UnLandDat$Config, allConfigs)
 IMUdat <- as_tibble(IMUdat) # creating the data frame
 IMUdat$Config <- factor(IMUdat$Config, allConfigs)
 
-# Pressdat <- as_tibble(Pressdat) # creating the data frame
-# Pressdat$Config <- factor(Pressdat$Config, allConfigs)
 
-withinSubPlot <- function(inputDF, colName, dir) {
-  
-  # direction can be 'lower' or higher'. It is the direction of change that is better. 
-  # For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher. 
+TreadDat <- as_tibble(TreadDat)
+TreadDat$Config <- factor(TreadDat$Config, allConfigs)
+
+staticPress <- as_tibble(staticPress)
+staticPress$Config <- factor(staticPress$Config, allConfigs)
+
+
+# updated withinAvg plot 
+withinSubPlotAvg <- function(inputDF, colName, dir = 'lower', yLabel = NULL) {
+  # Validate the `dir` input
+  if(!dir %in% c('lower', 'higher')){
+    stop("The 'dir' argument must be either 'lower' or 'higher'.")
+  }
+  # Calculate the mean for each Subject and Config, removing NA values
   meanDat <- inputDF %>%
     group_by(Subject, Config) %>%
-    summarize(mean = mean(!! sym(colName),na.rm = TRUE))
-  
+    summarize(mean = mean(!! sym(colName), na.rm = TRUE), .groups = 'drop')
+  # Determine the best configuration based on the direction
   if (dir == 'lower'){
     whichConfig <- meanDat %>%
       group_by(Subject) %>%
-      summarize(
-        BestConfig = Config[which.min(mean)]
-      )
-    
+      reframe(BestConfig = Config[which.min(mean)])
   } else if (dir == 'higher') {
     whichConfig <- meanDat %>%
-      group_by(Subject) %>% 
-      summarize(
-        BestConfig = Config[which.max(mean)]
-      )
-    
+      group_by(Subject) %>%
+      reframe(BestConfig = Config[which.max(mean)])
   }
-  
-  whichConfig <- merge(meanDat, whichConfig)
-  
-  ggplot(data = whichConfig, mapping = aes(x = as.factor(Config), y = mean, col = BestConfig, group = Subject)) + geom_point(size = 4) + 
-    geom_line() + xlab('Configuration') + scale_color_manual(values=c("#000000","#00966C", "#ECE81A","#DC582A","#CAF0E4")) + theme(text = element_text(size = 16)) + ylab(paste0({{colName}})) 
-  
+  # Rename BestConfig to Config for merging
+  whichConfig <- whichConfig %>%
+    rename(Config = BestConfig)
+  # Merge the best configuration back to the mean data
+  mergedData <- merge(meanDat, whichConfig, by = c("Subject", "Config"))
+  # Calculate overall mean for each Config, removing NA values
+  overallMean <- meanDat %>%
+    group_by(Config) %>%
+    summarize(overallMean = mean(mean, na.rm = TRUE), .groups = 'drop')
+  # Plotting with ggplot2
+  plot <- ggplot() +
+    geom_point(data = meanDat, mapping = aes(x = as.factor(Config), y = mean, group = Subject, color = 'Subject Means'), size = 3, alpha = 0.5) +
+    geom_line(data = meanDat, mapping = aes(x = as.factor(Config), y = mean, group = Subject, color = 'Subject Means'), alpha = 0.5) +
+    geom_point(data = overallMean, mapping = aes(x = as.factor(Config), y = overallMean, color = 'Overall Mean'), size = 4, shape = 17) +
+    geom_line(data = overallMean, mapping = aes(x = as.factor(Config), y = overallMean, group = 1, color = 'Overall Mean'), size = 1.5) +
+    scale_color_manual(values = c('Subject Means' = 'grey', 'Overall Mean' = '#003C4C')) +
+    xlab('Configuration') +
+    theme(text = element_text(size = 16), legend.title = element_blank())
+  # Set y-axis label
+  if (!is.null(yLabel)) {
+    plot <- plot + ylab(yLabel)
+  } else {
+    plot <- plot + ylab(paste0(colName))
+  }
+  print(plot)
 }
-
 
 extractVals <- function(dat, mod, configNames, baseConfig, var, dir) {
   
@@ -289,14 +304,38 @@ withinSubQualPlot <- function(inputDF) {
 ###############################
 ```
 
-**Qualitative**
+## **Next Steps**
+
+## **Recommendations**
+
+## **Performance Rankings**
+
+|                             |     |      |      |
+|-----------------------------|-----|------|------|
+|                             | CFS | PFSC | PFSL |
+| Qualitative Ranking         | 95  |      |      |
+| Energy Efficiency           | 50  |      |      |
+| Stability & Control         | 50  |      |      |
+| Fit                         | 50  |      |      |
+| Overall Performance Ranking | 50  |      |      |
+
+## Radar Plots
+
+|     |       |
+|-----|-------|
+| PFS | PFSDZ |
+|     |       |
+
+## **Qualitative**
 
 ```{r}
 #| echo: false
 #| warning: false
+#| include: true 
+#| layout-ncol: 2  
 
 qualDat %>%
-  pivot_longer(cols = OverallFit:Heel, 
+  pivot_longer(cols = OverallFit:Cuff, 
                names_to = "Location", values_to = "Rating") %>%
   group_by(Location, Config) %>%
   summarize(
@@ -307,29 +346,84 @@ qualDat %>%
 
 #Defining the rating for the location 
 #Density plots for fit ratings of shoe locations
-qualDat <- pivot_longer(qualDat, cols = Forefoot:Heel, names_to = 'Location', values_to = 'Rating')
+qualDat <- pivot_longer(qualDat, cols = Forefoot:Cuff, names_to = 'Location', values_to = 'Rating')
 
 FF <- qualDat %>% 
   filter(Location=="Forefoot")
 
 
-qualDat$Location <- factor(qualDat$Location, c('Forefoot', 'Midfoot', 'Heel')) 
+qualDat$Location <- factor(qualDat$Location, c('Forefoot', 'Midfoot', 'Heel', 'Cuff')) 
 
 ```
 
 ```{r}
 #| echo: false
-withinSubQualPlot(qualDat)
+#| warning: false
+#| include: true
+
+withinSubQualAvg(qualDat)
 ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) + 
   geom_histogram(position = 'dodge', binwidth = 1) + facet_wrap(~Location) + scale_fill_manual(values=c("#999999", "#00966C", "#ECE81A","#DC582A","#CAF0E4")) +
   ylab('Responses') + theme(text=element_text(size=20)) + geom_vline(xintercept = 5, linewidth = 1)
 ```
 
-**Dial Torque**
+```{r}
+#| echo: false
+#| warning: false
+#| include: false
+
+
+# qual average plot
+withinSubQualAvg <- function(inputDF) {
+  
+  # direction can be 'lower' or higher'. It is the direction of change that is better. 
+  # For example, for contact time lower is better. so we put 'lower'. for jump height, higher is better, so we put higher. 
+  # Calculate the mean for each Subject and Config, removing NA values
+  meanDat <- inputDF %>%
+    group_by(Subject, Config) %>%
+    summarize(mean = mean(OverallFit, na.rm = TRUE), .groups = 'drop')
+  
+  
+  whichConfig <- inputDF %>%
+    group_by(Subject) %>%
+    summarize(
+      BestConfig = Config[which.max(OverallFit)]
+    )
+  
+  whichConfig <- whichConfig %>%
+    rename(Config = BestConfig)
+  
+  mergeDat <- merge(meanDat, whichConfig)
+  
+  overallMean <- meanDat %>%
+    group_by(Config) %>%
+    summarize(overallMean = mean(mean, na.rm = TRUE), .groups = 'drop')
+  # Plotting with ggplot2
+  plot <- ggplot() +
+    geom_point(data = meanDat, mapping = aes(x = as.factor(Config), y = mean, group = Subject, color = 'Subject Means'), size = 3, alpha = 0.5) +
+    geom_line(data = meanDat, mapping = aes(x = as.factor(Config), y = mean, group = Subject, color = 'Subject Means'), alpha = 0.5) +
+    geom_point(data = overallMean, mapping = aes(x = as.factor(Config), y = overallMean, color = 'Overall Mean'), size = 4, shape = 17) +
+    geom_line(data = overallMean, mapping = aes(x = as.factor(Config), y = overallMean, group = 1, color = 'Overall Mean'), linewidth = 1.5) +
+    scale_color_manual(values = c('Subject Means' = 'grey', 'Overall Mean' = '#003C4C')) +
+    xlab('Configuration') + ylab('Rating') +
+    theme(text = element_text(size = 16), legend.title = element_blank()) 
+    
+  
+  print(plot)
+  
+}
+
+withinSubQualAvg(qualDat)
+```
+
+### **Dial Torque**
 
 ```{r}
 #| echo: false
 #| warning: false
+#| include: true
+
+
 qualDat %>%
   group_by(Config)%>%
   summarize(
@@ -350,16 +444,47 @@ ggplot(qualDat, aes(x=Config, y = L_DialTorque1, color = Config, group= Subject)
   xlab('Config')+
   ggtitle('Left Foot')
 
+
+withinSubPlotAvg(qualDat, colName ='R_DialTorque1', dir = 'higher')  + ylab('Instep Dial - Torque [N-cm]')
+
 ```
-
-## Endurance
-
-**Walking Speed (higher is better)** **- Uneven Terrain Walking**
 
 ```{r}
 #| echo: false
 #| warning: false
-################
+#| include: true 
+
+torqueDat <- qualDat %>%
+  group_by(Subject) %>%
+  mutate(z_score = scale(L_DialTorque1)) %>%
+  group_by(Config)
+
+
+torqueMod <- brm(data = torqueDat, # Bayes model
+              family = gaussian,
+              z_score ~  Config + (1  | Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+
+extractVals(torqueDat , torqueMod, otherConfigs, baseline, 'L_DialTorque1', 'higher')
+```
+
+## Energy Efficiency
+
+### **Walking Speed (higher is better)** **- Uneven Terrain Walking**
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: false
+#| layout-ncol: 2  
+
 
 ###### Walking Speed
 
@@ -370,10 +495,12 @@ Speeddat <- IMUdat %>%
   group_by(Config)
 
 # Look at histogram of the data if any outliers need to be removed
-# ggplot(data = Speeddat, aes(x = imuSpeed, color = Config)) + geom_histogram() + facet_wrap(~Subject)
+ggplot(data = Speeddat, aes(x = imuSpeed, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
 
-p <- withinSubPlot(Speeddat, colName = 'imuSpeed', dir = 'higher')
-p + ylab('Walking Speed (m/s)')
+Speeddat <- subset(Speeddat, Speeddat$z_score < 2) #removing outliers
+Speeddat <- subset(Speeddat, Speeddat$z_score > -2)
+
+
 
 # Note for trail run metrics: Warmup was reduced (from 1000 to 400)
 SpeeddatMod <- brm(data = Speeddat, # Bayes model
@@ -387,16 +514,30 @@ SpeeddatMod <- brm(data = Speeddat, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-extractVals(Speeddat, SpeeddatMod, otherConfigs, baseline, 'imuSpeed', 'higher') 
+
 
 ```
-
-**Toe Clawing: Peak Toe Pressure (Lower is Better) - Single Leg Landing and Uneven Terrain Walking**
 
 ```{r}
 #| echo: false
 #| warning: false
-################
+#| include: true
+#| layout-ncol: 2 
+
+p <- withinSubPlotAvg(Speeddat, colName = 'imuSpeed', dir = 'higher')
+p + ylab('Walking Speed (m/s)')
+
+
+extractVals(Speeddat, SpeeddatMod, otherConfigs, baseline, 'imuSpeed', 'higher') 
+```
+
+### **Toe Clawing: Peak Toe Pressure (Lower is Better) - All Walking and Uneven Terrain Landings**
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: false
+
 
 ###### Peak Toe Pressure Walking
 
@@ -406,15 +547,17 @@ PeakToeWalkdat <- PressWalkDat %>%
   group_by(Config)
 
 # Look at histogram of the data if any outliers need to be removed
-ggplot(data = PeakToeWalkdat, aes(x = maxmaxToes, color = Config)) + geom_histogram() + facet_wrap(~Subject)
+ggplot(data = PeakToeWalkdat, aes(x = maxmaxToes, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
 
-p <- withinSubPlot(PeakToeWalkdat, colName = 'maxmaxToes', dir = 'lower')
-p + ylab('Peak Toe Pressure (kPa)')
+PeakToeWalkdat <- subset(PeakToeWalkdat, PeakToeWalkdat$z_score < 2)#removing outliers
+PeakToeWalkdat <- subset(PeakToeWalkdat, PeakToeWalkdat$z_score > -2)
+
+
 
 # Note for trail run metrics: Warmup was reduced (from 1000 to 500)
 PeakToeWalkdatMod <- brm(data = PeakToeWalkdat, # Bayes model
               family = gaussian,
-              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              z_score ~ Config + Movement + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
                         prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
                         prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
@@ -423,20 +566,24 @@ PeakToeWalkdatMod <- brm(data = PeakToeWalkdat, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-extractVals(PeakToeWalkdat, PeakToeWalkdatMod, otherConfigs, baseline, 'maxmaxToes', 'lower')
 
-###### Peak Toe Pressure Landings
 
-PeakToeLanddat <- PressLandDat %>% 
+
+###### Peak Toe Pressure Trail Landings
+
+PeakToeLanddat <- UnLandDat %>% 
   group_by(Subject) %>%
   mutate(z_score = scale(ToeClawPeak)) %>% 
   group_by(Config)
 
 # Look at histogram of the data if any outliers need to be removed
-# ggplot(data = PeakToeLanddat, aes(x = ToeClawPeak, color = Config)) + geom_histogram() + facet_wrap(~Subject)
+ggplot(data = PeakToeLanddat, aes(x = ToeClawPeak, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
 
-p <- withinSubPlot(PeakToeLanddat, colName = 'ToeClawPeak', dir = 'lower')
-p + ylab('Peak Toe Pressure (kPa)')
+PeakToeLanddat <- subset(PeakToeLanddat, PeakToeLanddat$z_score < 2)#removing outliers
+PeakToeLanddat <- subset(PeakToeLanddat, PeakToeLanddat$z_score > -2)
+
+
+
 
 # Note for trail run metrics: Warmup was reduced (from 1000 to 500)
 PeakToeLanddatMod <- brm(data = PeakToeLanddat, # Bayes model
@@ -450,28 +597,183 @@ PeakToeLanddatMod <- brm(data = PeakToeLanddat, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-extractVals(PeakToeLanddat, PeakToeLanddatMod, otherConfigs, baseline, 'ToeClawPeak', 'lower')
 
 ```
-
-**Task Efficiency: Rate of Force Development (higher is better) - Weighted Lunge**
 
 ```{r}
 #| echo: false
 #| warning: false
-################
+#| include: true
+#| layout-ncol: 2 
+
+p <- withinSubPlotAvg(PeakToeWalkdat, colName = 'maxmaxToes', dir = 'lower')
+p + ylab('Peak Toe Pressure (kPa)')
+
+
+extractVals(PeakToeWalkdat, PeakToeWalkdatMod, otherConfigs, baseline, 'maxmaxToes', 'lower')
+
+
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: true
+#| layout-ncol: 2 
+
+
+p <- withinSubPlotAvg(PeakToeLanddat, colName = 'ToeClawPeak', dir = 'lower')
+p + ylab('Peak Toe Pressure (kPa)')
+
+extractVals(PeakToeLanddat, PeakToeLanddatMod, otherConfigs, baseline, 'ToeClawPeak', 'lower')
+```
+
+### Peak Toe Pressure Walking: UH, DH, Trail
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: false
+
+###### Peak Toe Pressure UH 
+
+PeakToeUH <- PressWalkDat %>% 
+  group_by(Subject) %>%
+  filter(Movement == 'uh')%>%
+  mutate(z_score = scale(maxmaxToes)) %>% 
+  group_by(Config)
+
+# Look at histogram of the data if any outliers need to be removed
+ggplot(data = PeakToeUH, aes(x = maxmaxToes, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
+
+PeakToeUH <- subset(PeakToeUH, PeakToeUH$z_score < 2)#removing outliers
+PeakToeUH <- subset(PeakToeUH, PeakToeUH$z_score > -2)
+
+
+
+# Note for trail run metrics: Warmup was reduced (from 1000 to 500)
+PeakToeUHMod <- brm(data = PeakToeUH, # Bayes model
+              family = gaussian,
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+
+####### downhill
+
+PeakToeDH <- PressWalkDat %>% 
+  group_by(Subject) %>%
+  filter(Movement == 'dh')%>%
+  mutate(z_score = scale(maxmaxToes)) %>% 
+  group_by(Config)
+
+# Look at histogram of the data if any outliers need to be removed
+ggplot(data = PeakToeDH, aes(x = maxmaxToes, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
+
+PeakToeDH <- subset(PeakToeDH, PeakToeDH$z_score < 2)#removing outliers
+PeakToeDH <- subset(PeakToeDH, PeakToeDH$z_score > -2)
+
+
+
+# Note for trail run metrics: Warmup was reduced (from 1000 to 500)
+PeakToeDHMod <- brm(data = PeakToeDH, # Bayes model
+              family = gaussian,
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+
+
+##### trail
+PeakToeTr <- PressWalkDat %>% 
+  group_by(Subject) %>%
+  filter(Movement == 'trail' | Movement == 'trailwalk')%>%
+  mutate(z_score = scale(maxmaxToes)) %>% 
+  group_by(Config)
+
+# Look at histogram of the data if any outliers need to be removed
+ggplot(data = PeakToeTr, aes(x = maxmaxToes, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
+
+PeakToeTr <- subset(PeakToeTr, PeakToeTr$z_score < 2)#removing outliers
+PeakToeTr <- subset(PeakToeTr, PeakToeTr$z_score > -2)
+
+
+
+# Note for trail run metrics: Warmup was reduced (from 1000 to 500)
+PeakToeTrMod <- brm(data = PeakToeTr, # Bayes model
+              family = gaussian,
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: true
+#| layout-ncol: 2 
+
+## UH
+
+p <- withinSubPlotAvg(PeakToeUH, colName = 'maxmaxToes', dir = 'lower')
+p + ylab('Peak Toe Pressure (kPa)')
+
+extractVals(PeakToeUH, PeakToeUHMod, otherConfigs, baseline, 'maxmaxToes', 'lower')
+
+## DH
+
+p <- withinSubPlotAvg(PeakToeDH, colName = 'maxmaxToes', dir = 'lower')
+p + ylab('Peak Toe Pressure (kPa)')
+
+extractVals(PeakToeDH, PeakToeDHMod, otherConfigs, baseline, 'maxmaxToes', 'lower')
+
+## trail
+
+p <- withinSubPlotAvg(PeakToeTr, colName = 'maxmaxToes', dir = 'lower')
+p + ylab('Peak Toe Pressure (kPa)')
+
+extractVals(PeakToeTr, PeakToeTrMod, otherConfigs, baseline, 'maxmaxToes', 'lower')
+
+```
+
+### **Task Efficiency: Rate of Force Development (higher is better) - Weighted Lunge**
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: false
+
 
 ###### Rate of Force Development
 RFDSUDat <- SUDat %>% 
   group_by(Subject) %>%
+  filter(RFD < 20000) %>%
   mutate(z_score = scale(RFD)) %>% 
   group_by(Config)
 
 # Look at histogram of the data if any outliers need to be removed
-# ggplot(data = RFDSUDat, aes(x = RFD, color = Config)) + geom_histogram() + facet_wrap(~Subject)
+ggplot(data = RFDSUDat, aes(x = RFD, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
 
-p <- withinSubPlot(RFDSUDat, colName = 'RFD', dir = 'higher')
-p + ylab('Force Development (N/s)')
+RFDSUDat <- subset(RFDSUDat, RFDSUDat$z_score < 2)#removing outliers
+RFDSUDat <- subset(RFDSUDat, RFDSUDat$z_score > -2)
+
+
 
 RFDSUDatMod <- brm(data = RFDSUDat, 
               family = gaussian,
@@ -484,16 +786,28 @@ RFDSUDatMod <- brm(data = RFDSUDat,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-extractVals(RFDSUDat, RFDSUDatMod, otherConfigs, baseline, 'RFD', 'higher')
-
 ```
-
-**Balance: Center-of-Pressure Excursion (lower is better) - Weighted Lunge**
 
 ```{r}
 #| echo: false
 #| warning: false
-################
+#| include: true
+#| layout-ncol: 2 
+
+
+p <- withinSubPlotAvg(RFDSUDat, colName = 'RFD', dir = 'higher')
+p + ylab('Force Development (N/s)')
+
+extractVals(RFDSUDat, RFDSUDatMod, otherConfigs, baseline, 'RFD', 'higher')
+```
+
+### **Balance: Center-of-Pressure Excursion (lower is better) - Weighted Lunge**
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: false
+
 
 ###### COP Excursion
 COPSUDat <- SUDat %>% 
@@ -502,10 +816,12 @@ COPSUDat <- SUDat %>%
   group_by(Config)
 
 # Look at histogram of the data if any outliers need to be removed
-# ggplot(data = COPSUDat, aes(x = COPEx, color = Config)) + geom_histogram() + facet_wrap(~Subject)
+ggplot(data = COPSUDat, aes(x = COPEx, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
 
-p <- withinSubPlot(COPSUDat, colName = 'COPEx', dir = 'lower')
-p + ylab('Center-of-Pressure Excursion (m)')
+COPSUDat <- subset(COPSUDat, COPSUDat$z_score < 2)#removing outliers
+COPSUDat <- subset(COPSUDat, COPSUDat$z_score > -2)
+
+
 
 COPSUDatMod <- brm(data = COPSUDat, 
               family = gaussian,
@@ -518,17 +834,134 @@ COPSUDatMod <- brm(data = COPSUDat,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-extractVals(COPSUDat, COPSUDatMod, otherConfigs, baseline, 'COPEx', 'lower')
 ```
-
-## Health
-
-**Ankle Stability: Peak Eversion Velocity (lower is better) - Uneven Terrain Walking**
 
 ```{r}
 #| echo: false
 #| warning: false
-################
+#| include: true
+#| layout-ncol: 2 
+
+
+p <- withinSubPlotAvg(COPSUDat, colName = 'COPEx', dir = 'lower')
+p + ylab('Center-of-Pressure Excursion (m)')
+
+
+extractVals(COPSUDat, COPSUDatMod, otherConfigs, baseline, 'COPEx', 'lower')
+
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: false
+
+
+treadmill_UH <- subset(TreadDat , TreadDat$Slope == '10')
+# Level
+#organizing data - grouping by subject and config by the variable being observed
+psCOM_UH <- treadmill_UH %>% 
+  group_by(Subject) %>%
+  filter(COMWork_pos > 30) %>%
+  mutate(z_score = scale(COMWork_pos))%>%
+  group_by(Config) 
+
+psCOM_UH <- subset(psCOM_UH, psCOM_UH$z_score > -2)
+psCOM_UH <- subset(psCOM_UH, psCOM_UH$z_score < 2)
+
+#Normalization histograms, Check for normalish distribution/outliers
+ggplot(data = psCOM_UH, aes(x = COMWork_pos, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
+
+
+## Bayes model 
+# This model takes a while to run and may  crash your session 
+#Wait until you receive a warning about rtools to run anything else
+psCOM_UH_mod <- brm(data = psCOM_UH, 
+              family = gaussian,
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: true
+#| layout-ncol: 2 
+
+p <- withinSubPlotAvg(psCOM_UH, colName = 'COMWork_pos', dir = 'lower')
+p + ylab('Positive COM - Uphill (J)')
+
+
+extractVals(psCOM_UH, psCOM_UH_mod, otherConfigs, baseline, 'COMWork_pos', 'lower')
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: false
+
+treadmill_DH <- subset(TreadDat, TreadDat$Slope == '-10')
+# Level
+#organizing data - grouping by subject and config by the variable being observed
+ngCOM_DH <- treadmill_DH  %>% 
+  group_by(Subject) %>%
+  # filter(COMWork_pos > 30) %>%
+  mutate(z_score = scale(COMWork_neg))%>%
+  group_by(Config) 
+
+
+ngCOM_DH <- subset(ngCOM_DH, ngCOM_DH$z_score > -2)
+ngCOM_DH <- subset(ngCOM_DH, ngCOM_DH$z_score < 2)
+
+#Normalization histograms, Check for normalish distribution/outliers
+ggplot(data = ngCOM_DH, aes(x = COMWork_neg, fill = Config)) + geom_histogram() + facet_wrap(~Subject) 
+
+
+## Bayes model 
+# This model takes a while to run and may  crash your session 
+#Wait until you receive a warning about rtools to run anything else
+ngCOM_DH_mod <- brm(data = ngCOM_DH , 
+              family = gaussian,
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: true
+#| layout-ncol: 2 
+
+p <- withinSubPlotAvg(ngCOM_DH, colName = 'COMWork_neg', dir = 'higher')
+p + ylab('Negative COM - Downhill (J)')
+
+
+extractVals(ngCOM_DH, ngCOM_DH_mod, otherConfigs, baseline, 'COMWork_neg', 'higher')
+```
+
+## Stability & Control
+
+### **Ankle Stability: Peak Eversion Velocity (lower is better) - Uneven Terrain Walking**
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: false
+
 
 ###### Peak eversion velocity
 
@@ -539,10 +972,12 @@ Everdat <- IMUdat %>%
   group_by(Config)
 
 # Look at histogram of the data if any outliers need to be removed
-# ggplot(data = Everdat, aes(x = pIEgyro, color = Config)) + geom_histogram() + facet_wrap(~Subject)
+ggplot(data = Everdat, aes(x = pIEgyro, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
 
-p <- withinSubPlot(Everdat, colName = 'pIEgyro', dir = 'lower')
-p + ylab('Eversion Velocity (deg/s)')
+Everdat <- subset(Everdat, Everdat$z_score < 2)#removing outliers
+Everdat <- subset(Everdat, Everdat$z_score > -2)
+
+
 
 EverdatMod <- brm(data = Everdat, # Bayes model
               family = gaussian,
@@ -555,67 +990,29 @@ EverdatMod <- brm(data = Everdat, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-extractVals(Everdat, EverdatMod, otherConfigs, baseline, 'pIEgyro', 'lower')
-```
 
-**Knee Joint Loading: Knee Abduction Moment (lower magnitude is better) - Weighted Single Leg Landings & Weighted Lunge**
+```
 
 ```{r}
 #| echo: false
 #| warning: false
-################
+#| include: true
+#| layout-ncol: 2 
 
-### SLL Knee Abduction Moment
-KABDOGLandDat <- OGLandDat %>% 
-  group_by(Subject) %>%
-  filter(RkneeABDMom > -500) %>%
-  mutate(z_score = scale(RkneeABDMom)) %>% 
-  group_by(Config)
+p <- withinSubPlotAvg(Everdat, colName = 'pIEgyro', dir = 'lower')
+p + ylab('Eversion Velocity (deg/s)')
 
-# Look at histogram of the data if any outliers need to be removed
-# ggplot(data = KABDOGLandDat, aes(x = RkneeABDMom, color = Config)) + geom_histogram() + facet_wrap(~Subject)
+extractVals(Everdat, EverdatMod, otherConfigs, baseline, 'pIEgyro', 'lower')
+```
 
-p <- withinSubPlot(KABDOGLandDat, colName = 'RkneeABDMom', dir = 'higher')
-p + ylab('Knee Abduction Moment (Nm)')
+### **Knee Joint Loading: Knee Abduction Moment (lower magnitude is better) - Weighted Lunge**
 
-KABDOGLandDatMod <- brm(data = KABDOGLandDat, 
-              family = gaussian,
-              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
-              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
-                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
-                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
-                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
-              iter = 2000, warmup = 1000, chains = 4, cores = 4,
-              control = list(adapt_delta = .975, max_treedepth = 20),
-              seed = 190831)
+```{r}
+#| echo: false
+#| warning: false
+#| include: false
 
-extractVals(KABDOGLandDat, KABDOGLandDatMod, otherConfigs, baseline, 'RkneeABDMom', 'higher')
 
-### SLL Knee Adduction Moment
-# KADDOGLandDat <- OGLandDat %>% 
-#   group_by(Subject) %>%
-#   filter(RkneeADDMom < 500, RkneeADDMom > 0) %>%
-#   mutate(z_score = scale(RkneeADDMom)) %>% 
-#   group_by(Config)
-# 
-# # Look at histogram of the data if any outliers need to be removed
-# ggplot(data = KADDOGLandDat, aes(x = RkneeADDMom, color = Config)) + geom_histogram() + facet_wrap(~Subject)
-# 
-# p <- withinSubPlot(KADDOGLandDat, colName = 'RkneeADDMom', dir = 'lower')
-# p + ylab('Knee Adduction Moment (Nm)')
-# 
-# KADDOGLandDatMod <- brm(data = KADDOGLandDat, 
-#               family = gaussian,
-#               z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
-#               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
-#                         prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
-#                         prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
-#                         prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
-#               iter = 2000, warmup = 1000, chains = 4, cores = 4,
-#               control = list(adapt_delta = .975, max_treedepth = 20),
-#               seed = 190831)
-# 
-# extractVals(KADDOGLandDat, KADDOGLandDatMod, otherConfigs, baseline, 'RkneeADDMom', 'lower')
 
 ### SU Knee Abduction Moment
 KABDSUDat <- SUDat %>% 
@@ -625,10 +1022,14 @@ KABDSUDat <- SUDat %>%
   group_by(Config)
 
 # Look at histogram of the data if any outliers need to be removed
-# ggplot(data = KABDSUDat, aes(x = RkneeABDMom, color = Config)) + geom_histogram() + facet_wrap(~Subject)
+ggplot(data = KABDSUDat, aes(x = RkneeABDMom, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
 
-p <- withinSubPlot(KABDSUDat, colName = 'RkneeABDMom', dir = 'higher')
-p + ylab('Knee Abduction Moment (Nm)')
+KABDSUDat <- subset(KABDSUDat, KABDSUDat$z_score < 2)#removing outliers
+KABDSUDat <- subset(KABDSUDat, KABDSUDat$z_score > -2)
+
+KABDSUDat <- KABDSUDat %>%
+  filter(Subject != 'ChadPrichard'& Subject != 'WesWeber')
+
 
 KABDSUDatMod <- brm(data = KABDSUDat, 
               family = gaussian,
@@ -641,7 +1042,6 @@ KABDSUDatMod <- brm(data = KABDSUDat,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-extractVals(KABDSUDat, KABDSUDatMod, otherConfigs, baseline, 'RkneeABDMom', 'higher')
 
 ### SU Knee Adduction Moment
 # KADDSUDat <- SUDat %>% 
@@ -674,35 +1074,21 @@ extractVals(KABDSUDat, KABDSUDatMod, otherConfigs, baseline, 'RkneeABDMom', 'hig
 ```{r}
 #| echo: false
 #| warning: false
-################
+#| include: true
+#| layout-ncol: 2 
 
-### 
-# AIMOGLandDat <- OGLandDat %>% 
-#   group_by(Subject) %>%
-#   filter(RankleInMom != 'NA') %>%
-#   mutate(z_score = scale(RankleInMom)) %>% 
-#   group_by(Config)
-# 
-# # Look at histogram of the data if any outliers need to be removed
-# ggplot(data = AIMOGLandDat, aes(x = RankleInMom, color = Config)) + geom_histogram() + facet_wrap(~Subject)
-# 
-# p <- withinSubPlot(AIMOGLandDat, colName = 'RankleInMom', dir = 'lower')
-# p + ylab('Ankle Inversion Moment (Nm)')
-# 
-# AIMOGLandDatMod <- brm(data = AIMOGLandDat, 
-#               family = gaussian,
-#               z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
-#               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
-#                         prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
-#                         prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
-#                         prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
-#               iter = 2000, warmup = 1000, chains = 4, cores = 4,
-#               control = list(adapt_delta = .975, max_treedepth = 20),
-#               seed = 190831)
-# 
-# extractVals(AIMOGLandDat, AIMOGLandDatMod, otherConfigs, baseline, 'RankleInMom', 'lower')
-# 
-# 
+p <- withinSubPlotAvg(KABDSUDat, colName = 'RkneeABDMom', dir = 'higher')
+p + ylab('Knee Abduction Moment (Nm)')
+
+extractVals(KABDSUDat, KABDSUDatMod, otherConfigs, baseline, 'RkneeABDMom', 'higher')
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: false
+
+
 # ### SU Ankle Inversion Moment
 # AIMSUDat <- SUDat %>% 
 #   group_by(Subject) %>%
@@ -731,38 +1117,12 @@ extractVals(KABDSUDat, KABDSUDatMod, otherConfigs, baseline, 'RkneeABDMom', 'hig
 
 ```
 
-**Ankle Stability: Ankle Eversion Moment (lower magnitude is better) - Weighted Single Leg Landings & Weighted Lunge**
+### **Ankle Stability: Ankle Eversion Moment (lower magnitude is better) - Weighted Lunge**
 
 ```{r}
 #| echo: false
 #| warning: false
-################
-
-### 
-AEMOGLandDat <- OGLandDat %>% 
-  group_by(Subject) %>%
-  filter(RankleEvMom != 'NA', RankleEvMom < 0) %>%
-  mutate(z_score = scale(RankleEvMom)) %>% 
-  group_by(Config)
-
-# Look at histogram of the data if any outliers need to be removed
-ggplot(data = AEMOGLandDat, aes(x = RankleEvMom, color = Config)) + geom_histogram() + facet_wrap(~Subject)
-
-p <- withinSubPlot(AEMOGLandDat, colName = 'RankleEvMom', dir = 'higher')
-p + ylab('Ankle Eversion Moment (Nm)')
-
-AEMOGLandDatMod <- brm(data = AEMOGLandDat, 
-              family = gaussian,
-              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
-              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
-                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
-                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
-                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
-              iter = 2000, warmup = 1000, chains = 4, cores = 4,
-              control = list(adapt_delta = .975, max_treedepth = 20),
-              seed = 190831)
-
-extractVals(AEMOGLandDat, AEMOGLandDatMod, otherConfigs, baseline, 'RankleEvMom', 'higher')
+#| include: false
 
 
 ### SU Ankle Eversion Moment
@@ -773,10 +1133,12 @@ AEMSUDat <- SUDat %>%
   group_by(Config)
 
 # Look at histogram of the data if any outliers need to be removed
-ggplot(data = AEMSUDat, aes(x = RankleEvMom, color = Config)) + geom_histogram() + facet_wrap(~Subject)
+ggplot(data = AEMSUDat, aes(x = RankleEvMom, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
 
-p <- withinSubPlot(AEMSUDat, colName = 'RankleEvMom', dir = 'higher')
-p + ylab('Ankle Eversion Moment (Nm)')
+AEMSUDat <- subset(AEMSUDat, AEMSUDat$z_score < 2)#removing outliers
+AEMSUDat <- subset(AEMSUDat, AEMSUDat$z_score > -2)
+
+
 
 AEMSUDatMod <- brm(data = AEMSUDat, 
               family = gaussian,
@@ -792,54 +1154,44 @@ AEMSUDatMod <- brm(data = AEMSUDat,
 extractVals(AEMSUDat, AEMSUDatMod, otherConfigs, baseline, 'RankleEvMom', 'higher')
 ```
 
-**Stability (faster is better) - Weighted Single Leg Landings & Landing on Uneven Terrain**
+```{r}
+#| echo: false
+#| warning: false
+#| include: true 
+#| layout-ncol: 2 
+
+p <- withinSubPlotAvg(AEMSUDat, colName = 'RankleEvMom', dir = 'higher')
+p + ylab('Ankle Eversion Moment (Nm)')
+
+extractVals(AEMSUDat, AEMSUDatMod, otherConfigs, baseline, 'RankleEvMom', 'higher')
+
+```
+
+### **Stability (faster is better) - Landing on Uneven Terrain**
 
 ```{r}
 #| echo: false
 #| warning: false
-################
+#| include: false
 
-### Overground stabilization time
-TimeOGLandDat <- OGLandDat %>% 
+
+### Trail stabilization time
+TimeUnLandDat <- UnLandDat %>% 
   group_by(Subject) %>%
-  filter(StabTime != 'NA') %>%
   mutate(z_score = scale(StabTime)) %>% 
   group_by(Config)
 
 # Look at histogram of the data if any outliers need to be removed
-# ggplot(data = TimeOGLandDat, aes(x = StabTime, color = Config)) + geom_histogram() + facet_wrap(~Subject)
+ggplot(data = TimeUnLandDat, aes(x = StabTime, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
 
-p <- withinSubPlot(TimeOGLandDat, colName = 'StabTime', dir = 'lower')
-p + ylab('Stabilization Time (s)')
+TimeUnLandDat <- subset(TimeUnLandDat, TimeUnLandDat$z_score < 2)#removing outliers
+TimeUnLandDat <- subset(TimeUnLandDat, TimeUnLandDat$z_score > -2)
 
-TimeOGLandDatMod <- brm(data = TimeOGLandDat, 
-              family = gaussian,
-              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
-              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
-                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
-                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
-                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
-              iter = 2000, warmup = 1000, chains = 4, cores = 4,
-              control = list(adapt_delta = .975, max_treedepth = 20),
-              seed = 190831)
 
-extractVals(TimeOGLandDat, TimeOGLandDatMod, otherConfigs, baseline, 'StabTime', 'lower')
-
-### Overground stabilization time
-TimeUnLandDat <- UnLandDat %>% 
-  group_by(Subject) %>%
-  mutate(z_score = scale(StabalizeTime)) %>% 
-  group_by(Config)
-
-# Look at histogram of the data if any outliers need to be removed
-ggplot(data = TimeUnLandDat, aes(x = StabalizeTime, color = Config)) + geom_histogram() + facet_wrap(~Subject)
-
-p <- withinSubPlot(TimeUnLandDat, colName = 'StabalizeTime', dir = 'lower')
-p + ylab('Stabilization Time (s)')
 
 TimeUnLandDatMod <- brm(data = TimeUnLandDat, 
               family = gaussian,
-              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              z_score ~ Config + Order + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
                         prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
                         prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
@@ -848,19 +1200,34 @@ TimeUnLandDatMod <- brm(data = TimeUnLandDat,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-extractVals(TimeUnLandDat, TimeUnLandDatMod, otherConfigs, baseline, 'StabalizeTime', 'lower')
+
 ```
-
-## Quantitative Fit
-
-**Heel Hold: Heel contact area (higher is better) - Uneven Terrain Walking**
 
 ```{r}
 #| echo: false
 #| warning: false
-################
+#| include: true
+#| layout-ncol: 2 
 
-###### Heel Contact
+
+p <- withinSubPlotAvg(TimeUnLandDat, colName = 'StabTime', dir = 'lower')
+p + ylab('Stabilization Time (s)')
+
+extractVals(TimeUnLandDat, TimeUnLandDatMod, otherConfigs, baseline, 'StabTime', 'lower')
+```
+
+## Quantitative Fit
+
+### **Heel Hold: Heel contact area (higher is better) - Uneven Terrain Walking**
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: false
+
+
+
+###### Heel Contact  all tasks
 
 HeelCondat <- PressWalkDat %>% 
   group_by(Subject) %>%
@@ -868,15 +1235,18 @@ HeelCondat <- PressWalkDat %>%
   group_by(Config)
 
 # Look at histogram of the data if any outliers need to be removed
-# ggplot(data = HeelCondat, aes(x = heelAreaP, color = Config)) + geom_histogram() + facet_wrap(~Subject)
+ggplot(data = HeelCondat, aes(x = heelAreaP, fill = Movement)) + geom_histogram() + facet_wrap(~Subject)
 
-p <- withinSubPlot(HeelCondat, colName = 'heelAreaP', dir = 'higher')
+HeelCondat <- subset(HeelCondat, HeelCondat$z_score < 2)#removing outliers
+HeelCondat <- subset(HeelCondat, HeelCondat$z_score > -2)
+
+p <- withinSubPlotAvg(HeelCondat, colName = 'heelAreaP', dir = 'higher')
 p + ylab('Heel Contact (%)')
 
 # Note for trail run metrics: Warmup was reduced (from 1000 to 500)
 HeelCondatMod <- brm(data = HeelCondat, # Bayes model
               family = gaussian,
-              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              z_score ~ Config + Movement + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
               prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
                         prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
                         prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
@@ -888,112 +1258,326 @@ HeelCondatMod <- brm(data = HeelCondat, # Bayes model
 extractVals(HeelCondat, HeelCondatMod, otherConfigs, baseline, 'heelAreaP', 'higher')
 ```
 
-Radar Plots
+```{r}
+#| echo: false
+#| warning: false
+#| include: false
+#| layout-ncol: 2 
+
+###### Heel Contact by task
+
+DHCondat <- PressWalkDat %>% 
+  group_by(Subject) %>%
+  filter(Movement == 'dh')%>%
+  mutate(z_score = scale(heelAreaP)) %>% 
+  group_by(Config)
+
+# Look at histogram of the data if any outliers need to be removed
+ggplot(data = DHCondat, aes(x = heelAreaP, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
+
+DHCondat <- subset(DHCondat, DHCondat$z_score < 2)#removing outliers
+DHCondat <- subset(DHCondat, DHCondat$z_score > -2)
+
+# Note for trail run metrics: Warmup was reduced (from 1000 to 500)
+DHCondatMod <- brm(data = DHCondat, # Bayes model
+              family = gaussian,
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+
+
+UHCondat <- PressWalkDat %>% 
+  group_by(Subject) %>%
+  filter(Movement == 'uh')%>%
+  mutate(z_score = scale(heelAreaP)) %>% 
+  group_by(Config)
+
+# Look at histogram of the data if any outliers need to be removed
+ggplot(data = UHCondat, aes(x = heelAreaP, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
+
+UHCondat <- subset(UHCondat, UHCondat$z_score < 2)#removing outliers
+UHCondat <- subset(UHCondat, UHCondat$z_score > -2)
+
+# Note for trail run metrics: Warmup was reduced (from 1000 to 500)
+UHCondatMod <- brm(data = UHCondat, # Bayes model
+              family = gaussian,
+              z_score ~ Config + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+
+TCondat <- PressWalkDat %>% 
+  group_by(Subject) %>%
+  filter(Movement == 'trailwalk' | Movement == 'trail')%>%
+  mutate(z_score = scale(heelAreaP)) %>% 
+  group_by(Config)
+
+# Look at histogram of the data if any outliers need to be removed
+ggplot(data = TCondat, aes(x = heelAreaP, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
+
+TCondat <- subset(TCondat, TCondat$z_score < 2)#removing outliers
+TCondat <- subset(TCondat, TCondat$z_score > -2)
+
+# Note for trail run metrics: Warmup was reduced (from 1000 to 500)
+TCondatMod <- brm(data = TCondat, # Bayes model
+              family = gaussian,
+              z_score ~ Config  + (1 + Config| Subject), #fixed effect of configuration and time period with a different intercept and slope for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+```
 
 ```{r}
 #| echo: false
+#| warning: false
+#| include: true
+#| layout-ncol: 2 
 
-###### For agility run combo
-# For DPZ
+p <- withinSubPlotAvg(DHCondat, colName = 'heelAreaP', dir = 'higher')
+p + ylab('Downhill - Heel Contact (%)')
 
-# Endurance <- 43
-# 
-# Health <- 38
-# 
-# Fit <- 14
-# 
-# Qual <- 88
-# 
-# data <- t(c(Endurance, Health, Fit, Qual))
-# 
-# data <- as.data.frame(data)
-# 
-# improvThresh<- as.data.frame(t(c(70,70,70,93)))
-# equalThresh<- as.data.frame(t(c(50,50,50,93)))
-# 
-# min =as.data.frame(t(rep(0, 4)))
-# max = as.data.frame(t(rep(100,4)))
-# data <- rbind(max, min, improvThresh, equalThresh, data)
-# 
-# colnames(data) <- c("Endurance", "Health", "Fit", "Qual")
-# 
-# colors <- c("#C8C9C7","#53565A", "#00966C")
-# 
-# create_beautiful_radarchart <- function(data, color = "#00966C",
-#                                         vlabels = colnames(data), vlcex = 0.9,
-#                                         caxislabels = NULL, title = NULL, ...){
-#   radarchart(
-#     data, axistype = 1,
-#     # Customize the polygon
-#     pcol = color, pfcol = scales::alpha(color, 0.5), plwd = 2, plty = 1,
-#     # Customize the grid
-#     cglcol = "grey", cglty = 1, cglwd = 0.8,
-#     # Customize the axis
-#     axislabcol = "grey",
-#     # Variable labels
-#     vlcex = vlcex, vlabels = vlabels,
-#     caxislabels = caxislabels, title = title, ...
-#   )
-# }
-# 
-# 
-# create_beautiful_radarchart(data = data, color = colors)
+extractVals(DHCondat, DHCondatMod, otherConfigs, baseline, 'heelAreaP', 'higher')
 
-# legend(x = "topright", inset = c(- 0.3, 0.2), legend = c("Threshold for confidence in improvement", "FA", "Power Zone Config"),
-#        bty = "n", pch = 20, col = colors, text.col = "black", cex = .7, pt.cex = 1)
+p <- withinSubPlotAvg(UHCondat, colName = 'heelAreaP', dir = 'higher')
+p + ylab('Uphill - Heel Contact (%)')
+
+extractVals(UHCondat, UHCondatMod, otherConfigs, baseline, 'heelAreaP', 'higher')
+
+p <- withinSubPlotAvg(TCondat, colName = 'heelAreaP', dir = 'higher')
+p + ylab('Trail - Heel Contact (%)')
+
+extractVals(TCondat, TCondatMod, otherConfigs, baseline, 'heelAreaP', 'higher')
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: false
+
+#Static dorsal pressure
+
+Static <- subset(staticPress, staticPress$Movement == 'Standing')
+
+
+peakDorsal <- Static%>% 
+  group_by(Subject) %>%
+  mutate(z_score = scale(maxDorsalPressure)) %>% 
+  group_by(Config)
+
+ggplot(data = peakDorsal, aes(x = maxDorsalPressure, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
+
+# peakDorsal  <- subset(peakDorsal , peakDorsal $z_score < 2) #remov. outliers
+# peakDorsal  <- subset(peakDorsal , peakDorsal $z_score > -2)
+
+
+DorsalMaxMod <- brm(data = peakDorsal, # Bayes model
+              family = gaussian,
+              z_score ~ Config + (1|Subject), #fixed effect of configuration  with different intercept each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained 
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+
+
+
+
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: true
+#| layout-ncol: 2 
+
+p <- withinSubPlotAvg(peakDorsal, colName = 'maxDorsalPressure', dir = 'lower')
+p + ylab('Max Dorsal Pressure (kPa)') 
+
+
+
+extractVals(peakDorsal, DorsalMaxMod, otherConfigs, baseline, 'maxDorsalPressure', 'lower')
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: false
+
+
+###### peak dorsal pressure 
+
+Static <- subset(staticPress, staticPress$Movement == 'Standing')
+
+
+avgDorsal <- Static%>% 
+  group_by(Subject) %>%
+  mutate(z_score = scale(meanDorsalPressure)) %>% 
+  group_by(Config)
+
+ggplot(data = avgDorsal, aes(x = meanDorsalPressure, fill = Config)) + geom_histogram() + facet_wrap(~Subject)
+
+# peakDorsal  <- subset(peakDorsal , peakDorsal $z_score < 2) #remov. outliers
+# peakDorsal  <- subset(peakDorsal , peakDorsal $z_score > -2)
+
+
+DorsalMeanMod <- brm(data = avgDorsal, # Bayes model
+              family = gaussian,
+              z_score ~ Config + (1|Subject), #fixed effect of configuration with a different intercept for each subject
+              prior = c(prior(normal(0, 1), class = Intercept), #The intercept prior is set as a mean of 25 with an SD of 5 This may be interpreted as the average loading rate (but average is again modified by the subject-specific betas)
+                        prior(normal(0, 1), class = b), #beta for the intercept for the change in loading rate for each configuration
+                        prior(cauchy(0, 1), class = sd), #This is a regularizing prior, meaning we will allow the SD of the betas to vary across subjects
+                        prior(cauchy(0, 1), class = sigma)), #overall variability that is left unexplained
+              iter = 2000, warmup = 1000, chains = 4, cores = 4,
+              control = list(adapt_delta = .975, max_treedepth = 20),
+              seed = 190831)
+
+
+
+
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: true
+#| layout-ncol: 2 
+
+p <- withinSubPlotAvg(avgDorsal, colName = 'meanDorsalPressure', dir = 'higher')
+p + ylab('Mean Dorsal Pressure (kPa)') 
+
+extractVals(avgDorsal, DorsalMeanMod, otherConfigs, baseline, 'meanDorsalPressure', 'higher')
+
+
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| include: false
+
+## Radar for PFS #####
+
+EnergyEfficiency <- 37
+
+StabilityControl <- 39
+
+Fit <- 38
+
+Qual <- 90
 #
-# ## This code gives a visual representation of how a shoe performed against a baseline shoe in the form of a radar plot
-# #This happens by assigning different averaged ratings to different segments
-# #You are only adding the shoe being tested to the ratings, the baseline shoe is always set to 50 for a clear comparison
-# #The shoe being tested is rated by the average percentile confidence in each segment
-# ###For example, if a PFS shoe had 75% confidence in CMJ  and 50% in skater for contact time, the average rating for agility would be 62.5 -> 63
+data <- t(c(EnergyEfficiency, StabilityControl, Fit, Qual))
+
+data <- as.data.frame(data)
+
+improvThresh<- as.data.frame(t(c(70,70,70,70)))
+equalThresh<- as.data.frame(t(c(50,50,50,50)))
+
+min =as.data.frame(t(rep(0, 4)))
+max = as.data.frame(t(rep(100,4)))
+data <- rbind(max, min, improvThresh, equalThresh, data)
+
+colnames(data) <- c("EnergyEfficiency", "StabilityControl", "Fit", "Qual")
+
+data$Qual[4] <- 92
+
+colors <- c("#C8C9C7","#53565A", "#00966C")
+
+create_beautiful_radarchart <- function(data, color = "#00966C",
+                                        vlabels = colnames(data), vlcex = 0.9,
+                                        caxislabels = NULL, title = NULL, ...){
+  radarchart(
+    data, axistype = 1,
+    # Customize the polygon
+    pcol = color, pfcol = scales::alpha(color, 0.5), plwd = 2, plty = 1,
+    # Customize the grid
+    cglcol = "grey", cglty = 1, cglwd = 0.8,
+    # Customize the axis
+    axislabcol = "grey",
+    # Variable labels
+    vlcex = vlcex, vlabels = vlabels,
+    caxislabels = caxislabels, title = title, ...
+  )
+}
+
+
+create_beautiful_radarchart(data = data, color = colors)
+# 
+ legend(x = "topright", inset = c(- 0.3, 0.2), legend = c("Threshold for confidence in improvement", "FA", "Power Zone Config"),
+      bty = "n", pch = 20, col = colors, text.col = "black", cex = .7, pt.cex = 1)
+
+ 
+# # ## This code gives a visual representation of how a shoe performed against a baseline shoe in the form of a radar plot
+# # #This happens by assigning different averaged ratings to different segments
+# # #You are only adding the shoe being tested to the ratings, the baseline shoe is always set to 50 for a clear comparison
+# # #The shoe being tested is rated by the average percentile confidence in each segment
+# # ###For example, if a PFS shoe had 75% confidence in CMJ  and 50% in skater for contact time, the average rating for agility would be 62.5 -> 63
+# #
+# # #
+# # #
+# # #### Config PFSDZ
+# #
+Endurance <- 67
+
+Health <- 26
+
+Fit <- 55
+
+Qual <- 91
+
+data <- t(c(Endurance, Health, Fit, Qual))
+
+data <- as.data.frame(data)
+
+improvThresh<- as.data.frame(t(c(70,70,70,70)))
+equalThresh<- as.data.frame(t(c(50,50,50,50)))
+
+min =as.data.frame(t(rep(0, 4)))
+max = as.data.frame(t(rep(100,4)))
+data <- rbind(max, min, improvThresh, equalThresh, data)
+
+colnames(data) <- c("EnergyEfficiency", "StabilityControl", "Fit", "Qual")
+
+data$Qual[4] <- 92
+
+colors <- c("#C8C9C7","#53565A", "#00966C")
 #
-# # 
-# # 
-# # #### Config SPZ
-# # 
-# Endurance <- 44
-# 
-# Health <- 44
-# 
-# Fit <- 0
-# 
-# Qual <- 83
-# 
-# data <- t(c(Endurance, Health, Fit, Qual))
-# 
-# data <- as.data.frame(data)
-# 
-# improvThresh<- as.data.frame(t(c(70,70,70,93)))
-# equalThresh<- as.data.frame(t(c(50,50,50,93)))
-# 
-# min =as.data.frame(t(rep(0, 4)))
-# max = as.data.frame(t(rep(100,4)))
-# data <- rbind(max, min, improvThresh, equalThresh, data)
-# 
-# colnames(data) <- c("Endurance", "Health", "Fit", "Qual")
-# 
-# colors <- c("#C8C9C7","#53565A", "#00966C")
-# 
-# create_beautiful_radarchart <- function(data, color = "#00966C",
-#                                         vlabels = colnames(data), vlcex = 0.9,
-#                                         caxislabels = NULL, title = NULL, ...){
-#   radarchart(
-#     data, axistype = 1,
-#     # Customize the polygon
-#     pcol = color, pfcol = scales::alpha(color, 0.5), plwd = 2, plty = 1,
-#     # Customize the grid
-#     cglcol = "grey", cglty = 1, cglwd = 0.8,
-#     # Customize the axis
-#     axislabcol = "grey",
-#     # Variable labels
-#     vlcex = vlcex, vlabels = vlabels,
-#     caxislabels = caxislabels, title = title, ...
-#   )
-# }
-# 
-# 
-# create_beautiful_radarchart(data = data, color = colors)
+create_beautiful_radarchart <- function(data, color = "#00966C",
+                                        vlabels = colnames(data), vlcex = 0.9,
+                                        caxislabels = NULL, title = NULL, ...){
+  radarchart(
+    data, axistype = 1,
+    # Customize the polygon
+    pcol = color, pfcol = scales::alpha(color, 0.5), plwd = 2, plty = 1,
+    # Customize the grid
+    cglcol = "grey", cglty = 1, cglwd = 0.8,
+    # Customize the axis
+    axislabcol = "grey",
+    # Variable labels
+    vlcex = vlcex, vlabels = vlabels,
+    caxislabels = caxislabels, title = title, ...
+  )
+}
+
+
+create_beautiful_radarchart(data = data, color = colors)
 
 # legend(x = "topright", inset = c(- 0.3, 0.2), legend = c("Threshold for confidence in improvement", "FA", "Power Zone Config"),
 #        bty = "n", pch = 20, col = colors, text.col = "black", cex = .7, pt.cex = 1)
