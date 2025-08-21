@@ -18,49 +18,55 @@ rm(list=ls())
 #
 ##############################
 
-Year <- '2024'  
-Month <- 'May'
-Brand <- 'Giro'
-Model <- 'Regime' 
+Year <- '2025'  
+Month <- 'April'
+Brand <- 'Specialized'
+Model <- 'SWorks Torch' 
 Benefit <- 'P/P' 
 Type <- 'Performance'# Performance, mechanistic, materials
 
-TestName<-'PP_Perf_CyclingUpperStiffnessII_May2024'
+TestName<-'2025_Performance_CyclingLacevBOA_Specialized'
 
 
 ######### Cycling power and Pressure DB ##########################
 # Read the existing database: Only to get column name order
 pwerParentDat <- read.csv('Z:/BigData/DB_V2/CyclingPowerDB_V2.csv',nrows=1)
-# ParentDat <- ParentDat %>%
-#   rename('Subject' = ?..Subject)
+pwerParentDat <- pwerParentDat %>%
+  rename('Subject' = ï..Subject)
 name_order = colnames(pwerParentDat)
 
 # Read the Watt Bike Data:
 CycleDat <- read.csv(file.choose())
 # If any configurations need to be renamed
 CycleDat <- CycleDat%>% 
-  group_by(Subject, Config, Order)
-  # mutate(Subject= replace(Subject, Subject == 'TrapperSteinle','TrapperSteinle'))
+  group_by(Subject, Config, Order) %>% 
+  mutate(Config = replace(Config, Config == 'DD', 'BOA')) %>%
+  mutate(Subject= replace(Subject, Subject == 'JarodCordell','JaredCordell'))
+
+CycleDat$Order = CycleDat$Order - 4
 
 # Read and summarize the steady-state:
 PressDat <- read.csv(file.choose())
 
 PressSteadyDat <- PressDat %>%
+  mutate(Config = replace(Config, Config == 'DD', 'BOA')) %>%
+  mutate(Subject= replace(Subject, Subject == 'JarodCordell','JaredCordell')) %>%
   filter(Movement == 'Steady') %>%
   group_by(Subject, Config, Order) %>% 
   summarize(HeelContact_steady = mean(heelArea_Up, na.rm = TRUE), PeakToePress_steady = mean(maxmaxToes, na.rm = TRUE))
   # mutate(Subject= replace(Subject, Subject == 'TrapperSteinle','TrapperSteinle'))
 
 
-
 PressSprintDat <- PressDat %>%
+  mutate(Config = replace(Config, Config == 'DD', 'BOA')) %>%
+  mutate(Subject= replace(Subject, Subject == 'JarodCordell','JaredCordell')) %>%
   filter(Movement == 'Sprint') %>%
   group_by(Subject, Config, Order) %>% 
   summarize(HeelContact_sprint = mean(heelArea_Up, na.rm = TRUE), PeakToePress_sprint = mean(maxmaxToes, na.rm = TRUE))
   # mutate(Subject= replace(Subject, Subject == 'TrapperSteinle','TrapperSteinle'))
 
   
-  # Combine IMU and pressure data
+# Combine the master list (parent) with the current data
 pwer_ChildDat <- list(CycleDat,PressSteadyDat,PressSprintDat) %>%
   reduce(full_join)
 
@@ -89,7 +95,11 @@ name_order = colnames(statParentDat)
 
 ### Import Static Pressure data
 
-statChildDat <- read.csv(file.choose()) 
+statChildDat <- read.csv(file.choose())
+
+statChildDat <- statChildDat %>%
+  mutate(Config = replace(Config, Config == 'DD', 'BOA')) %>%
+  mutate(Subject= replace(Subject, Subject == 'JarodCordell','JaredCordell'))
 
 
 #staticDat$Subject[staticDat$Subject == 'WesWebber'] <- 'WesWeber'
@@ -121,9 +131,11 @@ qual_ParentDat <- read.csv('Z:/BigData/DB_V2/QualitativeBigData_v2.csv',nrows=1)
 name_order = colnames(qual_ParentDat)
 
 # Read the qualitative data to be added to master data
-qual_ChildDat <- read_xlsx('C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/Testing Segments/Cycling Performance Tests/PP_CyclingUpperStiffnessII_May2024/PP_CyclingUpperStiffnessII_May2024_Qual.xlsx')
+qual_ChildDat <- read_xlsx(file.choose())
 qual_ChildDat <- qual_ChildDat %>%
-  rename('Overall' = OverallFit)
+  rename('Overall' = OverallFit) %>%
+  mutate(Config = replace(Config, Config == 'DD', 'BOA')) %>%
+  mutate(Subject= replace(Subject, Subject == 'JarodCordell','JaredCordell'))
 noSub <- length(qual_ChildDat$Subject)
 
 ### Set up data to append ###
@@ -133,7 +145,7 @@ qual_ChildDat$Month <- rep(Month, each = noSub)
 qual_ChildDat$Brand <- rep(Brand, each = noSub)
 qual_ChildDat$Model <- rep(Model, each = noSub) 
 qual_ChildDat$Dial1Closure <- rep('Instep', each = noSub) # refer to the "READ ME" on how the closures are defined
-qual_ChildDat$Dial2Closure <- rep('NA', each = noSub)
+qual_ChildDat$Dial2Closure <- rep('Mid', each = noSub)
 qual_ChildDat$Dial3Closure <- rep('NA', each = noSub)
 
 
@@ -163,14 +175,12 @@ if (a == 'YES'){
 }
 
 ######### Sub Visits BD ############
-
-
 ParentDat <- read.csv('Z:/BigData/DB_V2/MasterSubjectVisits.csv',nrows=1)
 # ParentDat <- ParentDat %>%
 #   rename('Subject' = ?..Subject)
 name_order = colnames(ParentDat)
 # Read in qual sheet to reference names
-ChildDat <- read_xlsx('C:/Users/bethany.kilpatrick/Boa Technology Inc/PFL - General/Testing Segments/Cycling Performance Tests/PP_CyclingUpperStiffnessII_May2024/PP_CyclingUpperStiffnessII_May2024_Qual.xlsx',sheet = 'Sheet3')
+ChildDat <- read_xlsx(file.choose(),sheet = 'Sheet3')
 ChildDat <- subset(ChildDat,select = -c(FootScan,Compensation))
 # ChildDat <- ChildDat %>% rename(Speed.run. = RunSpeed)
 noSub <- length(ChildDat$Subject)
@@ -198,30 +208,33 @@ rm(ParentDat,ChildDat,noSub,name_order,a)
 
 
 ### Updating Config Big Data ###
-
-
 ParentDat <- read.csv('Z:\\BigData\\DB_V2\\ConfigDB.csv',nrows=1)
-# ParentDat <- ParentDat %>%
-#   rename('Name.of.Test' = ?..Name.of.Test)
+ParentDat <- ParentDat %>%
+  rename('Name.of.Test' = ï..Name.of.Test)
 name_order = colnames(ParentDat)
 
-Config <- unique(ChildDat$Config)
+# Read the qualitative data to be added to master data
+config_ChildDat <- read_xlsx(file.choose())
+config_ChildDat <- qual_ChildDat %>%
+  mutate(Config = replace(Config, Config == 'DD', 'BOA'))
+
+Config <- unique(config_ChildDat$Config)
 noSub <- length(Config)
-Config.Long <- c('High Stiffness 72.3','Mid Stiffness 36.8' ,'Low Stiffness 26.6')
-ChildDat <- data.frame(Config,Config.Long)
-ChildDat$Year <- rep(Year, each = noSub)
-ChildDat$Month <- rep(Month, each = noSub)
-ChildDat$Brand <- rep(Brand, each = noSub)
-ChildDat$Model <- rep(Model, each = noSub)
-ChildDat$Name.of.Test <- rep(TestName, each = noSub)
+Config.Long <- c('On-Market Lace','Double-Double BOA with 22 N/mm stiffness at instep/forefoot, stretchy midfoot')
+config_ChildDat <- data.frame(Config,Config.Long)
+config_ChildDat$Year <- rep(Year, each = noSub)
+config_ChildDat$Month <- rep(Month, each = noSub)
+config_ChildDat$Brand <- rep(Brand, each = noSub)
+config_ChildDat$Model <- rep(Model, each = noSub)
+config_ChildDat$Name.of.Test <- rep(TestName, each = noSub)
 
 # Sort the data into the correct order
-ChildDat <- ChildDat[,name_order]
+config_ChildDat <- config_ChildDat[,name_order]
 
 # write output. add a 1 to the end if you are at all unsure of output!!!
 a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?')
 if (a == 'YES'){
-  write.table(ChildDat, "Z:\\BigData\\DB_V2\\ConfigDB.csv", sep=',', 
+  write.table(config_ChildDat, "Z:\\BigData\\DB_V2\\ConfigDB.csv", sep=',', 
               append = TRUE,col.names = FALSE, row.names = FALSE)
   
 }
