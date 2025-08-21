@@ -16,14 +16,14 @@ rm(list=ls())
 #
 ##############################
 
-Year <- '2024'  
-Month <- 'July'
-Brand <- 'Altra'
-Model <- 'Timp' 
+Year <- '2025'  
+Month <- 'August'
+Brand <- 'Kailas'
+Model <- 'EXPro' 
 Benefit <- 'E/H' 
-Type <- 'Mechanistic'# Performance, mechanistic, materials
+Type <- 'Performance'# Performance, mechanistic, materials
 
-TestName<-'EH_Trail_TrailStability3_Mech_July24'
+TestName<-'2025_Performance_KailasEXPro_Kailas'
 
 
 
@@ -39,9 +39,10 @@ name_order = colnames(ParentDat)
 
 # Read and summarize the IMU Data:
 
-IMUDat <- read.csv('Z:\\Testing Segments\\Material Testing\\2023\\UpperStiffnessE&H_Performance_Aug2023\\IMU\\IMUmetrics.csv')
+IMUDat <- read.csv('C:\\Users\\milena.singletary\\OneDrive - BOA Technology Inc\\General - PFL Team\\Testing Segments\\EndurancePerformance\\2025_Performance_KailasEXPro_Kailas\\IMU\\IMUmetrics.csv')
 
 IMUDat <- IMUDat %>%
+  rename(Order = Sesh)%>%
   filter(Label > 0) %>%
   group_by(Subject, Config, Order, Label) %>%
   summarize(IMUSpeed = mean(imuSpeed), PeakEvVel = mean(pIEgyro), PeakJerk = mean(pJerk),
@@ -49,7 +50,7 @@ IMUDat <- IMUDat %>%
 
 # Read and summarize the pressure data
 
-PressDat <- read.csv('C:\\Users\\bethany.kilpatrick\\Boa Technology Inc\\PFL - General\\Testing Segments\\EndurancePerformance\\EH_Trail_TrailStability3_Mech_July24\\Xsensor\\0_CompiledResults.csv')
+PressDat <- read.csv('C:\\Users\\milena.singletary\\OneDrive - BOA Technology Inc\\General - PFL Team\\Testing Segments\\EndurancePerformance\\2025_Performance_KailasEXPro_Kailas\\Xsensor\\cropped\\3_CompiledResults.csv')
 
 PressDat <- PressDat %>%
   filter(Label > 0) %>%
@@ -76,17 +77,19 @@ colnames(ChildDat)[which(names(ChildDat) == 'Label')] <- 'Movement'
 # ChildDat <- subset(ChildDat,select = -c(Name, Sesh))
 #_______________________________________________________________________________
 # Append other necessary information to the DataFrame
-ChildDat$Year <- rep(2024, dim(ChildDat)[1])
-ChildDat$Month <- rep('July', dim(ChildDat)[1])
-ChildDat$Brand <- rep('Altra', dim(ChildDat)[1])
-ChildDat$Model <- rep('Timp', dim(ChildDat)[1])
+ChildDat$Year <- rep(2025, dim(ChildDat)[1])
+ChildDat$Month <- rep('August', dim(ChildDat)[1])
+ChildDat$Brand <- rep('Kailas', dim(ChildDat)[1])
+ChildDat$Model <- rep('EXPro', dim(ChildDat)[1])
 
 # Sort the DataFrame columns into the right order (from the Parent)
 ChildDat <- ChildDat[,name_order]
 
+a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?')
 
-write.table(PressDat, file = 'Z:\\BigData\\DB_V2\\TrailDB.csv', sep = ',',
-            append = TRUE,col.names = FALSE, row.names = FALSE)
+if (a == 'YES'){
+write.table(ChildDat, file = 'Z:\\BigData\\DB_V2\\TrailDB.csv', sep = ',',
+            append = TRUE,col.names = FALSE, row.names = FALSE)}
 
 
 
