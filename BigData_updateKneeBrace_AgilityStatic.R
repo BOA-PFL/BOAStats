@@ -14,36 +14,36 @@ replaceName <- function(DF, toReplace, newName){
 
 
 
-Year <- '2023'
-Month <- 'October'
-Brand <- 'Breg'
-Model <- 'Fusion'
-TestName <- 'EH_KneeBrace_ThighCalfImportance_Oct23'
-Benefit <- 'E/H'
+Year <- '2025'
+Month <- 'August'
+Brand <- 'STOKO'
+Model <- 'SupportiveTight'
+TestName <- '2025_Performance_CompressionKneeStability_Stoko'
+Benefit <- 'S&C'
 Type <- 'Mechanistic' 
 
 
 
 # Read the existing database: Only to get column name order
-ParentDat <- read.csv('Z:/BigData/DB_V2/KneeBraceDB.csv',nrows=1)
+ParentDat <- read.csv('\\\\boa-srv10\\PFL-DATA\\BigData\\DB_V2\\KneeBraceDB.csv',nrows=1)
 # ParentDat <- ParentDat %>%
 #   rename('Subject' = ?..Subject)
 name_order = colnames(ParentDat)
 
 # Read and summarize the overground data:
-AgilityDat <- read.csv('Z:/Testing Segments/EndurancePerformance/EH_KneeBrace_ThighCalfImportance_Oct23/Overground/CompiledAgilityData.csv') 
+AgilityDat <- read.csv('C:\\Users\\bethany.kilpatrick\\BOA Technology Inc\\PFL Team - General\\Testing Segments\\AgilityPerformanceData\\2025_Performance_CompressionKneeStability_Stoko\\Overground\\0_CompiledAgilityData.csv') 
 
 
 CMJDat <- AgilityDat %>%
   filter(Movement == 'CMJ') %>%
-  group_by(Subject, Config, Movement, Trial) %>%
+  group_by(Subject, Config, Movement, Order) %>%
   summarise(ContactTime = mean(CT), PeakAnklePFMoment = mean(peakPFmom), PropForce = mean(peakGRF_Z),
             PeakAnkleInMoment = mean(peakINVmom), KneeAbAdROM = mean(kneeABDrom),PeakKneeAbMoment = mean(PeakKneeAbMoment), 
             kneeFLEXrom = mean(kneeFLEXrom),peakKneeEXTmom = mean(peakKneeEXTmom), COMEccWork = mean(eccWork), COMConWork = mean(conWork))
 
 SKTDat <- AgilityDat %>%
   filter(Movement == 'Skater') %>%
-  group_by(Subject, Config, Movement, Trial) %>%
+  group_by(Subject, Config, Movement, Order) %>%
   summarise(ContactTime = mean(CT), PeakAnklePFMoment = mean(peakPFmom), PropForce = mean(peakGRF_X),
             PeakAnkleInMoment = mean(peakINVmom), KneeAbAdROM = mean(kneeABDrom), PeakKneeAbMoment = mean(PeakKneeAbMoment),
             kneeFLEXrom = mean(kneeFLEXrom),peakKneeEXTmom = mean(peakKneeEXTmom), COMEccWork = mean(eccWork), COMConWork = mean(conWork)) 
@@ -54,7 +54,7 @@ ChildDat <- list(CMJDat,SKTDat) %>%
 ChildDat <- merge(x=CMJDat,y=SKTDat,all=TRUE)
 
 #Static Brace data
-braceDat <- read.csv('Z:/Testing Segments/EndurancePerformance/EH_KneeBrace_ThighCalfImportance_Oct23/Overground/Static/AllStaticBraceDat.csv')
+# braceDat <- read.csv('Z:/Testing Segments/EndurancePerformance/EH_KneeBrace_ThighCalfImportance_Oct23/Overground/Static/AllStaticBraceDat.csv')
 
 # Renaming the delta trials 
 # braceDat <- braceDat %>% 
@@ -62,15 +62,33 @@ braceDat <- read.csv('Z:/Testing Segments/EndurancePerformance/EH_KneeBrace_Thig
 #   rename(deltaTwo = Two)%>%
 #   rename(deltaThree = Three)%>%
 #   rename(deltaFour = Four)
-#   
-
-ChildDat <- merge(x=ChildDat,y=braceDat,all=TRUE)
 
 
-ChildDat$Year <- rep(2023, dim(ChildDat)[1])
-ChildDat$Month <- rep('October', dim(ChildDat)[1])
-ChildDat$Brand <- rep('Breg', dim(ChildDat)[1])
-ChildDat$Model <- rep('Fusion', dim(ChildDat)[1])
+ChildDat$deltaOne <- rep('NA', dim(ChildDat)[1])
+ChildDat$deltaTwo  <- rep('NA', dim(ChildDat)[1])
+ChildDat$deltaThree <- rep('NA', dim(ChildDat)[1])
+ChildDat$deltaFour <- rep('NA', dim(ChildDat)[1])
+ChildDat$s_One <- rep('NA', dim(ChildDat)[1])
+ChildDat$s_Two <- rep('NA', dim(ChildDat)[1])
+ChildDat$s_Three <- rep('NA', dim(ChildDat)[1])
+ChildDat$s_Four <- rep('NA', dim(ChildDat)[1])
+
+
+
+
+# ChildDat <- merge(x=ChildDat,y=braceDat,all=TRUE)
+# 
+# 
+# ChildDat$Year <- rep(2023, dim(ChildDat)[1])
+# ChildDat$Month <- rep('October', dim(ChildDat)[1])
+# ChildDat$Brand <- rep('Breg', dim(ChildDat)[1])
+# ChildDat$Model <- rep('Fusion', dim(ChildDat)[1])
+
+ChildDat$Year <- rep(Year, dim(ChildDat)[1])
+ChildDat$Month <- rep(Month, dim(ChildDat)[1])
+ChildDat$Brand <- rep(Brand, dim(ChildDat)[1])
+ChildDat$Model <- rep(Model, dim(ChildDat)[1])
+
 
 #_______________________________________________________________________________
 # Place NaNs for missing data
