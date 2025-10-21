@@ -16,7 +16,7 @@ execute:
 +--------------------+------------------------------------------------+
 | Test Name          | 2025_Mechanistic_WomensPanelStiffnessII_Adidas |
 +====================+================================================+
-| **Benefit:**       | Agility & Speed                                |
+| **Benefit:**       | Court                                          |
 +--------------------+------------------------------------------------+
 | **Date:**          | 4/2023                                         |
 +--------------------+------------------------------------------------+
@@ -35,13 +35,13 @@ execute:
 
 -   Previous cycling performance tests (Cycling_DDRoad_Performance_Feb22) showed improvements due to a heel lock guide providing immediate lace pull toward the heel cut.
 
--   The purpose of this test was to evaluate how a heel lock guide affects agility and speed performance in a single dial and dual dial configuration.
+-   The purpose of this test was to evaluate how a heel lock guide affects court performance in a single dial and dual dial configuration.
 
 ## Hypothesis
 
 H1: The heel lock will improve heel hold and the dual dial heel lock will provide the best fit. Heel hold will be measured as contact area between the heel and the midsole during running. Forefoot hold will be measured as pressure and contact area between the forefoot and midsole during running.
 
-H2: Improved fit will result in better agility, ie. [reduced contact time.]{.underline}
+H2: Improved fit will result in better speed, ie. [reduced contact time.]{.underline}
 
 H1.a: Reduced contact time will be achieved through increased propulsive force (i.e. in the direction of movement), and increased ankle force production in the direction of movement
 
