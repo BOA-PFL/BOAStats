@@ -5,7 +5,7 @@ format:
     reference-doc: 'C:\\Users\\Kate.Harrison\\Boa Technology Inc\\PFL Team - General\\Testing Segments\\Report_Template.docx'
 editor: visual
 editor_options: 
-  chunk_output_type: console 
+  chunk_output_type: console
 execute:
   error: true 
   warning: false
@@ -16,7 +16,7 @@ execute:
 +--------------------+--------------------------------------------+
 | Test Name          | EH_Snowboard_BurtonWrap_BrandPartner_Dec24 |
 +====================+============================================+
-| **Benefit:**       | Endurance & Health                         |
+| **Segment:**       | Snow: Snowboard                            |
 +--------------------+--------------------------------------------+
 | **Date:**          | 12/24                                      |
 +--------------------+--------------------------------------------+
@@ -29,21 +29,25 @@ execute:
 |                    | -   Triple dial PFW                        |
 +--------------------+--------------------------------------------+
 
-## Purpose & Background
+# Purpose & Background
 
 -   PFL Mechanistic testing has shown that PFW improves pressure distribution, heel hold and edge control relative to on market CFS boots.
 
--   The purpose of this test is to test the benefits with a Step-On binding, and to verify benefits of the triple dial system relative to current best in class on market boot.
+-   **The purpose of this test is to test the benefits with a Step-On binding, and to verify benefits of the triple dial system relative to current best in class on market boot.**
 
-## Hypothesis
+# Hypothesis
+
+**Key Benefits:**
 
 H1: PFW will improve pressure distribution, resulting in stronger hold (higher average pressure) without added pressure points (similar or lower peak pressures).
 
 H2: PFW will improve heel hold, indicated by heel contact area during toe turns.
 
+**Additional Benefits:**
+
 H3: Improved fit and heel hold will allow for better edge control, indicated by greater edge forces and faster rate of force development.
 
-## Methods
+# Methods
 
 +--------------+---------------+---------------------------------------+-------------------------------+
 | Subjects     | Movements     | Equipment                             | Measurements                  |
@@ -63,15 +67,13 @@ H3: Improved fit and heel hold will allow for better edge control, indicated by 
 |              |               |                                       | -   Rate of force development |
 +--------------+---------------+---------------------------------------+-------------------------------+
 
-## Configurations
+# Configurations
 
 +-------------------------+------------------+
 | Baseline: Dual Dial CFS | fTriple Dial PFW |
 +=========================+==================+
 |                         |                  |
 +-------------------------+------------------+
-
-## Summary of Findings
 
 ```{r}
 #| echo: false
@@ -80,6 +82,8 @@ H3: Improved fit and heel hold will allow for better edge control, indicated by 
 
 library(readxl)
 library(tidyverse)
+library(lme4)
+library(emmeans)
 library(tm)
 library(SnowballC)
 library(RColorBrewer)
@@ -278,10 +282,53 @@ withinSubQualPlot <- function(inputDF) {
   
 }
 
+EffectSizeLM <- function(df, inputmodel) {
+  myformula <- as.formula(paste0(inputmodel))
+  full.mod = lmer(myformula, data = df, REML = TRUE, na.action = "na.omit")
+  conditions.emm <- emmeans(full.mod, "Config", lmer.df = "satterthwaite")
+  efsi_sum = summary(eff_size(conditions.emm, sigma = sigma(full.mod), edf = Inf))
+  
+  for (ii in 1:(length(unique(df$Config))-1)){
+    print(paste('effect size for:', efsi_sum$contrast[ii], ' is ', round(efsi_sum$effect.size[ii],3)))
+  }
+
+return()
+}
+
 ##############################
 ```
 
-**Qualitative**
+# Summary of Findings
+
+(Did we achieve the goal of the study?)
+
+# Next Steps
+
+-   
+
+# Recommendations
+
+-   
+
+# Key Benefit Performance
+
+|                             | Base | Config1 |
+|-----------------------------|------|---------|
+| Power Transfer              | 50   |         |
+| Energy Efficiency           | 50   |         |
+| Stability & Control         | 50   |         |
+| Quantitative Fit            | 50   |         |
+| Overall Performance Ranking | 50   |         |
+
+# Additional Benefit Performance
+
+|                     | Base | Config1 |
+|---------------------|------|---------|
+| Qualitative Ranking | 90   |         |
+
+# **Qualitative**
+
+# **Qualitative**
 
 ```{r}
 #| echo: false
@@ -315,9 +362,9 @@ ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) +
 
 ```
 
-## Power
+# Power
 
-**Average Speed - Higher is better**
+## **Average Speed - Higher is better**
 
 ```{r}
 #| echo: false
@@ -356,10 +403,12 @@ avgMod <- brm(data = avgDat, # Bayes model
 
 p <- withinSubPlotAvg(avgDat, colName = 'AvgSpeed', dir = 'higher','Average Speed (kph)')
 
-extractVals(avgDat, avgMod, otherConfigs, baseline, 'AvgSpeed', 'higher') 
+extractVals(avgDat, avgMod, otherConfigs, baseline, 'AvgSpeed', 'higher')
+
+EffectSizeLM(avgDat,'AvgSpeed ~ Config + (Config|Subject)')
 ```
 
-**Top Speed - Higher is better**
+## **Top Speed - Higher is better**
 
 ```{r}
 #| echo: false
@@ -401,9 +450,9 @@ p <- withinSubPlotAvg(topDat, colName = 'TopSpeed', dir = 'higher','Top Speed (k
 extractVals(topDat, topMod, otherConfigs, baseline, 'TopSpeed', 'higher') 
 ```
 
-**Peak Edge Force - Higher is better**
+## **Peak Edge Force - Higher is better**
 
-Heel Turns
+**Heel Turns**
 
 ```{r}
 #| echo: false
@@ -447,7 +496,7 @@ p <- withinSubPlotAvg(heelFdat, colName = 'HeelTotMaxForce', dir = 'higher','Hee
 extractVals(heelFdat, heelFmod, otherConfigs, baseline, 'HeelTotMaxForce', 'higher') 
 ```
 
-Toe edge
+**Toe edge**
 
 ```{r}
 #| echo: false
@@ -491,9 +540,9 @@ p <- withinSubPlotAvg(toeFdat, colName = 'ToeTotMaxForce', dir = 'higher','Toe E
 extractVals(toeFdat, toeFmod, otherConfigs, baseline, 'ToeTotMaxForce', 'higher')
 ```
 
-**Board Angle**
+## **Board Angle**
 
-Heel Turns
+**Heel Turns**
 
 ```{r}
 #| echo: false
@@ -533,7 +582,7 @@ p <- withinSubPlotAvg(heelEdat, colName = 'BoardAngle_HeelTurns', dir = 'higher'
 extractVals(heelEdat, heelEmod, otherConfigs, baseline, 'BoardAngle_HeelTurns', 'higher')
 ```
 
-Toe Turns
+**Toe Turns**
 
 ```{r}
 #| echo: false
@@ -573,11 +622,11 @@ p <- withinSubPlotAvg(toeEdat, colName = 'BoardAngle_ToeTurns', dir = 'higher','
 extractVals(toeEdat, toeEmod, otherConfigs, baseline, 'BoardAngle_ToeTurns', 'higher')
 ```
 
-## Precision
+# Precision
 
-**Rate of Force Development - Higher is better**
+## **Rate of Force Development - Higher is better**
 
-Heel Turns
+**Heel Turns**
 
 ```{r}
 #| echo: false
@@ -618,7 +667,7 @@ p <- withinSubPlotAvg(heelRFDdat, colName = 'RFD', dir = 'higher','RFD (N/s)')
 extractVals(heelRFDdat, heelRFDmod, otherConfigs, baseline, 'RFD', 'higher')
 ```
 
-Toe Turns
+**Toe Turns**
 
 ```{r}
 #| echo: false
@@ -659,9 +708,9 @@ withinSubPlotAvg(toeRFDdat, colName = 'RFD', dir = 'higher','Toe Turns RFD (N/s)
 extractVals(toeRFDdat, toeRFDmod, otherConfigs, baseline, 'RFD', 'higher')
 ```
 
-## **Quantitative Fit**
+# **Quantitative Fit**
 
-**Heel Contact Area - Toe Turns - Higher is better**
+## **Heel Contact Area - Toe Turns - Higher is better**
 
 ```{r}
 #| echo: false
@@ -702,7 +751,7 @@ p <- withinSubPlotAvg(heeldat, colName = 'heelAreaP', dir = 'higher','Heel Conta
 extractVals(heeldat, heelmod, otherConfigs, baseline, 'heelAreaP', 'higher')
 ```
 
-**Average Dorsal Pressure**
+## **Average Dorsal Pressure**
 
 ```{r}
 #| echo: false
@@ -744,7 +793,7 @@ p + ylab('Average Dorsal Pressure (kPa)')
 extractVals(avgDorsaldat, avgDorsalmod, otherConfigs, baseline, 'avgDorsal', 'higher')
 ```
 
-**Variation in Dorsal Pressure - Lower is Better**
+## **Variation in Dorsal Pressure - Lower is Better**
 
 ```{r}
 #| echo: false
@@ -786,7 +835,7 @@ p + ylab('Variation in Dorsal Pressure')
 extractVals(varDorsaldat, varDorsalmod, otherConfigs, baseline, 'varDorsal', 'lower')
 ```
 
-**Average Shin Pressure**
+## **Average Shin Pressure**
 
 ```{r}
 #| echo: false
@@ -828,7 +877,7 @@ p + ylab('Average Shin Pressure (kPa)')
 extractVals(avgShindat, avgShinmod, otherConfigs, baseline, 'avgShin', 'higher')
 ```
 
-**Variation in Shin Pressure**
+## **Variation in Shin Pressure**
 
 ```{r}
 #| echo: false
@@ -870,7 +919,7 @@ p + ylab('Variation in Shin Pressure')
 extractVals(varShindat, varShinmod, otherConfigs, baseline, 'varShin', 'lower')
 ```
 
-**Average Calf Pressure**
+## **Average Calf Pressure**
 
 ```{r}
 #| echo: false
@@ -913,7 +962,7 @@ p + ylab('Average Calf Pressure (kPa)')
 extractVals(avgCalfdat, avgCalfmod, otherConfigs, baseline, 'avgCalf', 'higher')
 ```
 
-**Variation in Calf Pressure**
+## **Variation in Calf Pressure**
 
 ```{r}
 #| echo: false
@@ -953,113 +1002,4 @@ p <- withinSubPlotAvg(varCalfdat, colName = 'varCalf', dir = 'lower')
 p + ylab('Variation in Calf Pressure')
 
 extractVals(varCalfdat, varCalfmod, otherConfigs, baseline, 'varCalf', 'lower')
-```
-
-```{r}
-#| echo: false
-
-###### For agility run combo
-# For DPZ
-
-# Endurance <- 43
-# 
-# Health <- 38
-# 
-# Fit <- 14
-# 
-# Qual <- 88
-# 
-# data <- t(c(Endurance, Health, Fit, Qual))
-# 
-# data <- as.data.frame(data)
-# 
-# improvThresh<- as.data.frame(t(c(70,70,70,93)))
-# equalThresh<- as.data.frame(t(c(50,50,50,93)))
-# 
-# min =as.data.frame(t(rep(0, 4)))
-# max = as.data.frame(t(rep(100,4)))
-# data <- rbind(max, min, improvThresh, equalThresh, data)
-# 
-# colnames(data) <- c("Endurance", "Health", "Fit", "Qual")
-# 
-# colors <- c("#C8C9C7","#53565A", "#00966C")
-# 
-# create_beautiful_radarchart <- function(data, color = "#00966C",
-#                                         vlabels = colnames(data), vlcex = 0.9,
-#                                         caxislabels = NULL, title = NULL, ...){
-#   radarchart(
-#     data, axistype = 1,
-#     # Customize the polygon
-#     pcol = color, pfcol = scales::alpha(color, 0.5), plwd = 2, plty = 1,
-#     # Customize the grid
-#     cglcol = "grey", cglty = 1, cglwd = 0.8,
-#     # Customize the axis
-#     axislabcol = "grey",
-#     # Variable labels
-#     vlcex = vlcex, vlabels = vlabels,
-#     caxislabels = caxislabels, title = title, ...
-#   )
-# }
-# 
-# 
-# create_beautiful_radarchart(data = data, color = colors)
-
-# legend(x = "topright", inset = c(- 0.3, 0.2), legend = c("Threshold for confidence in improvement", "FA", "Power Zone Config"),
-#        bty = "n", pch = 20, col = colors, text.col = "black", cex = .7, pt.cex = 1)
-#
-# ## This code gives a visual representation of how a shoe performed against a baseline shoe in the form of a radar plot
-# #This happens by assigning different averaged ratings to different segments
-# #You are only adding the shoe being tested to the ratings, the baseline shoe is always set to 50 for a clear comparison
-# #The shoe being tested is rated by the average percentile confidence in each segment
-# ###For example, if a PFS shoe had 75% confidence in CMJ  and 50% in skater for contact time, the average rating for agility would be 62.5 -> 63
-#
-# # 
-# # 
-# # #### Config SPZ
-# # 
-# Endurance <- 44
-# 
-# Health <- 44
-# 
-# Fit <- 0
-# 
-# Qual <- 83
-# 
-# data <- t(c(Endurance, Health, Fit, Qual))
-# 
-# data <- as.data.frame(data)
-# 
-# improvThresh<- as.data.frame(t(c(70,70,70,93)))
-# equalThresh<- as.data.frame(t(c(50,50,50,93)))
-# 
-# min =as.data.frame(t(rep(0, 4)))
-# max = as.data.frame(t(rep(100,4)))
-# data <- rbind(max, min, improvThresh, equalThresh, data)
-# 
-# colnames(data) <- c("Endurance", "Health", "Fit", "Qual")
-# 
-# colors <- c("#C8C9C7","#53565A", "#00966C")
-# 
-# create_beautiful_radarchart <- function(data, color = "#00966C",
-#                                         vlabels = colnames(data), vlcex = 0.9,
-#                                         caxislabels = NULL, title = NULL, ...){
-#   radarchart(
-#     data, axistype = 1,
-#     # Customize the polygon
-#     pcol = color, pfcol = scales::alpha(color, 0.5), plwd = 2, plty = 1,
-#     # Customize the grid
-#     cglcol = "grey", cglty = 1, cglwd = 0.8,
-#     # Customize the axis
-#     axislabcol = "grey",
-#     # Variable labels
-#     vlcex = vlcex, vlabels = vlabels,
-#     caxislabels = caxislabels, title = title, ...
-#   )
-# }
-# 
-# 
-# create_beautiful_radarchart(data = data, color = colors)
-
-# legend(x = "topright", inset = c(- 0.3, 0.2), legend = c("Threshold for confidence in improvement", "FA", "Power Zone Config"),
-#        bty = "n", pch = 20, col = colors, text.col = "black", cex = .7, pt.cex = 1)
 ```

@@ -16,7 +16,7 @@ execute:
 +--------------------+-----------------------------------------+
 | Test Name          | EH_Workwear_MidcutStability3_Mech_Jan24 |
 +====================+=========================================+
-| **Benefit:**       | Endurance & Health                      |
+| **Segment:**       | Outdoor: Hike                           |
 +--------------------+-----------------------------------------+
 | **Date:**          | 1/2024                                  |
 +--------------------+-----------------------------------------+
@@ -31,7 +31,7 @@ execute:
 |                    | -   Lateral Wrap (Lat)                  |
 +--------------------+-----------------------------------------+
 
-## Purpose & Background
+# Purpose & Background
 
 -   Previous tests(MidcutStabilityII_CPDMech_Sept23, etc.) showed an external ankle wrap improved ankle stability metrics. It also performed the best in endurance metrics.
 
@@ -39,17 +39,21 @@ execute:
 
 -   Material A&S test (EnergyReturnA&S_April23) suggested that the direction of wrapping - medial v lateral - had a larger impact on performance than material choice in an unstructured shoe, with medial wrapping configurations performing best in A&S.
 
--   The purpose of this test was to understand if a medial or lateral ankle wrap affects endurance and health performance in high cut footwear.
+-   **The purpose of this test was to understand if a medial or lateral ankle wrap affects endurance and health performance in high cut footwear.**
 
-## Hypothesis
+# Hypothesis
+
+**Key Benefits:**
 
 H1: All three configurations will provide similar fit, increased heel hold and decreased toe pressures. Heel hold will be measured as contact area between the heel and the midsole during trail walking. Peak toe pressures will be measured during trail walking and during single leg landings on both level and uneven terrain.
 
 H2: The medial wrap will improve ankle stability. Ankle stability will be measured as the peak eversion velocity.
 
+**Additional Benefits:**
+
 H3: Similarly, the medial wrap will provide better balance with faster stabilizing times.
 
-## Methods
+# Methods
 
 +--------------+------------------------+---------------------------------------+----------------------------+
 | Subjects     | Movements              | Equipment                             | Measurements               |
@@ -78,15 +82,13 @@ H3: Similarly, the medial wrap will provide better balance with faster stabilizi
 |              | -   Downhill           |                                       |                            |
 +--------------+------------------------+---------------------------------------+----------------------------+
 
-## Configurations
+# Configurations
 
 +--------------------+----------------+----------------+
 | Baseline: External | Medial Wrap    | Lateral Wrap   |
 +====================+================+================+
 |                    |                |                |
 +--------------------+----------------+----------------+
-
-## Summary of Findings
 
 ```{r}
 #| echo: false
@@ -96,6 +98,8 @@ H3: Similarly, the medial wrap will provide better balance with faster stabilizi
 
 library(readxl)
 library(tidyverse)
+library(lme4)
+library(emmeans)
 library(tm)
 library(SnowballC)
 library(RColorBrewer)
@@ -382,8 +386,49 @@ withinSubQualAvg <- function(inputDF) {
   
 }
 
+EffectSizeLM <- function(df, inputmodel) {
+  myformula <- as.formula(paste0(inputmodel))
+  full.mod = lmer(myformula, data = df, REML = TRUE, na.action = "na.omit")
+  conditions.emm <- emmeans(full.mod, "Config", lmer.df = "satterthwaite")
+  efsi_sum = summary(eff_size(conditions.emm, sigma = sigma(full.mod), edf = Inf))
+  
+  for (ii in 1:(length(unique(df$Config))-1)){
+    print(paste('effect size for:', efsi_sum$contrast[ii], ' is ', round(efsi_sum$effect.size[ii],3)))
+  }
+
+return()
+}
+
 ###############################
 ```
+
+# Summary of Findings
+
+(Did we achieve the goal of the study?)
+
+# Next Steps
+
+-   
+
+# Recommendations
+
+-   
+
+# Key Benefit Performance
+
+|                             | Base | Config1 | Config2 |
+|-----------------------------|------|---------|---------|
+| Power Transfer              | 50   |         |         |
+| Energy Efficiency           | 50   |         |         |
+| Stability & Control         | 50   |         |         |
+| Quantitative Fit            | 50   |         |         |
+| Overall Performance Ranking | 50   |         |         |
+
+# Additional Benefit Performance
+
+|                     | Base | Config1 | Config2 |
+|---------------------|------|---------|---------|
+| Qualitative Ranking | 90   |         |         |
 
 # **Qualitative ( CF: , IF: )**
 
@@ -493,7 +538,7 @@ extractVals(torqueDat , torqueMod, otherConfigs, baseline, 'R_DialTorque1', 'hig
 
 # Efficiency
 
-### Positive Center of Mass Work- Uphill walking (lower is better)
+## Positive Center of Mass Work- Uphill walking (lower is better)
 
 ```{r}
 #| echo: false
@@ -543,9 +588,11 @@ p + ylab('Postitive COM - Uphill (J)')
 
 
 extractVals(psCOM_UH, psCOM_UH_mod, otherConfigs, baseline, 'COMWork_pos', 'lower')
+
+EffectSizeLM(psCOM_UH,'COMWork_pos ~ Config + (Config|Subject)')
 ```
 
-### Negative Center of Mass - Downhill (Higher is better)
+## Negative Center of Mass - Downhill (Higher is better)
 
 ```{r}
 #| echo: false
@@ -596,7 +643,7 @@ p + ylab('Negative COM - Downhill (J)')
 extractVals(ngCOM_DH, ngCOM_DH_mod, otherConfigs, baseline, 'COMWork_neg', 'higher')
 ```
 
-### **Walking Speed (higher is better)** **- Uneven Terrain Walking**
+## **Walking Speed (higher is better)** **- Uneven Terrain Walking**
 
 ```{r}
 #| echo: false
@@ -653,7 +700,7 @@ p + ylab('Walking Speed (m/s)')
 extractVals(Speeddat, SpeeddatMod, otherConfigs, baseline, 'imuSpeed', 'higher') 
 ```
 
-### **Toe Clawing: Peak Toe Pressure (Lower is Better) - Single Leg Landing and Uneven Terrain Walking**
+## **Toe Clawing: Peak Toe Pressure (Lower is Better) - Single Leg Landing and Uneven Terrain Walking**
 
 ```{r}
 #| echo: false
@@ -703,7 +750,7 @@ extractVals(PeakToeWalkdat, PeakToeWalkdatMod, otherConfigs, baseline, 'maxmaxTo
 
 # Stability
 
-### **Ankle Stability: Peak Eversion Velocity (lower is better) - Uneven Terrain Walking**
+## **Ankle Stability: Peak Eversion Velocity (lower is better) - Uneven Terrain Walking**
 
 ```{r}
 #| echo: false
@@ -757,7 +804,7 @@ extractVals(Everdat, EverdatMod, otherConfigs, baseline, 'pIEgyro', 'lower')
 
 ```
 
-### **Knee Joint Loading: Knee Abduction Moment (lower magnitude is better)**
+## **Knee Joint Loading: Knee Abduction Moment (lower magnitude is better)**
 
 ```{r}
 #| echo: false
@@ -820,7 +867,7 @@ p + ylab('Knee Abduction Moment (Nm)')
 extractVals(KABDOGLandDat, KABDOGLandDatMod, otherConfigs, baseline, 'RkneeABDMom', 'higher')
 ```
 
-### **Stability (faster is better) - Landing on Uneven Terrain**
+## **Stability (faster is better) - Landing on Uneven Terrain**
 
 ```{r}
 #| echo: false
@@ -869,7 +916,7 @@ extractVals(TimeUnLandDat, TimeUnLandDatMod, otherConfigs, baseline, 'StabalizeT
 
 # Quantitative Fit
 
-### **Heel Hold: Heel contact area (higher is better) - Uneven Terrain Walking**
+## **Heel Hold: Heel contact area (higher is better) - Uneven Terrain Walking**
 
 ```{r}
 #| echo: false
@@ -930,7 +977,7 @@ p + ylab('Heel Contact (%)')
 extractVals(HeelCondat, HeelCondatMod, otherConfigs, baseline, 'heelAreaP', 'higher')
 ```
 
-### **Static Pressure - Max Dorsal Pressure**
+## **Static Pressure - Max Dorsal Pressure**
 
 ```{r}
 #| echo: false
@@ -986,7 +1033,7 @@ extractVals(peakDorsal, DorsalMaxMod, otherConfigs, baseline, 'maxDorsalPressure
 
 ```
 
-### **Static Pressure - Mean Dorsal Pressure**
+## **Static Pressure - Mean Dorsal Pressure**
 
 ```{r}
 #| echo: false
