@@ -16,7 +16,7 @@ execute:
 +--------------------+----------------------------------------------+
 | Test Name          | 2025_Performance_CyclingLacevBOA_Specialized |
 +====================+==============================================+
-| **Benefit:**       | Cycling                                      |
+| **Segment:**       | Cycling: Road                                |
 +--------------------+----------------------------------------------+
 | **Date:**          | 4/2025                                       |
 +--------------------+----------------------------------------------+
@@ -29,21 +29,25 @@ execute:
 |                    | -   BOA Dual Dial (BOA)                      |
 +--------------------+----------------------------------------------+
 
-## Purpose & Background
+# Purpose & Background
 
 -   Previous cycling performance tests
 
--   The purpose of this test was to evaluate
+-   **The purpose of this test was to evaluate**
 
-## Hypothesis
+# Hypothesis
+
+**Key Benefits:**
 
 H1:
 
 H2:
 
-H1.
+**Additional Benefits:**
 
-## Methods
+H3:
+
+# Methods
 
 +-----------------+---------------------------+----------------------------+------------------------+
 | Subjects        | Movements                 | Equipment                  | Measurements           |
@@ -57,21 +61,19 @@ H1.
 |                 |                           |     -   Plantar and dorsal | -   Power Output       |
 +-----------------+---------------------------+----------------------------+------------------------+
 
-## Configurations
+# Configurations
 
 | Lace | BOA |
 |------|-----|
 |      |     |
-
-## Summary
-
-## Next Steps
 
 ```{r}
 #| echo: false
 #| warning: false
 #| include: false
 library(tidyverse)
+library(lme4)
+library(emmeans)
 library(tm)
 library(SnowballC)
 library(RColorBrewer)
@@ -307,117 +309,51 @@ withinSubQualAvg <- function(inputDF) {
   
 }
 
+EffectSizeLM <- function(df, inputmodel) {
+  myformula <- as.formula(paste0(inputmodel))
+  full.mod = lmer(myformula, data = df, REML = TRUE, na.action = "na.omit")
+  conditions.emm <- emmeans(full.mod, "Config", lmer.df = "satterthwaite")
+  efsi_sum = summary(eff_size(conditions.emm, sigma = sigma(full.mod), edf = Inf))
+  
+  for (ii in 1:(length(unique(df$Config))-1)){
+    print(paste('effect size for:', efsi_sum$contrast[ii], ' is ', round(efsi_sum$effect.size[ii],3)))
+  }
+
+return()
+}
+
 ###############################
 ```
 
-```{r}
-#| echo: false
-######
-# Function
-create_beautiful_radarchart <- function(data, color = "#00966C",
-                                        vlabels = colnames(data), vlcex = 1.2,
-                                        caxislabels = NULL, title = NULL, ...){
-  radarchart(
-    data, axistype = 1,
-    # Customize the polygon
-    pcol = color, pfcol = scales::alpha(color, 0.5), plwd = 2, plty = 1,
-    # Customize the grid
-    cglcol = "grey", cglty = 1, cglwd = 0.8,
-    # Customize the axis
-    axislabcol = "grey",
-    # Variable labels
-    vlcex = vlcex, vlabels = vlabels,
-    caxislabels = caxislabels, title = title, ...
-  )
-}
+# Summary of Findings
 
-###### For agility run combo
-EnergyEfficiency <- 50
+(Did we achieve the goal of the study?)
 
-PowerTransfer <- 95
+# Next Steps
 
-Fit <- 64
+-   
 
-Qual <- 91
+# Recommendations
 
-data <- t(c(EnergyEfficiency, PowerTransfer, Fit, Qual))
+-   
 
-data <- as.data.frame(data)
+# Key Benefit Performance
 
-improvThresh<- as.data.frame(t(c(70,70,70,70)))
-equalThresh<- as.data.frame(t(c(50,50,50,70)))
+|                             | Base | Config1 | Config2 |
+|-----------------------------|------|---------|---------|
+| Power Transfer              | 50   |         |         |
+| Energy Efficiency           | 50   |         |         |
+| Stability & Control         | 50   |         |         |
+| Quantitative Fit            | 50   |         |         |
+| Overall Performance Ranking | 50   |         |         |
 
-min =as.data.frame(t(rep(0, 4)))
-max = as.data.frame(t(rep(100,4)))
-data <- rbind(max, min, improvThresh, equalThresh, data)
+# Additional Benefit Performance
 
-colnames(data) <- c("Energy Efficiency", "Power Transfer", "Fit", "Qual")
+|                     | Base | Config1 | Config2 |
+|---------------------|------|---------|---------|
+| Qualitative Ranking | 90   |         |         |
 
-colors <- c("#C8C9C7","#53565A", "#00966C")
-
-create_beautiful_radarchart(data = data, color = colors)
-
-legend(x = "topright", legend = c("Improvement Threshold", "Lace", "BOA"),
-       bty = "n", pch = 20, col = colors, text.col = "black", cex = .8, pt.cex = 2)
-# 
-# ## This code gives a visual representation of how a shoe performed against a baseline shoe in the form of a radar plot 
-# #This happens by assigning different averaged ratings to different segments 
-# #You are only adding the shoe being tested to the ratings, the baseline shoe is always set to 50 for a clear comparison
-# #The shoe being tested is rated by the average percentile confidence in each segment 
-# ###For example, if a PFS shoe had 75% confidence in CMJ  and 50% in skater for contact time, the average rating for agility would be 62.5 -> 63 
-# 
-# 
-# 
-# #### Config DDHL
-# 
-# LateralAgility <- 32
-# 
-# VerticalAgility <- 28.3
-# 
-# Fit <- 48
-# 
-# Qual <- 85
-# 
-# data <- t(c(VerticalAgility, LateralAgility, Fit, Qual))
-# 
-# data <- as.data.frame(data)
-# 
-# improvThresh<- as.data.frame(t(rep(70, 4)))
-# equalThresh<- as.data.frame(t(rep(50, 4)))
-# 
-# min =as.data.frame(t(rep(0, 4)))
-# max = as.data.frame(t(rep(100,4)))
-# data <- rbind(max, min, improvThresh, equalThresh, data)
-# 
-# colnames(data) <- c("VerticalAgility", "LateralAgility", "Fit", "Qual")
-# 
-# colors <- c("#C8C9C7","#53565A", "#00966C")
-# 
-# create_beautiful_radarchart <- function(data, color = "#00966C", 
-#                                         vlabels = colnames(data), vlcex = 0.9,
-#                                         caxislabels = NULL, title = NULL, .){
-#   radarchart(
-#     data, axistype = 1,
-#     # Customize the polygon
-#     pcol = color, pfcol = scales::alpha(color, 0.5), plwd = 2, plty = 1,
-#     # Customize the grid
-#     cglcol = "grey", cglty = 1, cglwd = 0.8,
-#     # Customize the axis
-#     axislabcol = "grey", 
-#     # Variable labels
-#     vlcex = vlcex, vlabels = vlabels,
-#     caxislabels = caxislabels, title = title, .
-#   )
-# }
-# 
-# 
-# create_beautiful_radarchart(data = data, color = colors)
-# 
-# legend(x = "topright", inset = c(- 0.1, 0), legend = c("threshold for confidence in improvement", "SD", "Heel Lock Solution"),
-#        bty = "n", pch = 20, col = colors, text.col = "black", cex = .7, pt.cex = 1)
-```
-
-## **Qualitative**
+# **Qualitative**
 
 ```{r}
 #| echo: false
@@ -453,7 +389,7 @@ qualDat %>%
   gt()
 ```
 
-### **Dial Torque**
+## **Dial Torque**
 
 ```{r}
 #| echo: false
@@ -474,7 +410,7 @@ qualDat %>%
 
 # Energy Efficiency
 
-### **Energy Expenditure - Lower is Better**
+## **Energy Expenditure - Lower is Better**
 
 ```{r}
 #| echo: false
@@ -513,11 +449,13 @@ EEDatMod <- brm(data = EEDat, # Bayes model
 
 withinSubPlotAvg(EEDat, colName = 'EE', dir = 'lower', yLabel = 'Energy Expenditure (W/kg)')  
 extractVals(EEDat, EEDatMod, otherConfigs, baseline, 'EE', 'lower') 
+
+EffectSizeLM(EEDat,'EE ~ Config + (Config|Subject)')
 ```
 
 # Power Transfer
 
-### **Sprint Power - Higher is Better**
+## **Sprint Power - Higher is Better**
 
 ```{r}
 #| echo: false
@@ -562,7 +500,7 @@ extractVals(sprintDat, sprintDatMod, otherConfigs, baseline, 'Power_sprint', 'hi
 
 # **Quantitative Fit**
 
-### Peak Toe Pressure - Lower is Better
+## Peak Toe Pressure - Lower is Better
 
 ```{r}
 #| echo: false
@@ -600,7 +538,7 @@ withinSubPlotAvg(toemaxDat, colName = 'maxmaxToes', dir = 'lower', yLabel = 'Max
 extractVals(toemaxDat, toemaxMod, otherConfigs, baseline, 'maxmaxToes', 'lower')
 ```
 
-### **Heel Contact Area - Higher is Better**
+## **Heel Contact Area - Higher is Better**
 
 ```{r}
 #| echo: false
@@ -635,7 +573,7 @@ withinSubPlotAvg(heelConDat, colName = 'heelArea_Up', dir = 'higher', yLabel = '
 extractVals(heelConDat, heelConMod, otherConfigs, baseline, 'heelArea_Up', 'higher')
 ```
 
-### **Dorsal Pressure Metrics**
+## **Dorsal Pressure Metrics**
 
 **Dorsal Pressure Variation**
 

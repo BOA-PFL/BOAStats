@@ -16,7 +16,7 @@ execute:
 +--------------------+------------------------------------------------+
 | Test Name          | 2025_Mechanistic_WomensPanelStiffnessII_Adidas |
 +====================+================================================+
-| **Benefit:**       | Court                                          |
+| **Segment:**       | Court                                          |
 +--------------------+------------------------------------------------+
 | **Date:**          | 4/2023                                         |
 +--------------------+------------------------------------------------+
@@ -31,21 +31,25 @@ execute:
 |                    | -   DDHL (Dual Dial Heel-Lock)                 |
 +--------------------+------------------------------------------------+
 
-## Purpose & Background
+# Purpose & Background
 
 -   Previous cycling performance tests (Cycling_DDRoad_Performance_Feb22) showed improvements due to a heel lock guide providing immediate lace pull toward the heel cut.
 
--   The purpose of this test was to evaluate how a heel lock guide affects court performance in a single dial and dual dial configuration.
+-   **The purpose of this test was to evaluate how a heel lock guide affects court performance in a single dial and dual dial configuration.**
 
-## Hypothesis
+# Hypothesis
+
+**Key Benefits:**
 
 H1: The heel lock will improve heel hold and the dual dial heel lock will provide the best fit. Heel hold will be measured as contact area between the heel and the midsole during running. Forefoot hold will be measured as pressure and contact area between the forefoot and midsole during running.
 
 H2: Improved fit will result in better speed, ie. [reduced contact time.]{.underline}
 
-H1.a: Reduced contact time will be achieved through increased propulsive force (i.e. in the direction of movement), and increased ankle force production in the direction of movement
+**Additional Benefits:**
 
-## Methods
+H3: Reduced contact time will be achieved through increased propulsive force (i.e. in the direction of movement), and increased ankle force production in the direction of movement
+
+# Methods
 
 +------------------+---------------------+-------------------------------+------------------------------+
 | Subjects         | Movements           | Equipment                     | Measurements                 |
@@ -79,7 +83,7 @@ H1.a: Reduced contact time will be achieved through increased propulsive force (
 |                  |                     |                               | -   Peak Ankle Force         |
 +------------------+---------------------+-------------------------------+------------------------------+
 
-## Configurations
+# Configurations
 
 | Baseline | Config1 | Config2 |
 |----------|---------|---------|
@@ -93,6 +97,8 @@ H1.a: Reduced contact time will be achieved through increased propulsive force (
 
 library(readxl)
 library(tidyverse)
+library(lme4)
+library(emmeans)
 library(tm)
 library(SnowballC)
 library(RColorBrewer)
@@ -293,36 +299,51 @@ extractVals <- function(dat, mod, configNames, baseConfig, var, dir) {
   return()
 }
 
+EffectSizeLM <- function(df, inputmodel) {
+  myformula <- as.formula(paste0(inputmodel))
+  full.mod = lmer(myformula, data = df, REML = TRUE, na.action = "na.omit")
+  conditions.emm <- emmeans(full.mod, "Config", lmer.df = "satterthwaite")
+  efsi_sum = summary(eff_size(conditions.emm, sigma = sigma(full.mod), edf = Inf))
+  
+  for (ii in 1:(length(unique(df$Config))-1)){
+    print(paste('effect size for:', efsi_sum$contrast[ii], ' is ', round(efsi_sum$effect.size[ii],3)))
+  }
+
+return()
+}
 
 ###############################
 ```
 
-## Next Steps
+# Summary of Findings
+
+(Did we achieve the goal of the study?)
+
+# Next Steps
 
 -   
 
-## Recommendations
+# Recommendations
 
 -   
 
-## Performance Rankings
+# Key Benefit Performance
 
 |                             | Base | Config1 | Config2 |
 |-----------------------------|------|---------|---------|
-| Qualitative Ranking         | 90   |         |         |
 | Power Transfer              | 50   |         |         |
 | Energy Efficiency           | 50   |         |         |
 | Stability & Control         | 50   |         |         |
 | Quantitative Fit            | 50   |         |         |
 | Overall Performance Ranking | 50   |         |         |
 
-## Radar Plots
+# Additional Benefit Performance
 
-| Base | Config1 | Config2 |
-|------|---------|---------|
-|      |         |         |
+|                     | Base | Config1 | Config2 |
+|---------------------|------|---------|---------|
+| Qualitative Ranking | 90   |         |         |
 
-## **Qualitative**
+# **Qualitative**
 
 ```{r}
 #| echo: false
@@ -466,9 +487,9 @@ torqueMod <- brm(data = torqueDat, # Bayes model
 extractVals(torqueDat , torqueMod, otherConfigs, baseline, 'R_DialTorque1', 'higher')
 ```
 
-## Power Transfer
+# Power Transfer
 
-### **Contact Time**
+## **Contact Time**
 
 ```{r}
 #| echo: false
@@ -514,11 +535,12 @@ cmjCTMod <- brm(data = cmjDatCT, # Bayes model
 
 withinSubPlotAvg(cmjDatCT, 'CT', 'lower', 'Contact Time (s)')
 
-
 extractVals(cmjDatCT, cmjCTMod, otherConfigs, baseline,  'CT', dir = 'lower') 
+
+EffectSizeLM(cmjDatCT,'CT ~ Config + (Config|Subject)')
 ```
 
-### **Peak Force**
+## **Peak Force**
 
 ```{r}
 #| echo: false
@@ -562,7 +584,7 @@ withinSubPlotAvg(cmjDatPF, 'peakGRF_Z', 'higher', 'Peak Propulsive Force (N)')
 extractVals(cmjDatPF, cmjPFMod, otherConfigs, baseline, 'peakGRF_Z', 'higher')
 ```
 
-### **Peak Plantarflexion Moment**
+## **Peak Plantarflexion Moment**
 
 ```{r}
 #| echo: false
@@ -607,7 +629,7 @@ withinSubPlotAvg(cmjDatPP, 'peakPFmom', 'higher', 'Peak Plantar Flexion Moment (
 extractVals(cmjDatPP, cmjPPMod, otherConfigs, baseline, 'peakPFmom', 'higher')
 ```
 
-### Peak Power
+## Peak Power
 
 ```{r}
 #| echo: false
@@ -653,7 +675,7 @@ extractVals(cmjDatPPow, cmjPowerMod, otherConfigs, baseline, 'peakPower', 'highe
 
 ```
 
-### **Skater Contact Time**
+## **Skater Contact Time**
 
 ```{r}
 #| echo: false
@@ -704,7 +726,7 @@ withinSubPlotAvg(skaterDatCT, 'CT', 'lower', 'Contact Time (s)')
 extractVals(skaterDatCT, skateCTMod, otherConfigs, baseline, 'CT', 'lower') 
 ```
 
-### **Skater Propulsive Force**
+## **Skater Propulsive Force**
 
 ```{r}
 #| echo: false
@@ -750,7 +772,7 @@ withinSubPlotAvg(skaterDatPF, 'peakGRF_X', 'higher', 'Peak Propulsive Force (N)'
 extractVals(skaterDatPF, skatePFMod, otherConfigs, baseline, 'peakGRF_X', 'higher')
 ```
 
-### **Skater Power**
+## **Skater Power**
 
 ```{r}
 #| echo: false
@@ -796,9 +818,9 @@ extractVals(skaterDatPow, skatePowMod, otherConfigs, baseline, 'peakPower', 'hig
 
 ```
 
-## Stability & Control
+# Stability & Control
 
-### Peak Knee Abduction Range of Motion
+## Peak Knee Abduction Range of Motion
 
 ```{r}
 #| echo: false
@@ -843,7 +865,7 @@ extractVals(kneeAbdROM, kneeAbdROMMod, otherConfigs, baseline, 'kneeABDrom', 'lo
 
 ```
 
-### Peak Ankle Eversion Velocity
+## Peak Ankle Eversion Velocity
 
 ```{r}
 #| echo: false
@@ -888,9 +910,9 @@ extractVals(ankEvVel, ankEVvelMod, otherConfigs, baseline, 'peakEVvel', 'lower')
 
 ```
 
-## Energy Efficiency
+# Energy Efficiency
 
-### Positive Center of Mass Work - Running
+## Positive Center of Mass Work - Running
 
 ```{r}
 #| echo: false
@@ -937,7 +959,7 @@ withinSubPlotAvg(COMp, 'COMWork_pos', 'lower', 'Positive Center of Mass Work (J)
 extractVals(COMp, COMwMod, otherConfigs, baseline, 'COMWork_pos', 'lower') 
 ```
 
-### Negative Center of Mass Work - Running
+## Negative Center of Mass Work - Running
 
 ```{r}
 #| echo: false
@@ -982,7 +1004,9 @@ withinSubPlotAvg(COMn, 'COMWork_neg', 'higher', 'Negative Center of Mass Work (J
 extractVals(COMn, NCOMwMod, otherConfigs, baseline, 'COMWork_neg', 'higher') 
 ```
 
-### Heel Contact Area - Running
+# Quantitative Fit
+
+## Heel Contact Area - Running
 
 ```{r}
 #| echo: false
@@ -1041,7 +1065,7 @@ withinSubPlotAvg(HeelCondat, 'heelAreaP', 'higher', 'Heel Contact Area (%)')
 extractVals(HeelCondat, HeelMod, otherConfigs, baseline, 'heelAreaP', 'higher')
 ```
 
-### Peak Toe Pressure - Running
+## Peak Toe Pressure - Running
 
 ```{r}
 #| echo: false
@@ -1088,9 +1112,9 @@ withinSubPlotAvg(Toedat, 'maxmaxToes', 'lower', 'Peak Toe Pressure (kPa)')
 extractVals(Toedat, ToeMod, otherConfigs, baseline, 'maxmaxToes', 'lower')
 ```
 
-## Static Pressures
+# Static Pressures
 
-### **Static Peak Dorsal Pressure (lower is better)**
+## **Static Peak Dorsal Pressure (lower is better)**
 
 ```{r}
 #| echo: false
@@ -1133,7 +1157,7 @@ withinSubPlotAvg(pkDat, 'maxDorsalPressure', 'lower', 'Peak Dorsal Pressure (kPa
 extractVals(pkDat, pkMod, otherConfigs, baseline, 'maxDorsalPressure', 'lower')
 ```
 
-### Static Average Dorsal Pressure (higher is better)
+## Static Average Dorsal Pressure (higher is better)
 
 ```{r}
 #| echo: false
@@ -1179,7 +1203,7 @@ extractVals(avgDat, avgMod, otherConfigs, baseline, 'meanDorsalPressure', 'highe
 
 ```
 
-### Zonal Dorsal Pressures
+## Zonal Dorsal Pressures
 
 ```{r}
 #| echo: false
