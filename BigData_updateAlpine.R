@@ -13,7 +13,7 @@ Brand <- 'Solomon'
 Model <- 'S/Pro Supra Boa 120'
 TestName <- 'EH_Alpine_FullBootvsShell_Mech_Jan2024'
 Benefit <- 'P/P'
-Type <- 'Performance' 
+Type <- 'shoe' # updated from test type to item tested ex: 'shoe' , 'brace', 'other
 
 
 ### Functions
@@ -238,7 +238,7 @@ ChildDat$Year <- rep(Year, dim(ChildDat)[1])
 ChildDat$Month <- rep(Month, dim(ChildDat)[1])
 ChildDat$Brand <- rep(Brand, dim(ChildDat)[1])
 ChildDat$Model <- rep(Model, dim(ChildDat)[1])
-
+ChildDat$Type <- rep(Type, dim(ChildDat)[1])
 #_______________________________________________________________________________
 # Place NaNs for missing data
 # ChildDat$COMConWork <- rep('NA', dim(ChildDat)[1])
