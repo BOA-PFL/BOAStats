@@ -7,11 +7,11 @@ rm(list=ls())
 
 
 
-Year <- '2024'
+Year <- '2026'
 Month <- 'January'
-Brand <- 'Solomon'
-Model <- 'S/Pro Supra Boa 120'
-TestName <- 'EH_Alpine_FullBootvsShell_Mech_Jan2024'
+Brand <- 'K2'
+Model <- 'Theory'
+TestName <- '2026_Mechanistic_SnowboardWrapMechI_K2'
 Benefit <- 'P/P'
 Type <- 'shoe' # updated from test type to item tested ex: 'shoe' , 'brace', 'other
 
@@ -55,7 +55,7 @@ qual_ParentDat <- read.csv('Z:\\BigData\\DB_V2\\QualitativeBigData_v2.csv',nrows
 name_order = colnames(qual_ParentDat)
 
 # Read the qualitative data to be added to master data
-ChildDat <- read_xlsx('Z:\\Testing Segments\\Snow Performance\\EH_Alpine_FullBootVsShell_Jan2024\\EH_Alpine_FullBootvsShell_Mech_Jan2024_Qual.xlsx')
+ChildDat <- read_xlsx('C:\\Users\\milena.singletary\\OneDrive - BOA Technology Inc\\General - PFL Team\\Testing Segments\\Snow Sports\\Snowboard\\2026_Mechanistic_SnowboardWrapMechI_K2\\2026_Mechanistic_SnowboardWrapMechI_K2.xlsx')
 ChildDat <- ChildDat %>%
   rename('Overall' = OverallFit)
 noSub <- length(ChildDat$Subject)
@@ -75,11 +75,11 @@ ChildDat$Dial3Closure <- rep('NA', each = noSub)
 # Add in the additional dial torque information
 
 
-ChildDat$L_DialTorque1 <- rep('NA', each = noSub)
-ChildDat$L_DialTorque2 <- rep('NA', each = noSub)
+# ChildDat$L_DialTorque1 <- rep('NA', each = noSub)
+# ChildDat$L_DialTorque2 <- rep('NA', each = noSub)
 ChildDat$L_DialTorque3 <- rep('NA', each = noSub)
-ChildDat$R_DialTorque1 <- rep('NA', each = noSub)
-ChildDat$R_DialTorque2 <- rep('NA', each = noSub) 
+# ChildDat$R_DialTorque1 <- rep('NA', each = noSub)
+# ChildDat$R_DialTorque2 <- rep('NA', each = noSub) 
 ChildDat$R_DialTorque3 <- rep('NA', each = noSub)
 
 
@@ -112,6 +112,8 @@ if (a == 'YES'){
 rm(qual_ParentDat,noSub,name_order,a)
 
 
+
+
 ### Updating Config Big Data ###
 
 
@@ -122,7 +124,7 @@ name_order = colnames(ParentDat)
 
 Config <- unique(ChildDat$Config)
 noSub <- length(Config)
-Config.Long <- c('Full','Shell')
+Config.Long <- c('External Lower Zone Wrap','External Dual Zone Wrap')  #input long form of config types
 ChildDat <- data.frame(Config,Config.Long)
 ChildDat$Year <- rep(Year, each = noSub)
 ChildDat$Month <- rep(Month, each = noSub)
@@ -143,6 +145,10 @@ if (a == 'YES'){
 # Remove variables from the list
 rm(ParentDat,ChildDat,noSub,name_order,a)
 
+
+
+
+
 ######### Sub Visits BD ############
 
 # Read the existing database: Only to get column name order
@@ -151,9 +157,8 @@ ParentDat <- read.csv('Z:/BigData/DB_V2/MasterSubjectVisits.csv',nrows=1)
 #   rename('Subject' = ?..Subject)
 name_order = colnames(ParentDat)
 # Read in qual sheet to reference names
-ChildDat <- read_xlsx('Z:\\Testing Segments\\Snow Performance\\EH_Alpine_FullBootVsShell_Jan2024\\EH_Alpine_FullBootvsShell_Mech_Jan2024_Qual.xlsx',sheet = 'Anthro')
+ChildDat <- read_xlsx('C:\\Users\\milena.singletary\\OneDrive - BOA Technology Inc\\General - PFL Team\\Testing Segments\\Snow Sports\\Snowboard\\2026_Mechanistic_SnowboardWrapMechI_K2\\2026_Mechanistic_SnowboardWrapMechI_K2.xlsx')
 ChildDat <- subset(ChildDat,select = -c(2:3))
-ChildDat <- ChildDat %>% rename(Speed.run. = RunSpeed)
 noSub <- length(ChildDat$Subject)
 ChildDat$Year <- rep(Year, each = noSub)
 ChildDat$Month <- rep(Month, each = noSub)
@@ -164,10 +169,12 @@ ChildDat$Benefit <- rep(Benefit, each = noSub)
 ChildDat$Type <- rep(Type, each = noSub)
 ChildDat$Resistance <- rep('NA', each = noSub)
 ChildDat$Speed.run. <- rep('NA', each = noSub)
-
+ChildDat$Mass <- rep('NA', each = noSub)
+ChildDat$Sex <- rep('M', each = noSub)
 
 # Sort the data into the correct order
 ChildDat <- ChildDat[,name_order]
+ChildDat <- unique(ChildDat)  # if there is no anthro tab in the qual sheet reduce to one entry per subject
 
 # write output. add a 1 to the end if you are at all unsure of output!!!
 a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?')
@@ -185,13 +192,13 @@ rm(ParentDat,ChildDat,noSub,name_order,a)
 ## Combiming IMU and Pressure Data
 
 # Read the existing database: Only to get column name order
-ParentDat <- read.csv('Z:/BigData/DB_V2/AlpineDB.csv',nrows=1)
+ParentDat <- read.csv('Z:/BigData/DB_V2/SnowboardDB.csv',nrows=1)
 # ParentDat <- ParentDat %>%
 #   rename('Subject' = ?..Subject)
 name_order = colnames(ParentDat)
 
 # Read and summarize the overground data:
-IMUDat <- read.csv('Z:\\Testing Segments\\Snow Performance\\EH_Alpine_FullBootVsShell_Jan2024\\IMU\\0_IMUOutcomes2.csv') 
+IMUDat <- read.csv('C:\\Users\\milena.singletary\\OneDrive - BOA Technology Inc\\General - PFL Team\\Testing Segments\\Snow Sports\\Snowboard\\2026_Mechanistic_SnowboardWrapMechI_K2\\IMU\\0_IMUOutcomes.csv') 
 IMUDat$Subject <- tolower(gsub(" ", "", IMUDat$Subject))
 Subject <- unique(IMUDat$Subject)
 Config <- unique(IMUDat$Config)
@@ -203,23 +210,24 @@ cmp_strings(Config,unique(IMUDat$Config),'config')
 
 IMUDat <- IMUDat %>%
   group_by(Subject, Config) %>%
-  summarise(EdgeAng_Dwn_gyr= mean(edgeang_dwn_gyr), EdgeAng_Up_gyr = mean(edgeang_up_gyr), RAD_dwn = mean(RAD_dwn))
+  summarise(BoardAngle_ToeTurns= mean(BoardAngle_ToeTurns), BoardAngle_HeelTurns = mean(BoardAngle_HeelTurns), BootFlex = mean(BootFlex) )
 
 
-pressDat <- read.csv('Z:\\Testing Segments\\Snow Performance\\EH_Alpine_FullBootVsShell_Jan2024\\XSENSOR\\Cropped\\0_CompiledResults_7.csv') 
+pressDat <- read.csv('C:\\Users\\milena.singletary\\OneDrive - BOA Technology Inc\\General - PFL Team\\Testing Segments\\Snow Sports\\Snowboard\\2026_Mechanistic_SnowboardWrapMechI_K2\\XSensor\\Cropped\\0_CompiledResults.csv') 
 pressDat$Subject <- tolower(gsub(" ", "", pressDat$Subject))
 Subject <- unique(pressDat$Subject)
 Config <- unique(pressDat$Config)
 
 
 pressDat <- pressDat %>%
-  group_by(Subject, Config) %>%
-  summarise(MedialProportionMidfoot = mean(medPropMid), PeakToePress =mean(maxmaxToes), HeelContactArea = mean(heelAreaP), UphillMaxForce = mean(InsTotMaxForce), DownhillMaxForce = mean(OutTotMaxForce),
-            RFD = mean(RFD)) 
+  group_by(Subject, Config, TurnDirection) %>%
+  summarise( TurnTime =mean(TurnTime), ToeTotMaxForce = mean(ToeTotMaxForce), HeelTotMaxForce = mean(HeelTotMaxForce), maxmaxToes = mean(maxmaxToes),
+            heelAreaP = mean(heelAreaP), RFD = mean(RFD), RFDtime = mean(RFDtime)) 
 
 
-gpsDat <- read.csv('Z:\\Testing Segments\\Snow Performance\\EH_Alpine_FullBootVsShell_Jan2024\\GPS\\3_GPSOutcomes.csv') 
+gpsDat <- read.csv('C:\\Users\\milena.singletary\\OneDrive - BOA Technology Inc\\General - PFL Team\\Testing Segments\\Snow Sports\\Snowboard\\2026_Mechanistic_SnowboardWrapMechI_K2\\GPS\\1_GPSOutcomes_Racebox.csv') 
 gpsDat$Subject <- tolower(gsub(" ", "", gpsDat$Subject))
+gpsDat$Config <- tolower(gsub(" ", "", gpsDat$Config))
 Subject <- unique(gpsDat$Subject)
 Config <- unique(gpsDat$Config)
 
@@ -242,12 +250,6 @@ ChildDat$Type <- rep(Type, dim(ChildDat)[1])
 #_______________________________________________________________________________
 # Place NaNs for missing data
 # ChildDat$COMConWork <- rep('NA', dim(ChildDat)[1])
-# ChildDat$PeakKneeAbMoment <- rep('NA', dim(ChildDat)[1])
-# ChildDat$PeakAnklePFMoment <- rep('NA', dim(ChildDat)[1])
-# ChildDat$PropForce <- rep('NA', dim(ChildDat)[1])
-# ChildDat$PeakAnkleInMoment <- rep('NA', dim(ChildDat)[1])
-# ChildDat$KneeAbAdROM <- rep('NA', dim(ChildDat)[1])
-# ChildDat$COMEccWork <- rep('NA', dim(ChildDat)[1])
 #_______________________________________________________________________________
 
 # Sort the DataFrame columns into the right order (from the Parent)
@@ -255,7 +257,7 @@ ChildDat <- ChildDat[,name_order]
 
 a <- winDialog(type = 'yesno', message = 'Have you checked the Child Dataframe?')
 if (a == 'YES'){
-  write.table(ChildDat, "Z:/BigData/DB_V2/AlpineDB.csv", sep=',', 
+  write.table(ChildDat, "Z:/BigData/DB_V2/SnowboardDB.csv", sep=',', 
               append = TRUE,col.names = FALSE, row.names = FALSE)
 }
 
