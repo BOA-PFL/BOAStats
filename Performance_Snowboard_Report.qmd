@@ -261,6 +261,7 @@ extractVals <- function(dat, mod, configNames, baseConfig, var, dir) {
   }
   
   writeLines(sentences)
+  return(output)
 }
 
 # Setting up  "Best Of" line plots 
@@ -288,11 +289,38 @@ EffectSizeLM <- function(df, inputmodel) {
   conditions.emm <- emmeans(full.mod, "Config", lmer.df = "satterthwaite")
   efsi_sum = summary(eff_size(conditions.emm, sigma = sigma(full.mod), edf = Inf))
   
-  for (ii in 1:(length(unique(df$Config))-1)){
+  for (ii in 1:nrow(efsi_sum)){
     print(paste('effect size for:', efsi_sum$contrast[ii], ' is ', round(efsi_sum$effect.size[ii],3)))
   }
 
-return()
+return(efsi_sum)
+}
+
+checkEffectMagnitude <- function(extractOutput, effectOutput, baseConfig) {
+  # Combines extractVals' Bayesian probability of improvement with
+  # EffectSizeLM's frequentist effect size for each non-baseline config, and
+  # flags configs where both indicate a meaningful difference from baseline:
+  #   - major effect:    Prob > 80% and |effect size| > 0.25
+  #   - moderate effect: Prob > 80% and |effect size| between 0.15 and 0.25
+  #   - minor effect:    Prob between 70% and 80%
+  for (i in 1:nrow(extractOutput)) {
+    configName <- extractOutput[i, 'Config']
+    prob <- as.numeric(extractOutput[i, 'Probability of Improvement'])
+
+    matchRow <- which(grepl(baseConfig, effectOutput$contrast) & grepl(configName, effectOutput$contrast))
+
+    if (length(matchRow) == 1) {
+      effSize <- abs(effectOutput$effect.size[matchRow])
+
+      if (prob > 80 && effSize > 0.25) {
+        print(paste0('There is a major effect for ', configName, ' vs ', baseConfig))
+      } else if (prob > 80 && effSize >= 0.15 && effSize <= 0.25) {
+        print(paste0('There is a moderate effect for ', configName, ' vs ', baseConfig))
+      } else if (prob >= 70 && prob <= 80) {
+        print(paste0('There is a minor effect for ', configName, ' vs ', baseConfig))
+      }
+    }
+  }
 }
 
 ##############################
@@ -403,9 +431,10 @@ avgMod <- brm(data = avgDat, # Bayes model
 
 p <- withinSubPlotAvg(avgDat, colName = 'AvgSpeed', dir = 'higher','Average Speed (kph)')
 
-extractVals(avgDat, avgMod, otherConfigs, baseline, 'AvgSpeed', 'higher')
+ev_AvgSpeed <- extractVals(avgDat, avgMod, otherConfigs, baseline, 'AvgSpeed', 'higher')
 
-EffectSizeLM(avgDat,'AvgSpeed ~ Config + (Config|Subject)')
+es_AvgSpeed <- EffectSizeLM(avgDat,'AvgSpeed ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_AvgSpeed, es_AvgSpeed, baseline)
 ```
 
 ## **Top Speed - Higher is better**
@@ -447,7 +476,10 @@ topMod <- brm(data = topDat, # Bayes model
 
 p <- withinSubPlotAvg(topDat, colName = 'TopSpeed', dir = 'higher','Top Speed (kph)')
 
-extractVals(topDat, topMod, otherConfigs, baseline, 'TopSpeed', 'higher') 
+ev_TopSpeed <- extractVals(topDat, topMod, otherConfigs, baseline, 'TopSpeed', 'higher')
+
+es_TopSpeed <- EffectSizeLM(topDat, 'TopSpeed ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_TopSpeed, es_TopSpeed, baseline)
 ```
 
 ## **Peak Edge Force - Higher is better**
@@ -493,7 +525,10 @@ heelFmod <- brm(data = heelFdat, # Bayes model
 
 p <- withinSubPlotAvg(heelFdat, colName = 'HeelTotMaxForce', dir = 'higher','Heel Edge Force (N)')
 
-extractVals(heelFdat, heelFmod, otherConfigs, baseline, 'HeelTotMaxForce', 'higher') 
+ev_HeelTotMaxForce <- extractVals(heelFdat, heelFmod, otherConfigs, baseline, 'HeelTotMaxForce', 'higher')
+
+es_HeelTotMaxForce <- EffectSizeLM(heelFdat, 'HeelTotMaxForce ~ Config + (1 + Config|Subject)')
+checkEffectMagnitude(ev_HeelTotMaxForce, es_HeelTotMaxForce, baseline)
 ```
 
 **Toe edge**
@@ -537,7 +572,10 @@ toeFmod <- brm(data = toeFdat, # Bayes model
 
 p <- withinSubPlotAvg(toeFdat, colName = 'ToeTotMaxForce', dir = 'higher','Toe Edge Force (N)')
 
-extractVals(toeFdat, toeFmod, otherConfigs, baseline, 'ToeTotMaxForce', 'higher')
+ev_ToeTotMaxForce <- extractVals(toeFdat, toeFmod, otherConfigs, baseline, 'ToeTotMaxForce', 'higher')
+
+es_ToeTotMaxForce <- EffectSizeLM(toeFdat, 'ToeTotMaxForce ~ Config + (1 + Config|Subject)')
+checkEffectMagnitude(ev_ToeTotMaxForce, es_ToeTotMaxForce, baseline)
 ```
 
 ## **Board Angle**
@@ -579,7 +617,10 @@ heelEmod <- brm(data = heelEdat,
 
 p <- withinSubPlotAvg(heelEdat, colName = 'BoardAngle_HeelTurns', dir = 'higher', 'Board Angle (deg)')
 
-extractVals(heelEdat, heelEmod, otherConfigs, baseline, 'BoardAngle_HeelTurns', 'higher')
+ev_BoardAngle_HeelTurns <- extractVals(heelEdat, heelEmod, otherConfigs, baseline, 'BoardAngle_HeelTurns', 'higher')
+
+es_BoardAngle_HeelTurns <- EffectSizeLM(heelEdat, 'BoardAngle_HeelTurns ~ Config + (1 + Config|Subject)')
+checkEffectMagnitude(ev_BoardAngle_HeelTurns, es_BoardAngle_HeelTurns, baseline)
 ```
 
 **Toe Turns**
@@ -619,7 +660,10 @@ toeEmod <- brm(data = toeEdat,
 
 p <- withinSubPlotAvg(toeEdat, colName = 'BoardAngle_ToeTurns', dir = 'higher','Board Angle (deg)')
 
-extractVals(toeEdat, toeEmod, otherConfigs, baseline, 'BoardAngle_ToeTurns', 'higher')
+ev_BoardAngle_ToeTurns <- extractVals(toeEdat, toeEmod, otherConfigs, baseline, 'BoardAngle_ToeTurns', 'higher')
+
+es_BoardAngle_ToeTurns <- EffectSizeLM(toeEdat, 'BoardAngle_ToeTurns ~ Config + (1 + Config|Subject)')
+checkEffectMagnitude(ev_BoardAngle_ToeTurns, es_BoardAngle_ToeTurns, baseline)
 ```
 
 # Precision
@@ -664,7 +708,10 @@ heelRFDmod <- brm(data = heelRFDdat, # Bayes model
 p <- withinSubPlotAvg(heelRFDdat, colName = 'RFD', dir = 'higher','RFD (N/s)')
 
 
-extractVals(heelRFDdat, heelRFDmod, otherConfigs, baseline, 'RFD', 'higher')
+ev_HeelRFD <- extractVals(heelRFDdat, heelRFDmod, otherConfigs, baseline, 'RFD', 'higher')
+
+es_HeelRFD <- EffectSizeLM(heelRFDdat, 'RFD ~ Config + (1 + Config|Subject)')
+checkEffectMagnitude(ev_HeelRFD, es_HeelRFD, baseline)
 ```
 
 **Toe Turns**
@@ -705,7 +752,10 @@ toeRFDmod <- brm(data = toeRFDdat,
 
 withinSubPlotAvg(toeRFDdat, colName = 'RFD', dir = 'higher','Toe Turns RFD (N/s)' )
 
-extractVals(toeRFDdat, toeRFDmod, otherConfigs, baseline, 'RFD', 'higher')
+ev_ToeRFD <- extractVals(toeRFDdat, toeRFDmod, otherConfigs, baseline, 'RFD', 'higher')
+
+es_ToeRFD <- EffectSizeLM(toeRFDdat, 'RFD ~ Config + (1 + Config|Subject)')
+checkEffectMagnitude(ev_ToeRFD, es_ToeRFD, baseline)
 ```
 
 # **Quantitative Fit**
@@ -748,7 +798,10 @@ heelmod <- brm(data = heeldat,
 
 p <- withinSubPlotAvg(heeldat, colName = 'heelAreaP', dir = 'higher','Heel Contact Area (%)')
 
-extractVals(heeldat, heelmod, otherConfigs, baseline, 'heelAreaP', 'higher')
+ev_heelAreaP <- extractVals(heeldat, heelmod, otherConfigs, baseline, 'heelAreaP', 'higher')
+
+es_heelAreaP <- EffectSizeLM(heeldat, 'heelAreaP ~ Config + ToeTotMaxForce + (1 + Config|Subject)')
+checkEffectMagnitude(ev_heelAreaP, es_heelAreaP, baseline)
 ```
 
 ## **Average Dorsal Pressure**
@@ -790,7 +843,10 @@ avgDorsalmod <- brm(data = avgDorsaldat, # Bayes model
 p <- withinSubPlotAvg(avgDorsaldat, colName = 'avgDorsal', dir = 'higher')
 p + ylab('Average Dorsal Pressure (kPa)')
 
-extractVals(avgDorsaldat, avgDorsalmod, otherConfigs, baseline, 'avgDorsal', 'higher')
+ev_avgDorsal <- extractVals(avgDorsaldat, avgDorsalmod, otherConfigs, baseline, 'avgDorsal', 'higher')
+
+es_avgDorsal <- EffectSizeLM(avgDorsaldat, 'avgDorsal ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_avgDorsal, es_avgDorsal, baseline)
 ```
 
 ## **Variation in Dorsal Pressure - Lower is Better**
@@ -832,7 +888,10 @@ varDorsalmod <- brm(data = varDorsaldat, # Bayes model
 p <- withinSubPlotAvg(varDorsaldat, colName = 'varDorsal', dir = 'lower')
 p + ylab('Variation in Dorsal Pressure')
 
-extractVals(varDorsaldat, varDorsalmod, otherConfigs, baseline, 'varDorsal', 'lower')
+ev_varDorsal <- extractVals(varDorsaldat, varDorsalmod, otherConfigs, baseline, 'varDorsal', 'lower')
+
+es_varDorsal <- EffectSizeLM(varDorsaldat, 'varDorsal ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_varDorsal, es_varDorsal, baseline)
 ```
 
 ## **Average Shin Pressure**
@@ -874,7 +933,10 @@ avgShinmod <- brm(data = avgShindat, # Bayes model
 p <- withinSubPlotAvg(avgShindat, colName = 'avgShin', dir = 'higher')
 p + ylab('Average Shin Pressure (kPa)')
 
-extractVals(avgShindat, avgShinmod, otherConfigs, baseline, 'avgShin', 'higher')
+ev_avgShin <- extractVals(avgShindat, avgShinmod, otherConfigs, baseline, 'avgShin', 'higher')
+
+es_avgShin <- EffectSizeLM(avgShindat, 'avgShin ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_avgShin, es_avgShin, baseline)
 ```
 
 ## **Variation in Shin Pressure**
@@ -916,7 +978,10 @@ varShinmod <- brm(data = varShindat, # Bayes model
 p <- withinSubPlotAvg(varShindat, colName = 'varShin', dir = 'lower')
 p + ylab('Variation in Shin Pressure')
 
-extractVals(varShindat, varShinmod, otherConfigs, baseline, 'varShin', 'lower')
+ev_varShin <- extractVals(varShindat, varShinmod, otherConfigs, baseline, 'varShin', 'lower')
+
+es_varShin <- EffectSizeLM(varShindat, 'varShin ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_varShin, es_varShin, baseline)
 ```
 
 ## **Average Calf Pressure**
@@ -959,7 +1024,10 @@ avgCalfmod <- brm(data = avgCalfdat, # Bayes model
 p <- withinSubPlotAvg(avgCalfdat, colName = 'avgCalf', dir = 'higher')
 p + ylab('Average Calf Pressure (kPa)')
 
-extractVals(avgCalfdat, avgCalfmod, otherConfigs, baseline, 'avgCalf', 'higher')
+ev_avgCalf <- extractVals(avgCalfdat, avgCalfmod, otherConfigs, baseline, 'avgCalf', 'higher')
+
+es_avgCalf <- EffectSizeLM(avgCalfdat, 'avgCalf ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_avgCalf, es_avgCalf, baseline)
 ```
 
 ## **Variation in Calf Pressure**
@@ -1001,5 +1069,8 @@ varCalfmod <- brm(data = varCalfdat, # Bayes model
 p <- withinSubPlotAvg(varCalfdat, colName = 'varCalf', dir = 'lower')
 p + ylab('Variation in Calf Pressure')
 
-extractVals(varCalfdat, varCalfmod, otherConfigs, baseline, 'varCalf', 'lower')
+ev_varCalf <- extractVals(varCalfdat, varCalfmod, otherConfigs, baseline, 'varCalf', 'lower')
+
+es_varCalf <- EffectSizeLM(varCalfdat, 'varCalf ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_varCalf, es_varCalf, baseline)
 ```

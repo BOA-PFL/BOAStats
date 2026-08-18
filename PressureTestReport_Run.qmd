@@ -71,6 +71,8 @@ library(patchwork)
 library(tidyr)
 library(fmsb)
 library(gt)
+library(lme4)
+library(emmeans)
 rm(list=ls())
 ```
 
@@ -234,7 +236,47 @@ extractVals <- function(dat, mod, configNames, baseConfig, var, dir) {
   }
   
   writeLines(sentences)
-  return()
+  return(output)
+}
+
+EffectSizeLM <- function(df, inputmodel) {
+  myformula <- as.formula(paste0(inputmodel))
+  full.mod = lmer(myformula, data = df, REML = TRUE, na.action = "na.omit")
+  conditions.emm <- emmeans(full.mod, "Config", lmer.df = "satterthwaite")
+  efsi_sum = summary(eff_size(conditions.emm, sigma = sigma(full.mod), edf = Inf))
+
+  for (ii in 1:nrow(efsi_sum)){
+    print(paste('effect size for:', efsi_sum$contrast[ii], ' is ', round(efsi_sum$effect.size[ii],3)))
+  }
+
+return(efsi_sum)
+}
+
+checkEffectMagnitude <- function(extractOutput, effectOutput, baseConfig) {
+  # Combines extractVals' Bayesian probability of improvement with
+  # EffectSizeLM's frequentist effect size for each non-baseline config, and
+  # flags configs where both indicate a meaningful difference from baseline:
+  #   - major effect:    Prob > 80% and |effect size| > 0.25
+  #   - moderate effect: Prob > 80% and |effect size| between 0.15 and 0.25
+  #   - minor effect:    Prob between 70% and 80%
+  for (i in 1:nrow(extractOutput)) {
+    configName <- extractOutput[i, 'Config']
+    prob <- as.numeric(extractOutput[i, 'Probability of Improvement'])
+
+    matchRow <- which(grepl(baseConfig, effectOutput$contrast) & grepl(configName, effectOutput$contrast))
+
+    if (length(matchRow) == 1) {
+      effSize <- abs(effectOutput$effect.size[matchRow])
+
+      if (prob > 80 && effSize > 0.25) {
+        print(paste0('There is a major effect for ', configName, ' vs ', baseConfig))
+      } else if (prob > 80 && effSize >= 0.15 && effSize <= 0.25) {
+        print(paste0('There is a moderate effect for ', configName, ' vs ', baseConfig))
+      } else if (prob >= 70 && prob <= 80) {
+        print(paste0('There is a minor effect for ', configName, ' vs ', baseConfig))
+      }
+    }
+  }
 }
 
 # qual average plot
@@ -356,7 +398,9 @@ COMwMod <- brm(data = COMp, # Bayes model
 #| layout-ncol: 2  
 
 withinSubPlotAvg(COMp, 'COMWork_pos', 'lower', 'Positive Center of Mass Work (J)')
-extractVals(COMp, COMwMod, otherConfigs, baseline, 'COMWork_pos', 'lower') 
+ev_COMpos <- extractVals(COMp, COMwMod, otherConfigs, baseline, 'COMWork_pos', 'lower')
+es_COMpos <- EffectSizeLM(COMp, 'COMWork_pos ~ Config + Order + (1 + Config|Subject)')
+checkEffectMagnitude(ev_COMpos, es_COMpos, baseline)
 ```
 
 ## Negative Center of Mass Work - Running: Lower (closer to 0) is Better
@@ -395,7 +439,9 @@ NCOMwMod <- brm(data = COMn, # Bayes model
 #| layout-ncol: 2
 
 withinSubPlotAvg(COMn, 'COMWork_neg', 'higher', 'Negative Center of Mass Work (J)')
-extractVals(COMn, NCOMwMod, otherConfigs, baseline, 'COMWork_neg', 'higher') 
+ev_COMneg <- extractVals(COMn, NCOMwMod, otherConfigs, baseline, 'COMWork_neg', 'higher')
+es_COMneg <- EffectSizeLM(COMn, 'COMWork_neg ~ Config + Order + (1 + Config|Subject)')
+checkEffectMagnitude(ev_COMneg, es_COMneg, baseline)
 ```
 
 # Dynamic Fit: Running
@@ -437,7 +483,9 @@ HeelMod <- brm(data = HeelCondat, # Bayes model
 #| layout-ncol: 2
 
 withinSubPlotAvg(HeelCondat, 'heelAreaP', 'higher', 'Heel Contact Area (%)')
-extractVals(HeelCondat, HeelMod, otherConfigs, baseline, 'heelAreaP', 'higher')
+ev_Heel <- extractVals(HeelCondat, HeelMod, otherConfigs, baseline, 'heelAreaP', 'higher')
+es_Heel <- EffectSizeLM(HeelCondat, 'heelAreaP ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_Heel, es_Heel, baseline)
 ```
 
 ## Peak Toe Pressure (Toe Clawing): Lower is Better
@@ -477,7 +525,9 @@ ToeMod <- brm(data = Toedat, # Bayes model
 #| layout-ncol: 2  
 
 withinSubPlotAvg(Toedat, 'maxmaxToes', 'lower', 'Peak Toe Pressure (kPa)')
-extractVals(Toedat, ToeMod, otherConfigs, baseline, 'maxmaxToes', 'lower')
+ev_Toe <- extractVals(Toedat, ToeMod, otherConfigs, baseline, 'maxmaxToes', 'lower')
+es_Toe <- EffectSizeLM(Toedat, 'maxmaxToes ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_Toe, es_Toe, baseline)
 ```
 
 # Static Fit
@@ -517,8 +567,10 @@ covDorPressMod <- brm(data = covDorPress, # Bayes model
 #| echo: false
 #| warning: false
 #| layout-ncol: 2 
-withinSubPlotAvg(covDorPress , colName = 'covDorsalPressure', dir = 'lower', yLabel = 'Dorsal Pressure Variation')  
-extractVals(covDorPress, covDorPressMod, otherConfigs, baseline, 'covDorsalPressure', 'lower') 
+withinSubPlotAvg(covDorPress , colName = 'covDorsalPressure', dir = 'lower', yLabel = 'Dorsal Pressure Variation')
+ev_covDorPress <- extractVals(covDorPress, covDorPressMod, otherConfigs, baseline, 'covDorsalPressure', 'lower')
+es_covDorPress <- EffectSizeLM(covDorPress, 'covDorsalPressure ~ Config + (1|Subject)')
+checkEffectMagnitude(ev_covDorPress, es_covDorPress, baseline)
 ```
 
 ## Peak Dorsal Pressure: Lower is Better
@@ -555,8 +607,10 @@ peakDorPressMod <- brm(data = peakDorPress, # Bayes model
 #| echo: false
 #| warning: false
 #| layout-ncol: 2 
-withinSubPlotAvg(peakDorPress , colName = 'maxDorsalPressure', dir = 'lower', yLabel = 'Peak Dorsal Pressure (kPa)')  
-extractVals(peakDorPress, peakDorPressMod, otherConfigs, baseline, 'maxDorsalPressure', 'lower') 
+withinSubPlotAvg(peakDorPress , colName = 'maxDorsalPressure', dir = 'lower', yLabel = 'Peak Dorsal Pressure (kPa)')
+ev_peakDorPress <- extractVals(peakDorPress, peakDorPressMod, otherConfigs, baseline, 'maxDorsalPressure', 'lower')
+es_peakDorPress <- EffectSizeLM(peakDorPress, 'maxDorsalPressure ~ Config + (1|Subject)')
+checkEffectMagnitude(ev_peakDorPress, es_peakDorPress, baseline)
 ```
 
 ## Average Dorsal Pressure: Higher is Better
@@ -594,8 +648,10 @@ avgDorPressMod <- brm(data = avgDorPress, # Bayes model
 #| echo: false
 #| warning: false
 #| layout-ncol: 2 
-withinSubPlotAvg(avgDorPress , colName = 'meanDorsalPressure', dir = 'higher', yLabel = 'Avg Dorsal Pressure (kPa)')  
-extractVals(avgDorPress, avgDorPressMod, otherConfigs, baseline, 'meanDorsalPressure', 'higher')
+withinSubPlotAvg(avgDorPress , colName = 'meanDorsalPressure', dir = 'higher', yLabel = 'Avg Dorsal Pressure (kPa)')
+ev_avgDorPress <- extractVals(avgDorPress, avgDorPressMod, otherConfigs, baseline, 'meanDorsalPressure', 'higher')
+es_avgDorPress <- EffectSizeLM(avgDorPress, 'meanDorsalPressure ~ Config + (1|Subject)')
+checkEffectMagnitude(ev_avgDorPress, es_avgDorPress, baseline)
 ```
 
 ## Zonal Pressure
@@ -634,8 +690,10 @@ instDorsalMod <- brm(data = staticDat_instPres, # Bayes model
 #| echo: false
 #| warning: false
 #| layout-ncol: 2 
-withinSubPlotAvg(staticDat_instPres , colName = 'instepDorsalPressure', dir = 'higher', yLabel = 'Avg Instep Pressure (kPa)')  
-extractVals(staticDat_instPres, instDorsalMod, otherConfigs, baseline, 'instepDorsalPressure', 'higher') 
+withinSubPlotAvg(staticDat_instPres , colName = 'instepDorsalPressure', dir = 'higher', yLabel = 'Avg Instep Pressure (kPa)')
+ev_instDorsal <- extractVals(staticDat_instPres, instDorsalMod, otherConfigs, baseline, 'instepDorsalPressure', 'higher')
+es_instDorsal <- EffectSizeLM(staticDat_instPres, 'instepDorsalPressure ~ Config + (1|Subject)')
+checkEffectMagnitude(ev_instDorsal, es_instDorsal, baseline)
 ```
 
 **Average Midfoot Pressure**
@@ -670,8 +728,10 @@ mfPMod <- brm(data = mfPDat, # Bayes model
 #| warning: false
 #| layout-ncol: 2 
 
-withinSubPlotAvg(mfPDat, colName = 'mfDorsalPressure', dir = 'higher', 'Avg Midfoot Pressure (kPa)') 
-extractVals(mfPDat, mfPMod, otherConfigs, baseline, 'mfDorsalPressure', 'higher')
+withinSubPlotAvg(mfPDat, colName = 'mfDorsalPressure', dir = 'higher', 'Avg Midfoot Pressure (kPa)')
+ev_mfPress <- extractVals(mfPDat, mfPMod, otherConfigs, baseline, 'mfDorsalPressure', 'higher')
+es_mfPress <- EffectSizeLM(mfPDat, 'mfDorsalPressure ~ Config + (1|Subject)')
+checkEffectMagnitude(ev_mfPress, es_mfPress, baseline)
 ```
 
 **Average Forefoot Pressure**
@@ -706,5 +766,7 @@ ffPMod <- brm(data = ffPDat, # Bayes model
 #| layout-ncol: 2 
 
 withinSubPlotAvg(ffPDat, colName = 'ffDorsalPressure', dir = 'higher', yLabel = 'Avg Forefoot Pressure (kPa)')
-extractVals(ffPDat, ffPMod, otherConfigs, baseline, 'ffDorsalPressure', 'higher') 
+ev_ffPress <- extractVals(ffPDat, ffPMod, otherConfigs, baseline, 'ffDorsalPressure', 'higher')
+es_ffPress <- EffectSizeLM(ffPDat, 'ffDorsalPressure ~ Config + (1|Subject)')
+checkEffectMagnitude(ev_ffPress, es_ffPress, baseline)
 ```

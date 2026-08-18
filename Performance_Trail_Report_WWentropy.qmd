@@ -87,6 +87,8 @@ library(patchwork)
 library(tidyr)
 library(fmsb)
 library(gt)
+library(lme4)
+library(emmeans)
 rm(list=ls())
 ```
 
@@ -291,10 +293,50 @@ extractVals <- function(dat, mod, configNames, baseConfig, var, dir) {
   }
   
   writeLines(sentences)
-  
+  return(output)
 }
 
-# Setting up  "Best Of" line plots 
+EffectSizeLM <- function(df, inputmodel) {
+  myformula <- as.formula(paste0(inputmodel))
+  full.mod = lmer(myformula, data = df, REML = TRUE, na.action = "na.omit")
+  conditions.emm <- emmeans(full.mod, "Config", lmer.df = "satterthwaite")
+  efsi_sum = summary(eff_size(conditions.emm, sigma = sigma(full.mod), edf = Inf))
+
+  for (ii in 1:nrow(efsi_sum)){
+    print(paste('effect size for:', efsi_sum$contrast[ii], ' is ', round(efsi_sum$effect.size[ii],3)))
+  }
+
+return(efsi_sum)
+}
+
+checkEffectMagnitude <- function(extractOutput, effectOutput, baseConfig) {
+  # Combines extractVals' Bayesian probability of improvement with
+  # EffectSizeLM's frequentist effect size for each non-baseline config, and
+  # flags configs where both indicate a meaningful difference from baseline:
+  #   - major effect:    Prob > 80% and |effect size| > 0.25
+  #   - moderate effect: Prob > 80% and |effect size| between 0.15 and 0.25
+  #   - minor effect:    Prob between 70% and 80%
+  for (i in 1:nrow(extractOutput)) {
+    configName <- extractOutput[i, 'Config']
+    prob <- as.numeric(extractOutput[i, 'Probability of Improvement'])
+
+    matchRow <- which(grepl(baseConfig, effectOutput$contrast) & grepl(configName, effectOutput$contrast))
+
+    if (length(matchRow) == 1) {
+      effSize <- abs(effectOutput$effect.size[matchRow])
+
+      if (prob > 80 && effSize > 0.25) {
+        print(paste0('There is a major effect for ', configName, ' vs ', baseConfig))
+      } else if (prob > 80 && effSize >= 0.15 && effSize <= 0.25) {
+        print(paste0('There is a moderate effect for ', configName, ' vs ', baseConfig))
+      } else if (prob >= 70 && prob <= 80) {
+        print(paste0('There is a minor effect for ', configName, ' vs ', baseConfig))
+      }
+    }
+  }
+}
+
+# Setting up  "Best Of" line plots
 withinSubQualPlot <- function(inputDF) {
   
   # direction can be 'lower' or higher'. It is the direction of change that is better. 
@@ -420,7 +462,11 @@ SpeedMod <- brm(data = IMUdat, # Bayes model
 p <- withinSubPlot(IMUdat, colName = 'imuSpeed', dir = 'higher')
 p + ylab('Running Speed (m/s)')
 
-extractVals(IMUdat, SpeedMod, otherConfigs, baseline, 'imuSpeed', 'higher') 
+ev_Speed <- extractVals(IMUdat, SpeedMod, otherConfigs, baseline, 'imuSpeed', 'higher')
+
+es_Speed <- EffectSizeLM(IMUdat, 'imuSpeed ~ Config + Slope + Order + (Config|Subject)')
+
+checkEffectMagnitude(ev_Speed, es_Speed, baseline)
 
 ```
 
@@ -465,7 +511,11 @@ EverMod <- brm(data = Everdat, # Bayes model
 p <- withinSubPlot(Everdat, colName = 'pIEgyro', dir = 'lower')
 p + ylab('Eversion Velcity (deg/s)')
 
-extractVals(Everdat, EverMod, otherConfigs, baseline, 'pIEgyro', 'lower')
+ev_Ever <- extractVals(Everdat, EverMod, otherConfigs, baseline, 'pIEgyro', 'lower')
+
+es_Ever <- EffectSizeLM(Everdat, 'pIEgyro ~ Config + imuSpeed + Slope + Order + (1|Subject)')
+
+checkEffectMagnitude(ev_Ever, es_Ever, baseline)
 
 ```
 
@@ -503,7 +553,11 @@ HeelMod <- brm(data = HeelCondat, # Bayes model
 p <- withinSubPlot(HeelCondat, colName = 'heelAreaP', dir = 'higher')
 p + ylab('Heel Contact (%)')
 
-extractVals(HeelCondat, HeelMod, otherConfigs, baseline, 'heelAreaP', 'higher')
+ev_Heel <- extractVals(HeelCondat, HeelMod, otherConfigs, baseline, 'heelAreaP', 'higher')
+
+es_Heel <- EffectSizeLM(HeelCondat, 'heelAreaP ~ Config + Slope + Order + (1|Subject)')
+
+checkEffectMagnitude(ev_Heel, es_Heel, baseline)
 ```
 
 ## Adaptability
@@ -537,7 +591,11 @@ xmod <- brm(data = xdat, # Bayes model
 p <- withinSubPlot(xdat, colName = 'sampEntX_foot', dir = 'higher')
 p + ylab('Sample Entropy (X)')
 
-extractVals(xdat, xmod, otherConfigs, baseline, 'sampEntX_foot', 'higher')
+ev_SampEntX <- extractVals(xdat, xmod, otherConfigs, baseline, 'sampEntX_foot', 'higher')
+
+es_SampEntX <- EffectSizeLM(xdat, 'sampEntX_foot ~ Config + Sesh + Speed + (1|Subject)')
+
+checkEffectMagnitude(ev_SampEntX, es_SampEntX, baseline)
 ```
 
 **Mediolateral adaptability: higher is better**
@@ -569,7 +627,11 @@ ymod <- brm(data = ydat, # Bayes model
 p <- withinSubPlot(ydat, colName = 'sampEntY_foot', dir = 'higher')
 p + ylab('Sample Entropy (Y)')
 
-extractVals(ydat, ymod, otherConfigs, baseline, 'sampEntY_foot', 'higher')
+ev_SampEntY <- extractVals(ydat, ymod, otherConfigs, baseline, 'sampEntY_foot', 'higher')
+
+es_SampEntY <- EffectSizeLM(ydat, 'sampEntY_foot ~ Config + Sesh + Speed + (1|Subject)')
+
+checkEffectMagnitude(ev_SampEntY, es_SampEntY, baseline)
 ```
 
 **Anteroposterior adaptability: higher is better**
@@ -600,5 +662,9 @@ zmod <- brm(data = zdat, # Bayes model
 p <- withinSubPlot(ydat, colName = 'sampEntZ_foot', dir = 'higher')
 p + ylab('Sample Entropy (Z)')
 
-extractVals(zdat, zmod, otherConfigs, baseline, 'sampEntZ_foot', 'higher')
+ev_SampEntZ <- extractVals(zdat, zmod, otherConfigs, baseline, 'sampEntZ_foot', 'higher')
+
+es_SampEntZ <- EffectSizeLM(zdat, 'sampEntZ_foot ~ Config + Sesh + Speed + (1|Subject)')
+
+checkEffectMagnitude(ev_SampEntZ, es_SampEntZ, baseline)
 ```

@@ -88,7 +88,9 @@ library(patchwork)
 library(tidyr)
 library(fmsb)
 library(gt)
-rm(list=ls()) 
+library(lme4)
+library(emmeans)
+rm(list=ls())
 
 
 ```
@@ -257,6 +259,7 @@ extractVals <- function(dat, mod, configNames, baseConfig, var, dir) {
   }
   
   writeLines(sentences)
+  return(output)
 }
 
 # Setting up  "Best Of" line plots 
@@ -387,7 +390,47 @@ extractVals <- function(dat, mod, configNames, baseConfig, var, dir) {
   }
   
   writeLines(sentences)
-  return()
+  return(output)
+}
+
+EffectSizeLM <- function(df, inputmodel) {
+  myformula <- as.formula(paste0(inputmodel))
+  full.mod = lmer(myformula, data = df, REML = TRUE, na.action = "na.omit")
+  conditions.emm <- emmeans(full.mod, "Config", lmer.df = "satterthwaite")
+  efsi_sum = summary(eff_size(conditions.emm, sigma = sigma(full.mod), edf = Inf))
+
+  for (ii in 1:nrow(efsi_sum)){
+    print(paste('effect size for:', efsi_sum$contrast[ii], ' is ', round(efsi_sum$effect.size[ii],3)))
+  }
+
+return(efsi_sum)
+}
+
+checkEffectMagnitude <- function(extractOutput, effectOutput, baseConfig) {
+  # Combines extractVals' Bayesian probability of improvement with
+  # EffectSizeLM's frequentist effect size for each non-baseline config, and
+  # flags configs where both indicate a meaningful difference from baseline:
+  #   - major effect:    Prob > 80% and |effect size| > 0.25
+  #   - moderate effect: Prob > 80% and |effect size| between 0.15 and 0.25
+  #   - minor effect:    Prob between 70% and 80%
+  for (i in 1:nrow(extractOutput)) {
+    configName <- extractOutput[i, 'Config']
+    prob <- as.numeric(extractOutput[i, 'Probability of Improvement'])
+
+    matchRow <- which(grepl(baseConfig, effectOutput$contrast) & grepl(configName, effectOutput$contrast))
+
+    if (length(matchRow) == 1) {
+      effSize <- abs(effectOutput$effect.size[matchRow])
+
+      if (prob > 80 && effSize > 0.25) {
+        print(paste0('There is a major effect for ', configName, ' vs ', baseConfig))
+      } else if (prob > 80 && effSize >= 0.15 && effSize <= 0.25) {
+        print(paste0('There is a moderate effect for ', configName, ' vs ', baseConfig))
+      } else if (prob >= 70 && prob <= 80) {
+        print(paste0('There is a minor effect for ', configName, ' vs ', baseConfig))
+      }
+    }
+  }
 }
 
 ##############################
@@ -466,8 +509,9 @@ ggplot(qualDat, mapping = aes(x = Rating, fill = Config)) +
 #| layout-ncol: 2
 
 # p <- withinSubPlotAvg(heeldat, colName = 'heelAreaP', dir = 'higher','Heel Contact Area (%)')
-# 
+#
 # extractVals(heeldat, heelmod, otherConfigs, baseline, 'heelAreaP', 'higher')
+# es_HeelToe <- EffectSizeLM(heeldat, 'heelAreaP ~ Config + ToeTotMaxForce + (1|Subject)')
 ```
 
 ## Heel Contact Area
@@ -507,7 +551,10 @@ heelmod <- brm(data = heeldat,
 #| layout-ncol: 2
 p <- withinSubPlotAvg(heeldat, colName = 'heelContact', dir = 'higher','Heel Contact Area (%)')
 
-extractVals(heeldat, heelmod, otherConfigs, baseline, 'heelContact', 'higher') 
+ev_HeelContact <- extractVals(heeldat, heelmod, otherConfigs, baseline, 'heelContact', 'higher')
+
+es_HeelContact <- EffectSizeLM(heeldat, 'heelContact ~ Config + (1|Subject)')
+checkEffectMagnitude(ev_HeelContact, es_HeelContact, baseline)
 
 ```
 
@@ -558,7 +605,10 @@ avgDorsalmod <- brm(data = avgDorsaldat, # Bayes model
 p <- withinSubPlotAvg(avgDorsaldat, colName = 'meanDorsalPressure', dir = 'higher','Average Dorsal Pressure (kPa)')
 
 
-extractVals(avgDorsaldat, avgDorsalmod, otherConfigs, baseline, 'meanDorsalPressure', 'higher')
+ev_AvgDorsal <- extractVals(avgDorsaldat, avgDorsalmod, otherConfigs, baseline, 'meanDorsalPressure', 'higher')
+
+es_AvgDorsal <- EffectSizeLM(avgDorsaldat, 'meanDorsalPressure ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_AvgDorsal, es_AvgDorsal, baseline)
 ```
 
 ```{r}
@@ -606,7 +656,10 @@ normpkDormod <- brm(data =normpkDordat , # Bayes model
 p <- withinSubPlotAvg(normpkDordat , colName = 'normpkDor', dir = 'lower','Relative Peak Dorsal Pressure (kPa)')
 
 
-extractVals(normpkDordat , normpkDormod, otherConfigs, baseline, 'normpkDor', 'lower')
+ev_NormPkDorsal <- extractVals(normpkDordat , normpkDormod, otherConfigs, baseline, 'normpkDor', 'lower')
+
+es_NormPkDorsal <- EffectSizeLM(normpkDordat, 'normpkDor ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_NormPkDorsal, es_NormPkDorsal, baseline)
 ```
 
 ## Average Dorsal Pressure
@@ -660,7 +713,10 @@ maxDorsalmod <- brm(data = maxDorsaldat , # Bayes model
 p <- withinSubPlotAvg(maxDorsaldat, colName = 'maxDorsalPressure', dir = 'lower','Peak Dorsal Pressure (kPa)')
 
 
-extractVals(maxDorsaldat, maxDorsalmod, otherConfigs, baseline, 'maxDorsalPressure', 'lower')
+ev_MaxDorsal <- extractVals(maxDorsaldat, maxDorsalmod, otherConfigs, baseline, 'maxDorsalPressure', 'lower')
+
+es_MaxDorsal <- EffectSizeLM(maxDorsaldat, 'maxDorsalPressure ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_MaxDorsal, es_MaxDorsal, baseline)
 ```
 
 ## Variation in Dorsal Pressure
@@ -702,7 +758,10 @@ varDorsalmod <- brm(data = varDorsaldat, # Bayes model
 p <- withinSubPlotAvg(varDorsaldat, colName = 'covDorsalPressure', dir = 'lower','Variation in Dorsal Pressure')
 
 
-extractVals(varDorsaldat, varDorsalmod, otherConfigs, baseline, 'covDorsalPressure', 'lower')
+ev_VarDorsal <- extractVals(varDorsaldat, varDorsalmod, otherConfigs, baseline, 'covDorsalPressure', 'lower')
+
+es_VarDorsal <- EffectSizeLM(varDorsaldat, 'covDorsalPressure ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_VarDorsal, es_VarDorsal, baseline)
 ```
 
 ## **Average Shin Pressure**
@@ -746,7 +805,10 @@ layout-ncol: 2
 p <- withinSubPlotAvg(avgShindat, colName = 'avgShin', dir = 'higher','Average Shin Pressure (kPa)')
 
 
-extractVals(avgShindat, avgShinmod, otherConfigs, baseline, 'avgShin', 'higher')
+ev_AvgShin <- extractVals(avgShindat, avgShinmod, otherConfigs, baseline, 'avgShin', 'higher')
+
+es_AvgShin <- EffectSizeLM(avgShindat, 'avgShin ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_AvgShin, es_AvgShin, baseline)
 ```
 
 ```{r}
@@ -791,7 +853,10 @@ normpkShinmod <- brm(data = normpkShindat, # Bayes model
 p <- withinSubPlotAvg(normpkShindat, colName = 'normpkShin', dir = 'lower','Relative Peak Shin Pressure (kPa)')
 
 
-extractVals(normpkShindat, normpkShinmod, otherConfigs, baseline, 'normpkShin', 'lower')
+ev_NormPkShin <- extractVals(normpkShindat, normpkShinmod, otherConfigs, baseline, 'normpkShin', 'lower')
+
+es_NormPkShin <- EffectSizeLM(normpkShindat, 'normpkShin ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_NormPkShin, es_NormPkShin, baseline)
 ```
 
 ## **Variation in Shin Pressure**
@@ -833,7 +898,10 @@ varShinmod <- brm(data = varShindat, # Bayes model
 p <- withinSubPlotAvg(varShindat, colName = 'varShin', dir = 'lower','Variation in Shin Pressure')
 
 
-extractVals(varShindat, varShinmod, otherConfigs, baseline, 'varShin', 'lower')
+ev_VarShin <- extractVals(varShindat, varShinmod, otherConfigs, baseline, 'varShin', 'lower')
+
+es_VarShin <- EffectSizeLM(varShindat, 'varShin ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_VarShin, es_VarShin, baseline)
 ```
 
 ## **Average Calf Pressure**
@@ -876,7 +944,10 @@ avgCalfmod <- brm(data = avgCalfdat, # Bayes model
 p <- withinSubPlotAvg(avgCalfdat, colName = 'avgCalf', dir = 'higher','Average Calf Pressure (kPa)')
 
 
-extractVals(avgCalfdat, avgCalfmod, otherConfigs, baseline, 'avgCalf', 'higher')
+ev_AvgCalf <- extractVals(avgCalfdat, avgCalfmod, otherConfigs, baseline, 'avgCalf', 'higher')
+
+es_AvgCalf <- EffectSizeLM(avgCalfdat, 'avgCalf ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_AvgCalf, es_AvgCalf, baseline)
 ```
 
 ## **Variation in Calf Pressure**
@@ -932,7 +1003,10 @@ varCalfmod <- brm(data = varCalfdat, # Bayes model
 p <- withinSubPlotAvg(varCalfdat, colName = 'varCalf', dir = 'lower','Variation in Calf Pressure')
 
 
-extractVals(varCalfdat, varCalfmod , otherConfigs, baseline, 'varCalf', 'lower')
+ev_VarCalf <- extractVals(varCalfdat, varCalfmod , otherConfigs, baseline, 'varCalf', 'lower')
+
+es_VarCalf <- EffectSizeLM(varCalfdat, 'varCalf ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_VarCalf, es_VarCalf, baseline)
 ```
 
 ## Relative Peak CalfPressure
@@ -984,7 +1058,10 @@ normpkCalfdatmod <- brm(data = normpkCalfdat , # Bayes model
 p <- withinSubPlotAvg(normpkCalfdat , colName = 'normpkCalf', dir = 'lower','Relative Peak Calf Pressure (kPa)')
 
 
-extractVals(normpkCalfdat, normpkCalfdatmod , otherConfigs, baseline, 'normpkCalf', 'lower')
+ev_NormPkCalf <- extractVals(normpkCalfdat, normpkCalfdatmod , otherConfigs, baseline, 'normpkCalf', 'lower')
+
+es_NormPkCalf <- EffectSizeLM(normpkCalfdat, 'normpkCalf ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_NormPkCalf, es_NormPkCalf, baseline)
 
 
 ```
@@ -1038,7 +1115,10 @@ calfCondatmod <- brm(data = calfCondat, # Bayes model
 p <- withinSubPlotAvg(calfCondat , colName = 'calfContact', dir = 'higher','Calf Contact Area (%)')
 
 
-extractVals(calfCondat, calfCondatmod , otherConfigs, baseline, 'calfContact', 'higher')
+ev_CalfContact <- extractVals(calfCondat, calfCondatmod , otherConfigs, baseline, 'calfContact', 'higher')
+
+es_CalfContact <- EffectSizeLM(calfCondat, 'calfContact ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_CalfContact, es_CalfContact, baseline)
 ```
 
 ```{r}
