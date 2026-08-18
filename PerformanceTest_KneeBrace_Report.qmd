@@ -84,6 +84,7 @@ library(tidybayes)
 library(RColorBrewer)
 library(patchwork)
 library(lme4)
+library(emmeans)
 library(rlang)
 library(reshape2)
 library(readxl)
@@ -241,10 +242,50 @@ extractVals <- function(dat, mod, configNames, baseConfig, var, dir) {
   }
   
   writeLines(sentences)
-  return()
+  return(output)
 }
 
-# Setting up  "Best Of" line plots 
+EffectSizeLM <- function(df, inputmodel) {
+  myformula <- as.formula(paste0(inputmodel))
+  full.mod = lmer(myformula, data = df, REML = TRUE, na.action = "na.omit")
+  conditions.emm <- emmeans(full.mod, "Config", lmer.df = "satterthwaite")
+  efsi_sum = summary(eff_size(conditions.emm, sigma = sigma(full.mod), edf = Inf))
+
+  for (ii in 1:nrow(efsi_sum)){
+    print(paste('effect size for:', efsi_sum$contrast[ii], ' is ', round(efsi_sum$effect.size[ii],3)))
+  }
+
+return(efsi_sum)
+}
+
+checkEffectMagnitude <- function(extractOutput, effectOutput, baseConfig) {
+  # Combines extractVals' Bayesian probability of improvement with
+  # EffectSizeLM's frequentist effect size for each non-baseline config, and
+  # flags configs where both indicate a meaningful difference from baseline:
+  #   - major effect:    Prob > 80% and |effect size| > 0.25
+  #   - moderate effect: Prob > 80% and |effect size| between 0.15 and 0.25
+  #   - minor effect:    Prob between 70% and 80%
+  for (i in 1:nrow(extractOutput)) {
+    configName <- extractOutput[i, 'Config']
+    prob <- as.numeric(extractOutput[i, 'Probability of Improvement'])
+
+    matchRow <- which(grepl(baseConfig, effectOutput$contrast) & grepl(configName, effectOutput$contrast))
+
+    if (length(matchRow) == 1) {
+      effSize <- abs(effectOutput$effect.size[matchRow])
+
+      if (prob > 80 && effSize > 0.25) {
+        print(paste0('There is a major effect for ', configName, ' vs ', baseConfig))
+      } else if (prob > 80 && effSize >= 0.15 && effSize <= 0.25) {
+        print(paste0('There is a moderate effect for ', configName, ' vs ', baseConfig))
+      } else if (prob >= 70 && prob <= 80) {
+        print(paste0('There is a minor effect for ', configName, ' vs ', baseConfig))
+      }
+    }
+  }
+}
+
+# Setting up  "Best Of" line plots
 withinSubQualPlot <- function(inputDF) {
   
   # direction can be 'lower' or higher'. It is the direction of change that is better. 
@@ -532,10 +573,14 @@ b <- ggplot(braceDat, aes(x =Trial , y = KneeBraceVertPos,  color= Config, group
 
 
 
-extractVals(zscoreDat, 
-zscore_runmod_brace , otherConfigs, baseline, 'RKneeBrace_VertPos', 'higher') 
+ev_BracePos <- extractVals(zscoreDat,
+zscore_runmod_brace , otherConfigs, baseline, 'RKneeBrace_VertPos', 'higher')
 
-# extractVals(braceDat, 
+es_BracePos <- EffectSizeLM(zscoreDat, 'RKneeBrace_VertPos ~ Config + (1 + Config|Subject)')
+
+checkEffectMagnitude(ev_BracePos, es_BracePos, baseline)
+
+# extractVals(braceDat,
 # runmod_brace , otherConfigs, baseline, 'KneeBraceVertPos', 'higher') 
 
 
@@ -629,8 +674,12 @@ p + ylab('Peak Knee Extension Moment (Nm)')
 
 
 
-extractVals(jointDat, 
-runmod_cmj, otherConfigs, baseline, 'peakKneeEXTmom', 'higher') 
+ev_ExtMomCMJ <- extractVals(jointDat,
+runmod_cmj, otherConfigs, baseline, 'peakKneeEXTmom', 'higher')
+
+es_ExtMomCMJ <- EffectSizeLM(jointDat, 'peakKneeEXTmom ~ Trial + Config + (Config|Subject)')
+
+checkEffectMagnitude(ev_ExtMomCMJ, es_ExtMomCMJ, baseline)
 
 
 ```
@@ -684,8 +733,12 @@ p + ylab('Knee Flexion ROM (deg)')
 
 
 
-extractVals(kneeflexcmjDat, 
-kneeflexcmjMod, otherConfigs, baseline, 'kneeFLEXrom', 'higher') 
+ev_KneeFlexCMJ <- extractVals(kneeflexcmjDat,
+kneeflexcmjMod, otherConfigs, baseline, 'kneeFLEXrom', 'higher')
+
+es_KneeFlexCMJ <- EffectSizeLM(kneeflexcmjDat, 'kneeFLEXrom ~ Trial + Config + (Config|Subject)')
+
+checkEffectMagnitude(ev_KneeFlexCMJ, es_KneeFlexCMJ, baseline)
 
 
 
@@ -749,8 +802,12 @@ p + ylab('Peak Knee Abducion Moment (Nm)')
 
 
 
-extractVals(abMomecmjDat, 
-abMomecmjMod, otherConfigs, baseline, 'PeakKneeAbMoment', 'lower') 
+ev_AbMomCMJ <- extractVals(abMomecmjDat,
+abMomecmjMod, otherConfigs, baseline, 'PeakKneeAbMoment', 'lower')
+
+es_AbMomCMJ <- EffectSizeLM(abMomecmjDat, 'PeakKneeAbMoment ~ Trial + Config + (1 + Config|Subject)')
+
+checkEffectMagnitude(ev_AbMomCMJ, es_AbMomCMJ, baseline)
 
 
 ```
@@ -807,8 +864,12 @@ p + ylab('Knee Frontal Plane ROM (deg)')
 
 
 
-extractVals(fRomcmjDat, 
-fRomcmjMod, otherConfigs, baseline, 'kneeABDrom', 'lower')  
+ev_FRomCMJ <- extractVals(fRomcmjDat,
+fRomcmjMod, otherConfigs, baseline, 'kneeABDrom', 'lower')
+
+es_FRomCMJ <- EffectSizeLM(fRomcmjDat, 'kneeABDrom ~ Trial + Config + (1 + Config|Subject)')
+
+checkEffectMagnitude(ev_FRomCMJ, es_FRomCMJ, baseline)
 
 
 
@@ -865,8 +926,12 @@ p + ylab('Peak Knee Extension Moment (Nm)')
 
 
 
-extractVals(extmome_Skate, 
-extMome_skateMod, otherConfigs, baseline, 'peakKneeEXTmom', 'higher') 
+ev_ExtMomSkate <- extractVals(extmome_Skate,
+extMome_skateMod, otherConfigs, baseline, 'peakKneeEXTmom', 'higher')
+
+es_ExtMomSkate <- EffectSizeLM(extmome_Skate, 'peakKneeEXTmom ~ Trial + Config + (Config|Subject)')
+
+checkEffectMagnitude(ev_ExtMomSkate, es_ExtMomSkate, baseline)
 ```
 
 ### Knee Flexion Range of Motion
@@ -907,8 +972,12 @@ sagROMskateMod <- brm(data = sagROMskate, # Bayes model
 p <- withinSubPlot(sagROMskate, colName = 'kneeFLEXrom', dir = 'higher')
 p + ylab('Knee Flexion ROM (deg)')
 
-extractVals(sagROMskate, 
-sagROMskateMod, otherConfigs, baseline, 'kneeFLEXrom', 'higher') 
+ev_SagROMSkate <- extractVals(sagROMskate,
+sagROMskateMod, otherConfigs, baseline, 'kneeFLEXrom', 'higher')
+
+es_SagROMSkate <- EffectSizeLM(sagROMskate, 'kneeFLEXrom ~ Trial + Config + (Config|Subject)')
+
+checkEffectMagnitude(ev_SagROMSkate, es_SagROMSkate, baseline)
 
 
 ```
@@ -965,8 +1034,12 @@ p + ylab('Peak Knee Abducion Moment (Nm)')
 
 
 
-extractVals(abmomeSkate, 
-abmomeSkateMod, otherConfigs, baseline, 'PeakKneeAbMoment', 'lower') 
+ev_AbMomSkate <- extractVals(abmomeSkate,
+abmomeSkateMod, otherConfigs, baseline, 'PeakKneeAbMoment', 'lower')
+
+es_AbMomSkate <- EffectSizeLM(abmomeSkate, 'PeakKneeAbMoment ~ Trial + Config + (Config|Subject)')
+
+checkEffectMagnitude(ev_AbMomSkate, es_AbMomSkate, baseline)
 
 
 ```
@@ -1019,8 +1092,12 @@ p <- withinSubPlot(fRomSkate, colName = 'kneeABDrom', dir = 'lower')
 p + ylab('Knee Frontal Plane ROM (deg)')
 
 
-extractVals(fRomSkate, 
+ev_FRomSkate <- extractVals(fRomSkate,
 fRomSkateMod, otherConfigs, baseline, 'kneeABDrom', 'lower')
+
+es_FRomSkate <- EffectSizeLM(fRomSkate, 'kneeABDrom ~ Trial + Config + (Config|Subject)')
+
+checkEffectMagnitude(ev_FRomSkate, es_FRomSkate, baseline)
 
 ```
 

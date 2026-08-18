@@ -283,7 +283,7 @@ extractVals <- function(dat, mod, configNames, baseConfig, var, dir) {
   }
   
   writeLines(sentences)
-  return()
+  return(output)
 }
 
 # Setting up  "Best Of" line plots 
@@ -311,11 +311,38 @@ EffectSizeLM <- function(df, inputmodel) {
   conditions.emm <- emmeans(full.mod, "Config", lmer.df = "satterthwaite")
   efsi_sum = summary(eff_size(conditions.emm, sigma = sigma(full.mod), edf = Inf))
   
-  for (ii in 1:(length(unique(df$Config))-1)){
+  for (ii in 1:nrow(efsi_sum)){
     print(paste('effect size for:', efsi_sum$contrast[ii], ' is ', round(efsi_sum$effect.size[ii],3)))
   }
 
-return()
+return(efsi_sum)
+}
+
+checkEffectMagnitude <- function(extractOutput, effectOutput, baseConfig) {
+  # Combines extractVals' Bayesian probability of improvement with
+  # EffectSizeLM's frequentist effect size for each non-baseline config, and
+  # flags configs where both indicate a meaningful difference from baseline:
+  #   - major effect:    Prob > 80% and |effect size| > 0.25
+  #   - moderate effect: Prob > 80% and |effect size| between 0.15 and 0.25
+  #   - minor effect:    Prob between 70% and 80%
+  for (i in 1:nrow(extractOutput)) {
+    configName <- extractOutput[i, 'Config']
+    prob <- as.numeric(extractOutput[i, 'Probability of Improvement'])
+
+    matchRow <- which(grepl(baseConfig, effectOutput$contrast) & grepl(configName, effectOutput$contrast))
+
+    if (length(matchRow) == 1) {
+      effSize <- abs(effectOutput$effect.size[matchRow])
+
+      if (prob > 80 && effSize > 0.25) {
+        print(paste0('There is a major effect for ', configName, ' vs ', baseConfig))
+      } else if (prob > 80 && effSize >= 0.15 && effSize <= 0.25) {
+        print(paste0('There is a moderate effect for ', configName, ' vs ', baseConfig))
+      } else if (prob >= 70 && prob <= 80) {
+        print(paste0('There is a minor effect for ', configName, ' vs ', baseConfig))
+      }
+    }
+  }
 }
 
 ###############################
@@ -495,7 +522,10 @@ torqueMod <- brm(data = torqueDat, # Bayes model
               seed = 190831)
 
 
-extractVals(torqueDat , torqueMod, otherConfigs, baseline, 'L_DialTorque1', 'higher')
+ev_Torque <- extractVals(torqueDat , torqueMod, otherConfigs, baseline, 'L_DialTorque1', 'higher')
+
+es_Torque <- EffectSizeLM(torqueDat, 'L_DialTorque1 ~ Config + (1|Subject)')
+checkEffectMagnitude(ev_Torque, es_Torque, baseline)
 ```
 
 # Energy Efficiency
@@ -551,9 +581,10 @@ p <- withinSubPlotAvg(Speeddat, colName = 'imuSpeed', dir = 'higher')
 p + ylab('Walking Speed (m/s)')
 
 
-extractVals(Speeddat, SpeeddatMod, otherConfigs, baseline, 'imuSpeed', 'higher') 
+ev_Speed <- extractVals(Speeddat, SpeeddatMod, otherConfigs, baseline, 'imuSpeed', 'higher')
 
-EffectSizeLM(Speeddat,'imuSpeed ~ Config + (Config|Subject)')
+es_Speed <- EffectSizeLM(Speeddat,'imuSpeed ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_Speed, es_Speed, baseline)
 ```
 
 ## **Toe Clawing: Peak Toe Pressure (Lower is Better) - All Walking and Uneven Terrain Landings**
@@ -635,7 +666,10 @@ p <- withinSubPlotAvg(PeakToeWalkdat, colName = 'maxmaxToes', dir = 'lower')
 p + ylab('Peak Toe Pressure (kPa)')
 
 
-extractVals(PeakToeWalkdat, PeakToeWalkdatMod, otherConfigs, baseline, 'maxmaxToes', 'lower')
+ev_PeakToeWalk <- extractVals(PeakToeWalkdat, PeakToeWalkdatMod, otherConfigs, baseline, 'maxmaxToes', 'lower')
+
+es_PeakToeWalk <- EffectSizeLM(PeakToeWalkdat, 'maxmaxToes ~ Config + Movement + (Config|Subject)')
+checkEffectMagnitude(ev_PeakToeWalk, es_PeakToeWalk, baseline)
 
 
 ```
@@ -650,7 +684,10 @@ extractVals(PeakToeWalkdat, PeakToeWalkdatMod, otherConfigs, baseline, 'maxmaxTo
 p <- withinSubPlotAvg(PeakToeLanddat, colName = 'ToeClawPeak', dir = 'lower')
 p + ylab('Peak Toe Pressure (kPa)')
 
-extractVals(PeakToeLanddat, PeakToeLanddatMod, otherConfigs, baseline, 'ToeClawPeak', 'lower')
+ev_PeakToeLand <- extractVals(PeakToeLanddat, PeakToeLanddatMod, otherConfigs, baseline, 'ToeClawPeak', 'lower')
+
+es_PeakToeLand <- EffectSizeLM(PeakToeLanddat, 'ToeClawPeak ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_PeakToeLand, es_PeakToeLand, baseline)
 ```
 
 ## Peak Toe Pressure Walking: UH, DH, Trail
@@ -759,21 +796,30 @@ PeakToeTrMod <- brm(data = PeakToeTr, # Bayes model
 p <- withinSubPlotAvg(PeakToeUH, colName = 'maxmaxToes', dir = 'lower')
 p + ylab('Peak Toe Pressure (kPa)')
 
-extractVals(PeakToeUH, PeakToeUHMod, otherConfigs, baseline, 'maxmaxToes', 'lower')
+ev_PeakToeUH <- extractVals(PeakToeUH, PeakToeUHMod, otherConfigs, baseline, 'maxmaxToes', 'lower')
+
+es_PeakToeUH <- EffectSizeLM(PeakToeUH, 'maxmaxToes ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_PeakToeUH, es_PeakToeUH, baseline)
 
 ## DH
 
 p <- withinSubPlotAvg(PeakToeDH, colName = 'maxmaxToes', dir = 'lower')
 p + ylab('Peak Toe Pressure (kPa)')
 
-extractVals(PeakToeDH, PeakToeDHMod, otherConfigs, baseline, 'maxmaxToes', 'lower')
+ev_PeakToeDH <- extractVals(PeakToeDH, PeakToeDHMod, otherConfigs, baseline, 'maxmaxToes', 'lower')
+
+es_PeakToeDH <- EffectSizeLM(PeakToeDH, 'maxmaxToes ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_PeakToeDH, es_PeakToeDH, baseline)
 
 ## trail
 
 p <- withinSubPlotAvg(PeakToeTr, colName = 'maxmaxToes', dir = 'lower')
 p + ylab('Peak Toe Pressure (kPa)')
 
-extractVals(PeakToeTr, PeakToeTrMod, otherConfigs, baseline, 'maxmaxToes', 'lower')
+ev_PeakToeTr <- extractVals(PeakToeTr, PeakToeTrMod, otherConfigs, baseline, 'maxmaxToes', 'lower')
+
+es_PeakToeTr <- EffectSizeLM(PeakToeTr, 'maxmaxToes ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_PeakToeTr, es_PeakToeTr, baseline)
 
 ```
 
@@ -823,7 +869,10 @@ RFDSUDatMod <- brm(data = RFDSUDat,
 p <- withinSubPlotAvg(RFDSUDat, colName = 'RFD', dir = 'higher')
 p + ylab('Force Development (N/s)')
 
-extractVals(RFDSUDat, RFDSUDatMod, otherConfigs, baseline, 'RFD', 'higher')
+ev_RFD <- extractVals(RFDSUDat, RFDSUDatMod, otherConfigs, baseline, 'RFD', 'higher')
+
+es_RFD <- EffectSizeLM(RFDSUDat, 'RFD ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_RFD, es_RFD, baseline)
 ```
 
 ## **Balance: Center-of-Pressure Excursion (lower is better) - Weighted Lunge**
@@ -872,7 +921,10 @@ p <- withinSubPlotAvg(COPSUDat, colName = 'COPEx', dir = 'lower')
 p + ylab('Center-of-Pressure Excursion (m)')
 
 
-extractVals(COPSUDat, COPSUDatMod, otherConfigs, baseline, 'COPEx', 'lower')
+ev_COP <- extractVals(COPSUDat, COPSUDatMod, otherConfigs, baseline, 'COPEx', 'lower')
+
+es_COP <- EffectSizeLM(COPSUDat, 'COPEx ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_COP, es_COP, baseline)
 
 ```
 
@@ -925,7 +977,10 @@ p <- withinSubPlotAvg(psCOM_UH, colName = 'COMWork_pos', dir = 'lower')
 p + ylab('Positive COM - Uphill (J)')
 
 
-extractVals(psCOM_UH, psCOM_UH_mod, otherConfigs, baseline, 'COMWork_pos', 'lower')
+ev_psCOM_UH <- extractVals(psCOM_UH, psCOM_UH_mod, otherConfigs, baseline, 'COMWork_pos', 'lower')
+
+es_psCOM_UH <- EffectSizeLM(psCOM_UH, 'COMWork_pos ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_psCOM_UH, es_psCOM_UH, baseline)
 ```
 
 ```{r}
@@ -975,7 +1030,10 @@ p <- withinSubPlotAvg(ngCOM_DH, colName = 'COMWork_neg', dir = 'higher')
 p + ylab('Negative COM - Downhill (J)')
 
 
-extractVals(ngCOM_DH, ngCOM_DH_mod, otherConfigs, baseline, 'COMWork_neg', 'higher')
+ev_ngCOM_DH <- extractVals(ngCOM_DH, ngCOM_DH_mod, otherConfigs, baseline, 'COMWork_neg', 'higher')
+
+es_ngCOM_DH <- EffectSizeLM(ngCOM_DH, 'COMWork_neg ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_ngCOM_DH, es_ngCOM_DH, baseline)
 ```
 
 # Stability & Control
@@ -1027,7 +1085,10 @@ EverdatMod <- brm(data = Everdat, # Bayes model
 p <- withinSubPlotAvg(Everdat, colName = 'pIEgyro', dir = 'lower')
 p + ylab('Eversion Velocity (deg/s)')
 
-extractVals(Everdat, EverdatMod, otherConfigs, baseline, 'pIEgyro', 'lower')
+ev_Eversion <- extractVals(Everdat, EverdatMod, otherConfigs, baseline, 'pIEgyro', 'lower')
+
+es_Eversion <- EffectSizeLM(Everdat, 'pIEgyro ~ Config + imuSpeed + (Config|Subject)')
+checkEffectMagnitude(ev_Eversion, es_Eversion, baseline)
 ```
 
 ## **Knee Joint Loading: Knee Abduction Moment (lower magnitude is better) - Weighted Lunge**
@@ -1105,7 +1166,10 @@ KABDSUDatMod <- brm(data = KABDSUDat,
 p <- withinSubPlotAvg(KABDSUDat, colName = 'RkneeABDMom', dir = 'higher')
 p + ylab('Knee Abduction Moment (Nm)')
 
-extractVals(KABDSUDat, KABDSUDatMod, otherConfigs, baseline, 'RkneeABDMom', 'higher')
+ev_KneeABD <- extractVals(KABDSUDat, KABDSUDatMod, otherConfigs, baseline, 'RkneeABDMom', 'higher')
+
+es_KneeABD <- EffectSizeLM(KABDSUDat, 'RkneeABDMom ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_KneeABD, es_KneeABD, baseline)
 ```
 
 ```{r}
@@ -1176,7 +1240,10 @@ AEMSUDatMod <- brm(data = AEMSUDat,
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-extractVals(AEMSUDat, AEMSUDatMod, otherConfigs, baseline, 'RankleEvMom', 'higher')
+ev_AnkleEv <- extractVals(AEMSUDat, AEMSUDatMod, otherConfigs, baseline, 'RankleEvMom', 'higher')
+
+es_AnkleEv <- EffectSizeLM(AEMSUDat, 'RankleEvMom ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_AnkleEv, es_AnkleEv, baseline)
 ```
 
 ```{r}
@@ -1188,7 +1255,10 @@ extractVals(AEMSUDat, AEMSUDatMod, otherConfigs, baseline, 'RankleEvMom', 'highe
 p <- withinSubPlotAvg(AEMSUDat, colName = 'RankleEvMom', dir = 'higher')
 p + ylab('Ankle Eversion Moment (Nm)')
 
-extractVals(AEMSUDat, AEMSUDatMod, otherConfigs, baseline, 'RankleEvMom', 'higher')
+ev_AnkleEv2 <- extractVals(AEMSUDat, AEMSUDatMod, otherConfigs, baseline, 'RankleEvMom', 'higher')
+
+es_AnkleEv2 <- EffectSizeLM(AEMSUDat, 'RankleEvMom ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_AnkleEv2, es_AnkleEv2, baseline)
 
 ```
 
@@ -1238,7 +1308,10 @@ TimeUnLandDatMod <- brm(data = TimeUnLandDat,
 p <- withinSubPlotAvg(TimeUnLandDat, colName = 'StabTime', dir = 'lower')
 p + ylab('Stabilization Time (s)')
 
-extractVals(TimeUnLandDat, TimeUnLandDatMod, otherConfigs, baseline, 'StabTime', 'lower')
+ev_StabTime <- extractVals(TimeUnLandDat, TimeUnLandDatMod, otherConfigs, baseline, 'StabTime', 'lower')
+
+es_StabTime <- EffectSizeLM(TimeUnLandDat, 'StabTime ~ Config + Order + (Config|Subject)')
+checkEffectMagnitude(ev_StabTime, es_StabTime, baseline)
 ```
 
 # Quantitative Fit
@@ -1280,7 +1353,10 @@ HeelCondatMod <- brm(data = HeelCondat, # Bayes model
               control = list(adapt_delta = .975, max_treedepth = 20),
               seed = 190831)
 
-extractVals(HeelCondat, HeelCondatMod, otherConfigs, baseline, 'heelAreaP', 'higher')
+ev_HeelContact <- extractVals(HeelCondat, HeelCondatMod, otherConfigs, baseline, 'heelAreaP', 'higher')
+
+es_HeelContact <- EffectSizeLM(HeelCondat, 'heelAreaP ~ Config + Movement + (Config|Subject)')
+checkEffectMagnitude(ev_HeelContact, es_HeelContact, baseline)
 ```
 
 ```{r}
@@ -1376,17 +1452,26 @@ TCondatMod <- brm(data = TCondat, # Bayes model
 p <- withinSubPlotAvg(DHCondat, colName = 'heelAreaP', dir = 'higher')
 p + ylab('Downhill - Heel Contact (%)')
 
-extractVals(DHCondat, DHCondatMod, otherConfigs, baseline, 'heelAreaP', 'higher')
+ev_HeelContactDH <- extractVals(DHCondat, DHCondatMod, otherConfigs, baseline, 'heelAreaP', 'higher')
+
+es_HeelContactDH <- EffectSizeLM(DHCondat, 'heelAreaP ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_HeelContactDH, es_HeelContactDH, baseline)
 
 p <- withinSubPlotAvg(UHCondat, colName = 'heelAreaP', dir = 'higher')
 p + ylab('Uphill - Heel Contact (%)')
 
-extractVals(UHCondat, UHCondatMod, otherConfigs, baseline, 'heelAreaP', 'higher')
+ev_HeelContactUH <- extractVals(UHCondat, UHCondatMod, otherConfigs, baseline, 'heelAreaP', 'higher')
+
+es_HeelContactUH <- EffectSizeLM(UHCondat, 'heelAreaP ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_HeelContactUH, es_HeelContactUH, baseline)
 
 p <- withinSubPlotAvg(TCondat, colName = 'heelAreaP', dir = 'higher')
 p + ylab('Trail - Heel Contact (%)')
 
-extractVals(TCondat, TCondatMod, otherConfigs, baseline, 'heelAreaP', 'higher')
+ev_HeelContactTrail <- extractVals(TCondat, TCondatMod, otherConfigs, baseline, 'heelAreaP', 'higher')
+
+es_HeelContactTrail <- EffectSizeLM(TCondat, 'heelAreaP ~ Config + (Config|Subject)')
+checkEffectMagnitude(ev_HeelContactTrail, es_HeelContactTrail, baseline)
 ```
 
 ```{r}
@@ -1438,7 +1523,10 @@ p + ylab('Max Dorsal Pressure (kPa)')
 
 
 
-extractVals(peakDorsal, DorsalMaxMod, otherConfigs, baseline, 'maxDorsalPressure', 'lower')
+ev_MaxDorsal <- extractVals(peakDorsal, DorsalMaxMod, otherConfigs, baseline, 'maxDorsalPressure', 'lower')
+
+es_MaxDorsal <- EffectSizeLM(peakDorsal, 'maxDorsalPressure ~ Config + (1|Subject)')
+checkEffectMagnitude(ev_MaxDorsal, es_MaxDorsal, baseline)
 ```
 
 ```{r}
@@ -1488,6 +1576,9 @@ DorsalMeanMod <- brm(data = avgDorsal, # Bayes model
 p <- withinSubPlotAvg(avgDorsal, colName = 'meanDorsalPressure', dir = 'higher')
 p + ylab('Mean Dorsal Pressure (kPa)') 
 
-extractVals(avgDorsal, DorsalMeanMod, otherConfigs, baseline, 'meanDorsalPressure', 'higher')
+ev_MeanDorsal <- extractVals(avgDorsal, DorsalMeanMod, otherConfigs, baseline, 'meanDorsalPressure', 'higher')
+
+es_MeanDorsal <- EffectSizeLM(avgDorsal, 'meanDorsalPressure ~ Config + (1|Subject)')
+checkEffectMagnitude(ev_MeanDorsal, es_MeanDorsal, baseline)
 
 ```
