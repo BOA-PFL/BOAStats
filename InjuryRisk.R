@@ -20,8 +20,8 @@ library(bayestestR)
 
 
 
-InLab <- read.csv('C:/Users/max.ferguson/OneDrive - BOA Technology Inc/Documents/TrailAnkleMetrics/InLab/InLabIMUmetrics_wInversionInLab.csv',       fileEncoding = "UTF-8-BOM")
-Trail <- read.csv('C:/Users/max.ferguson/OneDrive - BOA Technology Inc/Documents/TrailAnkleMetrics/Trail/IMUmetrics_app.csv',       fileEncoding = "UTF-8-BOM")
+InLab <- read.csv('C:/Users/max.ferguson/OneDrive - BOA Technology Inc/PFL Team - General/PFL Internal Studies/AnkleInversionTrail/InLab/InLabIMUmetrics_wInversionInLab.csv',       fileEncoding = "UTF-8-BOM")
+Trail <- read.csv('C:/Users/max.ferguson/OneDrive - BOA Technology Inc/cPFL Team - General/PFL Internal Studies/AnkleInversionTrail/Trail/condition_summaryTrail_outlier_removed_BothFeet.csv',       fileEncoding = "UTF-8-BOM")
 
 
 
