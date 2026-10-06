@@ -11,7 +11,7 @@ library(glmmTMB)
 library(dplyr)
 library(bayestestR)
 library(brms)
-library(bayestestR)
+library(glmer)
 
 #-------------------------------------------------------------------------------
 # The purpose of this code is to examine A&S databases and compare metrics
@@ -65,7 +65,7 @@ BestCounts <- count(BestConfig, Config, name = "n_subjects")
 
 #LMM for risky steps  
 
-TrailMod <- glmmTMB(risky ~ Config + (1|Subject), data = Trail, family = binomial)
+TrailMod <- glmer(risky ~ Config + (1|Subject), data = Trail, family = binomial)
 summary(TrailMod)$coefficients 
 tidy(TrailMod, effects = "fixed", conf.int = TRUE, exponentiate = TRUE)
 
