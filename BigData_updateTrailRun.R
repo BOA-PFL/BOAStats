@@ -45,7 +45,7 @@ IMUDat <- IMUDat %>%
   rename(Order = Sesh)%>%
   filter(Label > 0) %>%
   group_by(Subject, Config, Order, Label) %>%
-  summarize(IMUSpeed = mean(imuSpeed), PeakEvVel = mean(pIEgyro), PeakJerk = mean(pJerk),
+  summarize(IMUSpeed = mean(imuSpeed), PeakEvVel = mean(pEgyro), PeakJerk = mean(pJerk),
             PeakAcc = mean(pAcc),RangeMLAcc = mean(rMLacc)) 
 
 # Read and summarize the pressure data

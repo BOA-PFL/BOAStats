@@ -726,7 +726,7 @@ p + ylab('Downhill Speed (m/s)')
 Everdat1 <- IMUdat %>% 
   group_by(Subject) %>%
   filter(Label == 1) %>%
-  mutate(z_score = scale(pIEgyro)) %>% 
+  mutate(z_score = scale(pEgyro)) %>% 
   group_by(Config)
 
 # Look at histogram of the data if any outliers need to be removed
@@ -735,7 +735,7 @@ Everdat1 <- IMUdat %>%
 Everdat2 <- IMUdat %>% 
   group_by(Subject) %>%
   filter(Label == 2) %>%
-  mutate(z_score = scale(pIEgyro)) %>% 
+  mutate(z_score = scale(pEgyro)) %>% 
   group_by(Config)
 
 # Look at histogram of the data if any outliers need to be removed
@@ -744,7 +744,7 @@ Everdat2 <- IMUdat %>%
 Everdat3 <- IMUdat %>% 
   group_by(Subject) %>%
   filter(Label == 3) %>%
-  mutate(z_score = scale(pIEgyro)) %>% 
+  mutate(z_score = scale(pEgyro)) %>% 
   group_by(Config)
 
 # Look at histogram of the data if any outliers need to be removed
@@ -800,31 +800,31 @@ Everdat3Mod <- brm(data = Everdat3, # Bayes model
 #| layout-ncol: 2 
 
 
-ev_Ever1 <- extractVals(Everdat1, Everdat1Mod, otherConfigs, baseline, 'pIEgyro', 'lower')
+ev_Ever1 <- extractVals(Everdat1, Everdat1Mod, otherConfigs, baseline, 'pEgyro', 'lower')
 
-es_Ever1 <- EffectSizeLM(Everdat1, 'pIEgyro ~ Config + (Config|Subject)')
+es_Ever1 <- EffectSizeLM(Everdat1, 'pEgyro ~ Config + (Config|Subject)')
 
 checkEffectMagnitude(ev_Ever1, es_Ever1, baseline)
 
-ev_Ever2 <- extractVals(Everdat2, Everdat2Mod, otherConfigs, baseline, 'pIEgyro', 'lower')
+ev_Ever2 <- extractVals(Everdat2, Everdat2Mod, otherConfigs, baseline, 'pEgyro', 'lower')
 
-es_Ever2 <- EffectSizeLM(Everdat2, 'pIEgyro ~ Config + (Config|Subject)')
+es_Ever2 <- EffectSizeLM(Everdat2, 'pEgyro ~ Config + (Config|Subject)')
 
 checkEffectMagnitude(ev_Ever2, es_Ever2, baseline)
 
-ev_Ever3 <- extractVals(Everdat3, Everdat3Mod, otherConfigs, baseline, 'pIEgyro', 'lower')
+ev_Ever3 <- extractVals(Everdat3, Everdat3Mod, otherConfigs, baseline, 'pEgyro', 'lower')
 
-es_Ever3 <- EffectSizeLM(Everdat3, 'pIEgyro ~ Config + (Config|Subject)')
+es_Ever3 <- EffectSizeLM(Everdat3, 'pEgyro ~ Config + (Config|Subject)')
 
 checkEffectMagnitude(ev_Ever3, es_Ever3, baseline)
 
-p <- withinSubPlotAvg(Everdat1, colName = 'pIEgyro', dir = 'lower')
+p <- withinSubPlotAvg(Everdat1, colName = 'pEgyro', dir = 'lower')
 p + ylab('Uphill Eversion Velcity (deg/s)')
 
-p <- withinSubPlotAvg(Everdat2, colName = 'pIEgyro', dir = 'lower')
+p <- withinSubPlotAvg(Everdat2, colName = 'pEgyro', dir = 'lower')
 p + ylab('Technical Top Eversion Velcity (deg/s)')
 
-p <- withinSubPlotAvg(Everdat3, colName = 'pIEgyro', dir = 'lower')
+p <- withinSubPlotAvg(Everdat3, colName = 'pEgyro', dir = 'lower')
 p + ylab('Downhill Eversion Velcity (deg/s)')
 
 ```
