@@ -302,7 +302,8 @@ checkEffectMagnitude <- function(extractOutput, effectOutput, baseConfig) {
   # flags configs where both indicate a meaningful difference from baseline:
   #   - major effect:    Prob > 80% and |effect size| > 0.25
   #   - moderate effect: Prob > 80% and |effect size| between 0.15 and 0.25
-  #   - minor effect:    Prob between 70% and 80%
+  #   - minor effect:    Prob between 70% and 80%, or Prob > 80% and |effect size| < 0.15
+  #   - no effect:       Prob < 70%
   for (i in 1:nrow(extractOutput)) {
     configName <- extractOutput[i, 'Config']
     prob <- as.numeric(extractOutput[i, 'Probability of Improvement'])
@@ -316,8 +317,12 @@ checkEffectMagnitude <- function(extractOutput, effectOutput, baseConfig) {
         print(paste0('There is a major effect for ', configName, ' vs ', baseConfig))
       } else if (prob > 80 && effSize >= 0.15 && effSize <= 0.25) {
         print(paste0('There is a moderate effect for ', configName, ' vs ', baseConfig))
+      } else if (prob > 80 && effSize < 0.15) {
+        print(paste0('There is a minor effect for ', configName, ' vs ', baseConfig))
       } else if (prob >= 70 && prob <= 80) {
         print(paste0('There is a minor effect for ', configName, ' vs ', baseConfig))
+      } else if (prob < 70) {
+        print(paste0('There is no effect for ', configName, ' vs ', baseConfig))
       }
     }
   }
